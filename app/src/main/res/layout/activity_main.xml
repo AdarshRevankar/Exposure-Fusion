@@ -7,49 +7,139 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="#000000">
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:layout_weight="1">
-            <ImageView
-                android:id="@+id/pic1"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:src="@drawable/pic1"/>
-
-            <ImageView
-                android:id="@+id/weighted"
+                android:orientation="vertical">
+                <ImageView
+                    android:id="@+id/pic1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:rotation="90"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_broken_image_black_24dp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:textAlignment="center"
+                    android:layout_weight="3"
+                    android:textColor="#FFFFFF"
+                    android:text="Original Image 1"/>
+            </LinearLayout>
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:src="@drawable/ic_launcher_background"/>
+                android:orientation="vertical">
+                <ImageView
+                    android:id="@+id/pic2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:rotation="90"
+                    android:src="@drawable/ic_broken_image_black_24dp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:textAlignment="center"
+                    android:layout_weight="3"
+                    android:textColor="#FFFFFF"
+                    android:text="Original Image 2"/>
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <ImageView
+                    android:id="@+id/pic3"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:rotation="90"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_broken_image_black_24dp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:textAlignment="center"
+                    android:layout_weight="3"
+                    android:textColor="#FFFFFF"
+                    android:text="Original Image 3"/>
+            </LinearLayout>
         </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:layout_weight="1">
-            <ImageView
-                android:id="@+id/convolve"
-                android:layout_weight="1"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/ic_launcher_background"/>
-            <ImageView
-                android:id="@+id/saturation"
                 android:layout_weight="1"
+                android:orientation="vertical">
+                <ImageView
+                    android:id="@+id/out1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:rotation="90"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_broken_image_black_24dp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:textAlignment="center"
+                    android:layout_weight="3"
+                    android:textColor="#FFFFFF"
+                    android:text="Normalized 1"/>
+            </LinearLayout>
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/ic_launcher_background"/>
-            <ImageView
-                android:id="@+id/exposure"
                 android:layout_weight="1"
+                android:orientation="vertical">
+                <ImageView
+                    android:id="@+id/out2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:rotation="90"
+                    android:src="@drawable/ic_broken_image_black_24dp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:textAlignment="center"
+                    android:layout_weight="3"
+                    android:textColor="#FFFFFF"
+                    android:text="Normalized 2"/>
+            </LinearLayout>
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/ic_launcher_background"/>
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <ImageView
+                    android:id="@+id/out3"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:rotation="90"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_broken_image_black_24dp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:textAlignment="center"
+                    android:layout_weight="3"
+                    android:textColor="#FFFFFF"
+                    android:text="Normalized 3"/>
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </RelativeLayout>
