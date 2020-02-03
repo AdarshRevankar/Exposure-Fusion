@@ -11,9 +11,7 @@ uchar4 __attribute__((kernel)) computeWeight(int32_t x, int32_t y){
     uchar4 e = rsGetElementAt_uchar4(inE, x, y);
 
     uchar4 pixel;
-    pixel.r = (c.r * s.r * e.r);
-    pixel.g = (c.g * s.g * e.g);
-    pixel.b = (c.b * s.b * e.b);
+    pixel.rgb = (float)e.r * (float)c.r * (float)s.r / (255.0f * 255.0f);
     pixel.a = 255.0f;
     return pixel;
 }

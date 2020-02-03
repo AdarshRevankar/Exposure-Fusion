@@ -203,12 +203,11 @@ public class HDRFilter implements HDRManager.Presenter{
         // Normalize Weighted Images
         // Allocate
         int bitmapWidth = bmpWeighted[0].getWidth();
-        int bitmapHeight = bmpWeighted[1].getHeight();
+        int bitmapHeight = bmpWeighted[0].getHeight();
 
         Allocation w1Alloc = Allocation.createFromBitmap(renderScript, bmpWeighted[0]);
         Allocation w2Alloc = Allocation.createFromBitmap(renderScript, bmpWeighted[1]);
         Allocation w3Alloc = Allocation.createFromBitmap(renderScript, bmpWeighted[2]);
-
         Allocation outAlloc = Allocation.createFromBitmap(renderScript, bmpImages[0]);
 
         ScriptC_NormalizeWeights scriptNW = new ScriptC_NormalizeWeights(renderScript);
