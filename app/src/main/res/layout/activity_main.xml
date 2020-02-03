@@ -32,7 +32,7 @@
                     android:textAlignment="center"
                     android:layout_weight="3"
                     android:textColor="#FFFFFF"
-                    android:text="Original Image"/>
+                    android:text="Original Image 1"/>
             </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
@@ -40,7 +40,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
                 <ImageView
-                    android:id="@+id/contrast"
+                    android:id="@+id/pic2"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
@@ -52,7 +52,7 @@
                     android:textAlignment="center"
                     android:layout_weight="3"
                     android:textColor="#FFFFFF"
-                    android:text="1. Contrast"/>
+                    android:text="Original Image 2"/>
             </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
@@ -60,7 +60,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
                 <ImageView
-                    android:id="@+id/saturated"
+                    android:id="@+id/pic3"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:rotation="90"
@@ -72,7 +72,7 @@
                     android:textAlignment="center"
                     android:layout_weight="3"
                     android:textColor="#FFFFFF"
-                    android:text="3. Saturated"/>
+                    android:text="Original Image 3"/>
             </LinearLayout>
         </LinearLayout>
         <LinearLayout
@@ -86,7 +86,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
                 <ImageView
-                    android:id="@+id/normal"
+                    android:id="@+id/out1"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:rotation="90"
@@ -98,7 +98,7 @@
                     android:textAlignment="center"
                     android:layout_weight="3"
                     android:textColor="#FFFFFF"
-                    android:text="5. Normalized"/>
+                    android:text="Normalized 1"/>
             </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
@@ -106,7 +106,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
                 <ImageView
-                    android:id="@+id/exposure"
+                    android:id="@+id/out2"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
@@ -118,7 +118,7 @@
                     android:textAlignment="center"
                     android:layout_weight="3"
                     android:textColor="#FFFFFF"
-                    android:text="3. Exposure"/>
+                    android:text="Normalized 2"/>
             </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
@@ -126,7 +126,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
                 <ImageView
-                    android:id="@+id/weighted"
+                    android:id="@+id/out3"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:rotation="90"
@@ -138,7 +138,7 @@
                     android:textAlignment="center"
                     android:layout_weight="3"
                     android:textColor="#FFFFFF"
-                    android:text="4. Weighted"/>
+                    android:text="Normalized 3"/>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

@@ -15,8 +15,7 @@ public class HDRFilter implements HDRManager.Presenter{
     private ScriptC_Convolve scriptConvolve;
     private ScriptC_Saturation scriptSaturation;
     private ScriptC_Exposure scriptExposure;
-    private ScriptC_WeightMap scriptWeightMap;
-
+    private ScriptC_NormalizeWeights scriptNorm;
 
     private static float[] laplacianKernel = {
             0.f, 1.f, 0.f,
@@ -31,14 +30,12 @@ public class HDRFilter implements HDRManager.Presenter{
     };
 
     // Methods
-
     HDRFilter(Context context){
         renderScript = RenderScript.create(context);
     }
 
     @Override
     public Bitmap applyGrayScaleFilter(Bitmap bmpImage) {
-
         scriptGray = new ScriptC_RGBtoGray(renderScript);
 
         int bitmapWidth = bmpImage.getWidth();
@@ -66,9 +63,7 @@ public class HDRFilter implements HDRManager.Presenter{
 
     @Override
     public Bitmap applyConvolution3x3Filter(Bitmap bmpImage) {
-
         scriptConvolve = new ScriptC_Convolve(renderScript);
-
 
         int bitmapWidth = bmpImage.getWidth();
         int bitmapHeight = bmpImage.getHeight();
@@ -155,79 +150,68 @@ public class HDRFilter implements HDRManager.Presenter{
     }
 
     @Override
-    public Bitmap computeWeightedFilter(Bitmap bmpContrast, Bitmap bmpSaturation, Bitmap bmpExposure) {
-        scriptWeightMap = new ScriptC_WeightMap(renderScript);
+    public Bitmap[] computeNormalWeighted(Bitmap[] bmpImages) {
+        Bitmap[] bmpListContrast = new Bitmap[3];
+        Bitmap[] bmpListSaturation = new Bitmap[3];
+        Bitmap[] bmpListExposure = new Bitmap[3];
 
-        int bitmapWidth = bmpContrast.getWidth();
-        int bitmapHeight = bmpContrast.getHeight();
-
-        // Allocate
-        Allocation inC = Allocation.createFromBitmap(renderScript, bmpContrast);
-        Allocation inS = Allocation.createFromBitmap(renderScript, bmpSaturation);
-        Allocation inE = Allocation.createFromBitmap(renderScript, bmpExposure);
-        Allocation outAllocation = Allocation.createFromBitmap(renderScript, bmpContrast);
-
-        // Script
-        scriptWeightMap.set_inC(inC);
-        scriptWeightMap.set_inS(inS);
-        scriptWeightMap.set_inE(inE);
-        scriptWeightMap.forEach_computeWeight(outAllocation);
-
-        // Output
-        Bitmap outBitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpContrast.getConfig());
-        outAllocation.copyTo(outBitmap);
-
-        //Destroy
-        inC.destroy();
-        inS.destroy();
-        inE.destroy();
-        outAllocation.destroy();
-        scriptWeightMap.destroy();
-
-        return outBitmap;
-    }
-
-    @Override
-    public Bitmap computeNormalWeighted(Bitmap[] bmpImages) {
-        Bitmap[] bmpWeighted = new Bitmap[3];
+        int bitmapWidth = bmpImages[0].getWidth();
+        int bitmapHeight = bmpImages[0].getHeight();
 
         // Calculate Weighted Images
         for (int i = 0; i < 3; i++) {
-            bmpWeighted[i] = computeWeightedFilter(
-                    applyConvolution3x3Filter(applyGrayScaleFilter(bmpImages[i])),
-                    applySaturationFilter(bmpImages[i]),
-                    applyExposureFilter(bmpImages[i])
-            );
+            bmpListContrast[i] = applyConvolution3x3Filter(applyGrayScaleFilter(bmpImages[i]));
+            bmpListSaturation[i] = applySaturationFilter(bmpImages[i]);
+            bmpListExposure[i] = applyExposureFilter(bmpImages[i]);
         }
 
-        // Normalize Weighted Images
-        // Allocate
-        int bitmapWidth = bmpWeighted[0].getWidth();
-        int bitmapHeight = bmpWeighted[0].getHeight();
+        // Allocate & Execute
+        Allocation c1 = Allocation.createFromBitmap(renderScript, bmpListContrast[0]);
+        Allocation c2 = Allocation.createFromBitmap(renderScript, bmpListContrast[1]);
+        Allocation c3 = Allocation.createFromBitmap(renderScript, bmpListContrast[2]);
 
-        Allocation w1Alloc = Allocation.createFromBitmap(renderScript, bmpWeighted[0]);
-        Allocation w2Alloc = Allocation.createFromBitmap(renderScript, bmpWeighted[1]);
-        Allocation w3Alloc = Allocation.createFromBitmap(renderScript, bmpWeighted[2]);
-        Allocation outAlloc = Allocation.createFromBitmap(renderScript, bmpImages[0]);
+        Allocation s1 = Allocation.createFromBitmap(renderScript, bmpListSaturation[0]);
+        Allocation s2 = Allocation.createFromBitmap(renderScript, bmpListSaturation[1]);
+        Allocation s3 = Allocation.createFromBitmap(renderScript, bmpListSaturation[2]);
 
-        ScriptC_NormalizeWeights scriptNW = new ScriptC_NormalizeWeights(renderScript);
-        scriptNW.set_w1(w1Alloc);
-        scriptNW.set_w2(w2Alloc);
-        scriptNW.set_w3(w3Alloc);
-        scriptNW.forEach_normalizeWeights(outAlloc);
+        Allocation e1 = Allocation.createFromBitmap(renderScript, bmpListExposure[0]);
+        Allocation e2 = Allocation.createFromBitmap(renderScript, bmpListExposure[1]);
+        Allocation e3 = Allocation.createFromBitmap(renderScript, bmpListExposure[2]);
 
-        // Output
-        Bitmap outBitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpWeighted[0].getConfig());
-        outAlloc.copyTo(outBitmap);
+        Allocation outAlloc1 = Allocation.createFromBitmap(renderScript, bmpImages[0]);
+        Allocation outAlloc2 = Allocation.createFromBitmap(renderScript, bmpImages[0]);
+        Allocation outAlloc3 = Allocation.createFromBitmap(renderScript, bmpImages[0]);
 
-        // Destory
-        outAlloc.destroy();
-        w1Alloc.destroy();
-        w2Alloc.destroy();
-        w3Alloc.destroy();
-        scriptNW.destroy();
+        scriptNorm = new ScriptC_NormalizeWeights(renderScript);
 
-        return outBitmap;
+        scriptNorm.set_nImageOut2(outAlloc2);
+        scriptNorm.set_nImageOut3(outAlloc3);
+
+        scriptNorm.set_C1(c1);
+        scriptNorm.set_C2(c2);
+        scriptNorm.set_C3(c3);
+
+        scriptNorm.set_S1(s1);
+        scriptNorm.set_S2(s2);
+        scriptNorm.set_S3(s3);
+
+        scriptNorm.set_E1(e1);
+        scriptNorm.set_E2(e2);
+        scriptNorm.set_E3(e3);
+
+        // Compute
+        scriptNorm.forEach_normalizeWeights(outAlloc1);
+
+        // Prepare out Bitmaps
+        Bitmap[] bmpOut = new Bitmap[3];
+        for(int i = 0; i< 3; i++){
+            bmpOut[i] = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpImages[0].getConfig());
+        }
+        outAlloc1.copyTo(bmpOut[0]);
+        outAlloc2.copyTo(bmpOut[1]);
+        outAlloc3.copyTo(bmpOut[2]);
+
+        return bmpOut;
     }
 
     @Override
