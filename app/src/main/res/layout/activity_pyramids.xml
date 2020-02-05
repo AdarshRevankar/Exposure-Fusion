@@ -6,17 +6,33 @@
     android:layout_height="match_parent"
     android:background="#000000"
     tools:context=".Pyramids">
-    <TextView
+    <Button
+        android:id="@+id/txtGP"
         android:layout_width="match_parent"
         android:layout_height="80dp"
         android:textColor="#FFFFFF"
         android:textSize="20sp"
         android:text="Gaussian Pyramid"
         android:background="#262626"
+        android:onClick="createGauzz"
         android:gravity="center"/>
 
+    <Button
+        android:id="@+id/lapButton"
+        android:layout_below="@+id/txtGP"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:text="Laplacian Pyramid"
+        android:onClick="gotoLapPage"
+        android:background="#060606"
+        android:gravity="center"/>
+
+
+
     <LinearLayout
-        android:layout_marginTop="80dp"
+        android:layout_below="@+id/lapButton"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"

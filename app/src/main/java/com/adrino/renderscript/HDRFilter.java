@@ -19,12 +19,14 @@ public class HDRFilter implements HDRManager.Presenter{
     private ScriptC_Exposure scriptExposure;
     private ScriptC_NormalizeWeights scriptNorm;
     private int width, height;
+    private Bitmap[] gauzImages;
 
     private static float[] laplacianKernel = {
             0.f, 1.f, 0.f,
             1.f, -4.f,1.f,
             0.f, 1.f, 0.f
     };
+    private Bitmap[] lapImages;
 
     // Methods
     HDRFilter(Context context){
@@ -220,10 +222,10 @@ public class HDRFilter implements HDRManager.Presenter{
     }
 
     @Override
-    public Bitmap[] compute(Bitmap[] bmpImages) {
+    public Bitmap[] computeGauz(Bitmap[] bmpImages) {
 
         Bitmap imgW1 = bmpImages[0];
-        Bitmap[] gauzImages = new Bitmap[4];
+        gauzImages = new Bitmap[4];
 
         width = imgW1.getWidth();
         height = imgW1.getHeight();
@@ -239,7 +241,7 @@ public class HDRFilter implements HDRManager.Presenter{
         Allocation middleAlloc = Allocation.createFromBitmap(renderScript, imgW1);
         Allocation outAlloc = Allocation.createFromBitmap(renderScript, imgW1);
 
-        gauzImages[0] = applyGrayScaleFilter(imgW1);
+        gauzImages[0] = imgW1;
 
         // Pass 1 G1
         ScriptC_gaussian scriptGaussian = new ScriptC_gaussian(renderScript);
@@ -328,6 +330,38 @@ public class HDRFilter implements HDRManager.Presenter{
         return gauzImages;
     }
 
+    @Override
+    public Bitmap[] computeLaplc(Bitmap[] bmpImages) {
+        ScriptC_Laplacian scrptLaplacian = new ScriptC_Laplacian(renderScript);
+
+        lapImages = new Bitmap[4];
+        for (int i = 0; i < 3; i++) {
+            lapImages[i] = Bitmap.createBitmap(width, height, bmpImages[0].getConfig());
+        }
+
+        Allocation G0 = Allocation.createFromBitmap(renderScript, bmpImages[0]);
+        Allocation G1 = Allocation.createFromBitmap(renderScript, bmpImages[1]);
+        Allocation G2 = Allocation.createFromBitmap(renderScript, bmpImages[2]);
+        Allocation G3 = Allocation.createFromBitmap(renderScript, bmpImages[3]);
+
+        Allocation outAlloc = Allocation.createFromBitmap(renderScript, bmpImages[0]);
+
+        scrptLaplacian.set_laplacianLowerLevel(G0);
+        scrptLaplacian.forEach_laplacian(G1, outAlloc);
+        outAlloc.copyTo(lapImages[0]);
+
+        scrptLaplacian.set_laplacianLowerLevel(G1);
+        scrptLaplacian.forEach_laplacian(G2, outAlloc);
+        outAlloc.copyTo(lapImages[1]);
+
+        scrptLaplacian.set_laplacianLowerLevel(G2);
+        scrptLaplacian.forEach_laplacian(G3, outAlloc);
+        outAlloc.copyTo(lapImages[2]);
+
+        lapImages[3] = bmpImages[3];
+        
+        return lapImages;
+    }
 
     @Override
     public void destoryRenderScript() {
