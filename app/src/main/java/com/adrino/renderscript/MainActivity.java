@@ -2,9 +2,11 @@ package com.adrino.renderscript;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageView;
 
 public class MainActivity extends AppCompatActivity implements HDRManager.Viewer {
@@ -29,6 +31,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
         Bitmap[] normal = hdrFilter.computeNormalWeighted(bmpImages);
 
 
+
         /*---------------------- Set Images ----------------------*/
         ((ImageView)findViewById(R.id.pic1)).setImageBitmap(bmpImages[0]);
         ((ImageView)findViewById(R.id.pic2)).setImageBitmap(bmpImages[1]);
@@ -37,11 +40,18 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
         ((ImageView)findViewById(R.id.out1)).setImageBitmap(normal[0]);
         ((ImageView)findViewById(R.id.out2)).setImageBitmap(normal[1]);
         ((ImageView)findViewById(R.id.out3)).setImageBitmap(normal[2]);
+
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         hdrFilter.destoryRenderScript();
+    }
+
+    public void gotoNextPage(View view) {
+        Intent i = new Intent(MainActivity.this, Pyramids.class);
+        onDestroy();
+        startActivity(i);
     }
 }

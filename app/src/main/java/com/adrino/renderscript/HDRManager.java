@@ -9,6 +9,8 @@ public interface HDRManager {
         Bitmap applySaturationFilter(Bitmap bmpImage);
         Bitmap applyExposureFilter(Bitmap bmpImage);
         Bitmap[] computeNormalWeighted(Bitmap[] bmpImages);
+        Bitmap[] computeGauz(Bitmap[] bmpImages);
+        Bitmap[] computeLaplc(Bitmap[] bmpImages);
         void destoryRenderScript();
     }
 
