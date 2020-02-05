@@ -2,6 +2,7 @@ package com.adrino.renderscript;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import androidx.renderscript.Allocation;
 import androidx.renderscript.Element;
@@ -9,6 +10,7 @@ import androidx.renderscript.RenderScript;
 
 public class HDRFilter implements HDRManager.Presenter{
 
+    private final static String TAG = "HDRFilter";
     // Attributes
     private static RenderScript renderScript;
     private ScriptC_RGBtoGray scriptGray;
@@ -16,17 +18,12 @@ public class HDRFilter implements HDRManager.Presenter{
     private ScriptC_Saturation scriptSaturation;
     private ScriptC_Exposure scriptExposure;
     private ScriptC_NormalizeWeights scriptNorm;
+    private int width, height;
 
     private static float[] laplacianKernel = {
             0.f, 1.f, 0.f,
             1.f, -4.f,1.f,
             0.f, 1.f, 0.f
-    };
-
-    private static float[] gaussianKernel = {
-            0.0625f, 0.125f, 0.0625f,
-            0.125f, 0.25f, 0.125f,
-            0.0625f, 0.125f, 0.0625f
     };
 
     // Methods
@@ -211,8 +208,126 @@ public class HDRFilter implements HDRManager.Presenter{
         outAlloc2.copyTo(bmpOut[1]);
         outAlloc3.copyTo(bmpOut[2]);
 
+        // Destroy
+        outAlloc1.destroy();
+        outAlloc2.destroy();
+        outAlloc3.destroy();
+        c1.destroy(); c2.destroy(); c3.destroy();
+        e1.destroy(); e2.destroy(); e3.destroy();
+        s1.destroy(); s2.destroy(); s3.destroy();
+        scriptNorm.destroy();
         return bmpOut;
     }
+
+    @Override
+    public Bitmap[] compute(Bitmap[] bmpImages) {
+
+        Bitmap imgW1 = bmpImages[0];
+        Bitmap[] gauzImages = new Bitmap[4];
+
+        width = imgW1.getWidth();
+        height = imgW1.getHeight();
+
+
+        for (int i = 1; i < 4; i++) {
+            gauzImages[i] = Bitmap.createBitmap(width, height, imgW1.getConfig());
+        }
+
+
+
+        Allocation inAlloc = Allocation.createFromBitmap(renderScript, imgW1);
+        Allocation middleAlloc = Allocation.createFromBitmap(renderScript, imgW1);
+        Allocation outAlloc = Allocation.createFromBitmap(renderScript, imgW1);
+
+        gauzImages[0] = applyGrayScaleFilter(imgW1);
+
+        // Pass 1 G1
+        ScriptC_gaussian scriptGaussian = new ScriptC_gaussian(renderScript);
+        scriptGaussian.set_compressTargetWidth(width / 2);
+        scriptGaussian.set_compressTargetHeight(height / 2);
+        scriptGaussian.set_compressSource(inAlloc);
+        scriptGaussian.forEach_compressStep1(middleAlloc);
+        scriptGaussian.set_compressSource(middleAlloc);
+        scriptGaussian.forEach_compressStep2(outAlloc);
+
+        scriptGaussian.set_expandTargetHeight(height);
+        scriptGaussian.set_expandTargetWidth(width);
+        scriptGaussian.set_expandSource(outAlloc);
+        scriptGaussian.forEach_expandStep1(middleAlloc);
+        scriptGaussian.set_expandSource(middleAlloc);
+        scriptGaussian.forEach_expandStep2(inAlloc);
+
+        inAlloc.copyTo(gauzImages[1]);
+
+
+        // Pass 2 G2
+        scriptGaussian.set_compressTargetWidth(width / 4);
+        scriptGaussian.set_compressTargetHeight(height / 4);
+        scriptGaussian.set_compressSource(outAlloc);
+        scriptGaussian.forEach_compressStep1(middleAlloc);
+        scriptGaussian.set_compressSource(middleAlloc);
+        scriptGaussian.forEach_compressStep2(inAlloc);
+
+        inAlloc.copyTo(gauzImages[2]);
+        Allocation tempAlloc = Allocation.createFromBitmap(renderScript, gauzImages[2]);
+
+        scriptGaussian.set_expandTargetHeight(height / 2);
+        scriptGaussian.set_expandTargetWidth(width / 2);
+        scriptGaussian.set_expandSource(inAlloc);
+        scriptGaussian.forEach_expandStep1(middleAlloc);
+        scriptGaussian.set_expandSource(middleAlloc);
+        scriptGaussian.forEach_expandStep2(outAlloc);
+
+
+        scriptGaussian.set_expandTargetHeight(height);
+        scriptGaussian.set_expandTargetWidth(width);
+        scriptGaussian.set_expandSource(outAlloc);
+        scriptGaussian.forEach_expandStep1(middleAlloc);
+        scriptGaussian.set_expandSource(middleAlloc);
+        scriptGaussian.forEach_expandStep2(inAlloc);
+
+        inAlloc.copyTo(gauzImages[2]);
+
+
+        // Pass 3 G3
+        scriptGaussian.set_compressTargetWidth(width / 8);
+        scriptGaussian.set_compressTargetHeight(height / 8);
+        scriptGaussian.set_compressSource(tempAlloc);
+        scriptGaussian.forEach_compressStep1(middleAlloc);
+        scriptGaussian.set_compressSource(middleAlloc);
+        scriptGaussian.forEach_compressStep2(outAlloc);
+
+        scriptGaussian.set_expandTargetHeight(height / 4);
+        scriptGaussian.set_expandTargetWidth(width / 4);
+        scriptGaussian.set_expandSource(outAlloc);
+        scriptGaussian.forEach_expandStep1(middleAlloc);
+        scriptGaussian.set_expandSource(middleAlloc);
+        scriptGaussian.forEach_expandStep2(inAlloc);
+
+        scriptGaussian.set_expandTargetHeight(height / 2);
+        scriptGaussian.set_expandTargetWidth(width / 2);
+        scriptGaussian.set_expandSource(inAlloc);
+        scriptGaussian.forEach_expandStep1(middleAlloc);
+        scriptGaussian.set_expandSource(middleAlloc);
+        scriptGaussian.forEach_expandStep2(outAlloc);
+
+        scriptGaussian.set_expandTargetHeight(height);
+        scriptGaussian.set_expandTargetWidth(width);
+        scriptGaussian.set_expandSource(outAlloc);
+        scriptGaussian.forEach_expandStep1(middleAlloc);
+        scriptGaussian.set_expandSource(middleAlloc);
+        scriptGaussian.forEach_expandStep2(inAlloc);
+
+        inAlloc.copyTo(gauzImages[3]);
+
+        scriptGaussian.destroy();
+        inAlloc.destroy();
+        outAlloc.destroy();
+        middleAlloc.destroy();
+        tempAlloc.destroy();
+        return gauzImages;
+    }
+
 
     @Override
     public void destoryRenderScript() {

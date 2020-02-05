@@ -1,15 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:background="#000000"
+    tools:context=".Pyramids">
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:text="Gaussian Pyramid"
+        android:background="#262626"
+        android:gravity="center"/>
 
     <LinearLayout
-        android:id="@+id/ll"
+        android:layout_marginTop="80dp"
         android:layout_width="match_parent"
-        android:layout_height="700dp"
-        android:background="#000000">
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:layout_weight="1">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -21,7 +32,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
                 <ImageView
-                    android:id="@+id/pic1"
+                    android:id="@+id/g0"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:rotation="90"
@@ -33,7 +44,7 @@
                     android:textAlignment="center"
                     android:layout_weight="3"
                     android:textColor="#FFFFFF"
-                    android:text="Original Image 1"/>
+                    android:text="G0"/>
             </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
@@ -41,7 +52,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
                 <ImageView
-                    android:id="@+id/pic2"
+                    android:id="@+id/g2"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
@@ -53,27 +64,7 @@
                     android:textAlignment="center"
                     android:layout_weight="3"
                     android:textColor="#FFFFFF"
-                    android:text="Original Image 2"/>
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:orientation="vertical">
-                <ImageView
-                    android:id="@+id/pic3"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:rotation="90"
-                    android:layout_weight="1"
-                    android:src="@drawable/ic_broken_image_black_24dp"/>
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="100dp"
-                    android:textAlignment="center"
-                    android:layout_weight="3"
-                    android:textColor="#FFFFFF"
-                    android:text="Original Image 3"/>
+                    android:text="G2"/>
             </LinearLayout>
         </LinearLayout>
         <LinearLayout
@@ -87,7 +78,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
                 <ImageView
-                    android:id="@+id/out1"
+                    android:id="@+id/g1"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:rotation="90"
@@ -99,7 +90,7 @@
                     android:textAlignment="center"
                     android:layout_weight="3"
                     android:textColor="#FFFFFF"
-                    android:text="Normalized 1"/>
+                    android:text="G1"/>
             </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
@@ -107,27 +98,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
                 <ImageView
-                    android:id="@+id/out2"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:rotation="90"
-                    android:src="@drawable/ic_broken_image_black_24dp"/>
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="100dp"
-                    android:textAlignment="center"
-                    android:layout_weight="3"
-                    android:textColor="#FFFFFF"
-                    android:text="Normalized 2"/>
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:orientation="vertical">
-                <ImageView
-                    android:id="@+id/out3"
+                    android:id="@+id/g3"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:rotation="90"
@@ -139,14 +110,8 @@
                     android:textAlignment="center"
                     android:layout_weight="3"
                     android:textColor="#FFFFFF"
-                    android:text="Normalized 3"/>
+                    android:text="G3"/>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
-    <Button
-        android:layout_below="@+id/ll"
-        android:layout_width="100dp"
-        android:layout_height="60dp"
-        android:text="Gaussian"
-        android:onClick="gotoNextPage"/>
 </RelativeLayout>
