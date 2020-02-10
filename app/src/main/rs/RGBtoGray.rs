@@ -12,9 +12,7 @@ uchar4 __attribute__((kernel)) convertRGBAToGray(uint32_t x, uint32_t y) {
                       (float) in.b * grayMultipliers.b);
 
     uchar4 pixelOut;
-    pixelOut.r = grayValue;
-    pixelOut.g = grayValue;
-    pixelOut.b = grayValue;
+    pixelOut.rgb = grayValue;
     pixelOut.a = in.a; // Preserve alpha
     return pixelOut;
 }
