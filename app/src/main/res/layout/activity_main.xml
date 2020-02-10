@@ -7,8 +7,9 @@
 
     <LinearLayout
         android:id="@+id/ll"
+        android:layout_above="@+id/bottomBar"
         android:layout_width="match_parent"
-        android:layout_height="700dp"
+        android:layout_height="match_parent"
         android:background="#000000">
         <LinearLayout
             android:layout_width="match_parent"
@@ -24,7 +25,7 @@
                     android:id="@+id/pic1"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:rotation="90"
+
                     android:layout_weight="1"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <TextView
@@ -45,7 +46,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:rotation="90"
+
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <TextView
                     android:layout_width="match_parent"
@@ -64,7 +65,7 @@
                     android:id="@+id/pic3"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:rotation="90"
+
                     android:layout_weight="1"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <TextView
@@ -77,9 +78,11 @@
             </LinearLayout>
         </LinearLayout>
         <LinearLayout
+            android:id="@+id/llView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
+            android:visibility="gone"
             android:layout_weight="1">
             <LinearLayout
                 android:layout_width="match_parent"
@@ -90,7 +93,6 @@
                     android:id="@+id/out1"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:rotation="90"
                     android:layout_weight="1"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <TextView
@@ -111,7 +113,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:rotation="90"
+
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <TextView
                     android:layout_width="match_parent"
@@ -130,7 +132,7 @@
                     android:id="@+id/out3"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:rotation="90"
+
                     android:layout_weight="1"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <TextView
@@ -143,10 +145,64 @@
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
-    <Button
-        android:layout_below="@+id/ll"
-        android:layout_width="100dp"
-        android:layout_height="60dp"
-        android:text="Gaussian"
-        android:onClick="gotoNextPage"/>
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="horizontal">
+        <Button
+            android:layout_weight="1"
+            android:id="@+id/Contrast"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:textSize="8sp"
+            android:text="Contrast"
+            android:onClick="setContrast"/>
+        <Button
+            android:layout_weight="1"
+            android:id="@+id/Saturation"
+            android:layout_width="100dp"
+            android:textSize="8sp"
+            android:layout_height="50dp"
+            android:text="Saturate"
+            android:onClick="setSaturation"/>
+        <Button
+            android:layout_weight="1"
+            android:id="@+id/Exposure"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:textSize="8sp"
+            android:text="Exposure"
+            android:onClick="setExposure"/>
+
+
+        <Button
+            android:layout_weight="1"
+            android:id="@+id/pyramidTest"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:textSize="8sp"
+            android:text="Pyramids"
+            android:onClick="gotoNextPage"/>
+        <Button
+            android:layout_weight="1"
+            android:id="@+id/collapse"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:textSize="8sp"
+            android:text="Collapse"
+            android:onClick="doCollapse"/>
+        <Button
+            android:layout_weight="1"
+            android:id="@+id/normal"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:textSize="8sp"
+            android:text="Normal"
+            android:onClick="setNormal"/>
+
+
+    </LinearLayout>
+
 </RelativeLayout>

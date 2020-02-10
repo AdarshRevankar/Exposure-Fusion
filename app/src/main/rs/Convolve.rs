@@ -1,13 +1,14 @@
 #pragma version(1)
 #pragma rs java_package_name(com.adrino.renderscript)
 
+// ============================================================================================
+// Contrast - Formaton using Convolution (C) = SUM[xy]( I[xy] * K[xy] )
+// ============================================================================================
 
-float* conv_kernel;
+float * conv_kernel;
 rs_allocation gIn;
-
 static uint32_t w;
 static uint32_t h;
-
 const uint8_t kernel_width = 3;
 const uint8_t kernel_height = 3;
 

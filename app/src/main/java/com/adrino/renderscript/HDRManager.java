@@ -9,8 +9,10 @@ public interface HDRManager {
         Bitmap applySaturationFilter(Bitmap bmpImage);
         Bitmap applyExposureFilter(Bitmap bmpImage);
         Bitmap[] computeNormalWeighted(Bitmap[] bmpImages);
-        Bitmap[] computeGauz(Bitmap[] bmpImages);
-        Bitmap[] computeLaplc(Bitmap[] bmpImages);
+        Bitmap[] generateGaussianPyramid(Bitmap bmpImages);
+        Bitmap[][] generateLaplacianPyramids(Bitmap[] bmpImages);
+        Bitmap[] generateResultant(Bitmap[][] gaussianPyramids, Bitmap[][] laplacianPyramids);
+        Bitmap collapseResultant(Bitmap[] resultant);
         void destoryRenderScript();
     }
 
