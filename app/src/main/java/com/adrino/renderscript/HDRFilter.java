@@ -7,7 +7,10 @@ import android.util.Log;
 import androidx.renderscript.Allocation;
 import androidx.renderscript.Element;
 import androidx.renderscript.RenderScript;
-import androidx.renderscript.Type;
+import androidx.renderscript.ScriptIntrinsicConvolve3x3;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Filter Class which has requried HDR Functions
@@ -21,7 +24,7 @@ import androidx.renderscript.Type;
  * 7. Product formation
  * 8. Collapse
  */
-public class HDRFilter implements HDRManager.Presenter {
+public class HDRFilter implements HDRManager.Performer {
 
     // Constants
     private final static String TAG = "HDRFilter";
@@ -29,224 +32,179 @@ public class HDRFilter implements HDRManager.Presenter {
 
     // Attributes
     private static RenderScript renderScript;
-    private ScriptC_RGBtoGray scriptGray;
-    private ScriptC_Convolve scriptConvolve;
+
+    private static ScriptC_utils scriptUtils;
+    private ScriptIntrinsicConvolve3x3 scriptConv;
     private ScriptC_Saturation scriptSaturation;
     private ScriptC_Exposure scriptExposure;
     private ScriptC_NormalizeWeights scriptNorm;
-    private int width, height;
     private ScriptC_Laplacian scriptLaplacian;
     private ScriptC_Collapse scriptCollapse;
     private ScriptC_gaussian scriptGaussian;
-    private static float[] laplacianKernel = {
-            0.f, 1.f, 0.f,
-            1.f, -4.f, 1.f,
-            0.f, 1.f, 0.f
-    };
+    private Element elementFloat4, elementFloat;
+
+    // Image meta
+    private static Bitmap.Config config;
+    private static int width, height;
 
     // Methods
     HDRFilter(Context context) {
         renderScript = RenderScript.create(context);
+        elementFloat4 = Element.F32_4(renderScript);
+        elementFloat = Element.F32(renderScript);
     }
 
     @Override
-    public Bitmap applyGrayScaleFilter(Bitmap bmpImage) {
-        scriptGray = new ScriptC_RGBtoGray(renderScript);
-
-        int bitmapWidth = bmpImage.getWidth();
-        int bitmapHeight = bmpImage.getHeight();
-
-        // Allocate
-        Allocation inAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-        Allocation outAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-
-
-
-        // Script
-        scriptGray.set_inAllocation(inAllocation);
-        scriptGray.forEach_convertRGBAToGray(outAllocation);
-
-
-        Bitmap outBitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpImage.getConfig());
-        outAllocation.copyTo(outBitmap);
-
-        //Destroy
-        inAllocation.destroy();
-        outAllocation.destroy();
-        scriptGray.destroy();
-
-        return outBitmap;
+    public void setMeta(int imWidth, int imHeight, Bitmap.Config imConfig){
+        this.width = imWidth;
+        this.height = imHeight;
+        this.config = imConfig;
     }
 
     @Override
-    public Bitmap applyConvolution3x3Filter(Bitmap bmpImage) {
-        scriptConvolve = new ScriptC_Convolve(renderScript);
+    public List<Allocation> applyConvolution3x3Filter(List<Bitmap> bmpImages){
+        // - - - - - - - - - - - - - - - - - - - - -
+        //      Perform Convolution
+        // - - - - - - - - - - - - - - - - - - - - -
+        float[] filter = {0, 1, 0, 1, -4, 1, 0, 1, 0};                                  // Filter
+        scriptConv = ScriptIntrinsicConvolve3x3.create(renderScript, elementFloat);     // Convolution intrinsic
+        scriptUtils = new ScriptC_utils(renderScript);                                  // For Gray Scale image
 
-        int bitmapWidth = bmpImage.getWidth();
-        int bitmapHeight = bmpImage.getHeight();
+        Allocation inAlloc, grayAlloc, outAlloc;
+        List<Allocation> outAllocList = new ArrayList<>(3);
 
-        // Allocate
-        Allocation inAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-        Allocation outAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-        Allocation kernalAllocation = Allocation.createSized(renderScript,
-                Element.F32(renderScript),
-                laplacianKernel.length);
+        for (Bitmap inImage : bmpImages) {
+            inAlloc = Allocation.createFromBitmap(renderScript, inImage);
+            grayAlloc = RsUtils.create2d(renderScript, width, height, elementFloat);
+            outAlloc = RsUtils.create2d(renderScript, width, height, elementFloat);
 
-        kernalAllocation.copyFrom(laplacianKernel);
-        scriptConvolve.bind_conv_kernel(kernalAllocation);
-        scriptConvolve.set_gIn(inAllocation);
-        scriptConvolve.invoke_setup();
-        scriptConvolve.forEach_root(inAllocation, outAllocation);
+            // Bitmap -> RGB
+            scriptUtils.set_inGrayAlloc(inAlloc);
+            scriptUtils.forEach_convertRGBAToGray(grayAlloc);
 
+            // RGB -> Convoluted
+            scriptConv.setInput(grayAlloc);
+            scriptConv.setCoefficients(filter);
+            scriptConv.forEach(outAlloc);
 
-        Bitmap outBitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpImage.getConfig());
-        outAllocation.copyTo(outBitmap);
+            // Add it to List
+            outAllocList.add(outAlloc);
 
-        //Destroy
-        inAllocation.destroy();
-        outAllocation.destroy();
-        scriptConvolve.destroy();
-
-        return outBitmap;
+            inAlloc.destroy();
+            grayAlloc.destroy();
+        }
+        scriptConv.destroy();
+        scriptUtils.destroy();
+        return outAllocList;
     }
 
     @Override
-    public Bitmap applySaturationFilter(Bitmap bmpImage) {
-
+    public List<Allocation> applySaturationFilter(List<Bitmap> bmpImages) {
+        // - - - - - - - - - - - - - - - - - - -
+        //          Apply Saturation
+        // - - - - - - - - - - - - - - - - - - -
         scriptSaturation = new ScriptC_Saturation(renderScript);
 
+        List<Allocation> outAllocList = new ArrayList<>(3);
+        Allocation inAllocation, outAllocation;
 
-        int bitmapWidth = bmpImage.getWidth();
-        int bitmapHeight = bmpImage.getHeight();
+        for(Bitmap inImage: bmpImages){
+            inAllocation = Allocation.createFromBitmap(renderScript, inImage);
+            outAllocation = RsUtils.create2d(renderScript, width, height, elementFloat);
 
-        // Allocate
-        Allocation inAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-        Allocation outAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
+            // Perform Saturation Script
+            scriptSaturation.set_inAlloc(inAllocation);
+            scriptSaturation.forEach_saturate(outAllocation);
 
-        // Script
-        scriptSaturation.set_inAlloc(inAllocation);
-        scriptSaturation.forEach_saturate(outAllocation);
+            outAllocList.add(outAllocation);
 
-        Bitmap outBitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpImage.getConfig());
-        outAllocation.copyTo(outBitmap);
-
-        //Destroy
-        inAllocation.destroy();
-        outAllocation.destroy();
-        scriptSaturation.destroy();
-
-        return outBitmap;
-    }
-
-    @Override
-    public Bitmap applyExposureFilter(Bitmap bmpImage) {
-        scriptExposure = new ScriptC_Exposure(renderScript);
-
-        int bitmapWidth = bmpImage.getWidth();
-        int bitmapHeight = bmpImage.getHeight();
-
-        // Allocate
-        Allocation inAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-        Allocation outAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-
-        // Script
-        scriptExposure.set_inAllocation(inAllocation);
-        scriptExposure.forEach_expose(outAllocation);
-
-        // Output
-        Bitmap outBitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpImage.getConfig());
-        outAllocation.copyTo(outBitmap);
-
-        //Destroy
-        inAllocation.destroy();
-        outAllocation.destroy();
-        scriptExposure.destroy();
-
-        return outBitmap;
-    }
-
-    @Override
-    public Bitmap[] computeNormalWeighted(Bitmap[] bmpImages) {
-        Bitmap[] bmpListContrast = new Bitmap[3];
-        Bitmap[] bmpListSaturation = new Bitmap[3];
-        Bitmap[] bmpListExposure = new Bitmap[3];
-
-        int bitmapWidth = bmpImages[0].getWidth();
-        int bitmapHeight = bmpImages[0].getHeight();
-
-        // Calculate Weighted Images
-        for (int i = 0; i < 3; i++) {
-            bmpListContrast[i] = applyConvolution3x3Filter(applyGrayScaleFilter(bmpImages[i]));
-            bmpListSaturation[i] = applySaturationFilter(bmpImages[i]);
-            bmpListExposure[i] = applyExposureFilter(bmpImages[i]);
+            // Destroy
+            inAllocation.destroy();
         }
 
-        // Allocate & Execute
-        Allocation c1 = Allocation.createFromBitmap(renderScript, bmpListContrast[0]);
-        Allocation c2 = Allocation.createFromBitmap(renderScript, bmpListContrast[1]);
-        Allocation c3 = Allocation.createFromBitmap(renderScript, bmpListContrast[2]);
+        scriptSaturation.destroy();
+        return outAllocList;
+    }
 
-        Allocation s1 = Allocation.createFromBitmap(renderScript, bmpListSaturation[0]);
-        Allocation s2 = Allocation.createFromBitmap(renderScript, bmpListSaturation[1]);
-        Allocation s3 = Allocation.createFromBitmap(renderScript, bmpListSaturation[2]);
+    @Override
+    public List<Allocation> applyExposureFilter(List<Bitmap> bmpImages) {
+        // - - - - - - - - - - - - - - - - - - -
+        //          Apply Exposedness
+        // - - - - - - - - - - - - - - - - - - -
+        scriptExposure = new ScriptC_Exposure(renderScript);
 
-        Allocation e1 = Allocation.createFromBitmap(renderScript, bmpListExposure[0]);
-        Allocation e2 = Allocation.createFromBitmap(renderScript, bmpListExposure[1]);
-        Allocation e3 = Allocation.createFromBitmap(renderScript, bmpListExposure[2]);
+        List<Allocation> outAllocList = new ArrayList<>(3);
+        Allocation inAllocation, outAllocation;
 
-        Allocation outAlloc1 = Allocation.createFromBitmap(renderScript, bmpImages[0]);
-        Allocation outAlloc2 = Allocation.createFromBitmap(renderScript, bmpImages[0]);
-        Allocation outAlloc3 = Allocation.createFromBitmap(renderScript, bmpImages[0]);
+        for(Bitmap inImage: bmpImages) {
+            // Allocate
+            inAllocation = Allocation.createFromBitmap(renderScript, inImage);
+            outAllocation = RsUtils.create2d(renderScript, width, height, elementFloat);
 
+            // Perform
+            scriptExposure.set_inAllocation(inAllocation);
+            scriptExposure.forEach_expose(outAllocation);
+
+            outAllocList.add(outAllocation);
+
+            inAllocation.destroy();
+        }
+        scriptExposure.destroy();
+
+        return outAllocList;
+    }
+
+
+    @Override
+    public List<Allocation> computeNormalWeighted(List<Allocation> contrast,
+                                          List<Allocation> saturation,
+                                          List<Allocation> well_exposedness) {
+
+        // - - - - - - - - - - - - - - - -
+        //          Normal Weight
+        // - - - - - - - - - - - - - - - -
         scriptNorm = new ScriptC_NormalizeWeights(renderScript);
 
-        scriptNorm.set_nImageOut2(outAlloc2);
-        scriptNorm.set_nImageOut3(outAlloc3);
+        Allocation outAlloc1 = RsUtils.create2d(renderScript, width, height, elementFloat);
+        Allocation outAlloc2 = RsUtils.create2d(renderScript, width, height, elementFloat);
+        Allocation outAlloc3 = RsUtils.create2d(renderScript, width, height, elementFloat);
 
-        scriptNorm.set_C1(c1);
-        scriptNorm.set_C2(c2);
-        scriptNorm.set_C3(c3);
+        scriptNorm.set_out2(outAlloc2);
+        scriptNorm.set_out3(outAlloc3);
 
-        scriptNorm.set_S1(s1);
-        scriptNorm.set_S2(s2);
-        scriptNorm.set_S3(s3);
+        scriptNorm.set_C1(contrast.get(0));
+        scriptNorm.set_C2(contrast.get(1));
+        scriptNorm.set_C3(contrast.get(2));
 
-        scriptNorm.set_E1(e1);
-        scriptNorm.set_E2(e2);
-        scriptNorm.set_E3(e3);
+        scriptNorm.set_S1(saturation.get(0));
+        scriptNorm.set_S2(saturation.get(1));
+        scriptNorm.set_S3(saturation.get(2));
+
+        scriptNorm.set_E1(well_exposedness.get(0));
+        scriptNorm.set_E2(well_exposedness.get(1));
+        scriptNorm.set_E3(well_exposedness.get(2));
 
         // Compute
         scriptNorm.forEach_normalizeWeights(outAlloc1);
 
-        // Prepare out Bitmaps
-        Bitmap[] bmpOut = new Bitmap[3];
-        for (int i = 0; i < 3; i++) {
-            bmpOut[i] = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpImages[0].getConfig());
-        }
-        outAlloc1.copyTo(bmpOut[0]);
-        outAlloc2.copyTo(bmpOut[1]);
-        outAlloc3.copyTo(bmpOut[2]);
+        List<Allocation> outAllocList = new ArrayList<>(3);
+        outAllocList.add(outAlloc1);
+        outAllocList.add(outAlloc2);
+        outAllocList.add(outAlloc3);
 
-        // Destroy
-        outAlloc1.destroy();
-        outAlloc2.destroy();
-        outAlloc3.destroy();
-        c1.destroy();
-        c2.destroy();
-        c3.destroy();
-        e1.destroy();
-        e2.destroy();
-        e3.destroy();
-        s1.destroy();
-        s2.destroy();
-        s3.destroy();
+//        for (int i = 0; i < 3; i++) {
+//            contrast.get(i).destroy();
+//            saturation.get(i).destroy();
+//            well_exposedness.get(i).destroy();
+//        }
         scriptNorm.destroy();
-        return bmpOut;
+
+        return outAllocList;
     }
 
     /**
      * - - - - - - - - - - - - - - - - - - - -
-     *      GAUSSIAN PYRAMID GENERATOR
+     * GAUSSIAN PYRAMID GENERATOR
      * - - - - - - - - - - - - - - - - - - - -
      * Given a single image ( GRAY ) Returns the Gaussian Pyramid ( 4 Layers )
      *
@@ -320,12 +278,12 @@ public class HDRFilter implements HDRManager.Presenter {
 
     /**
      * - - - - - - - - - - - - - - - - - - -
-     *      LAPLACIAN PYRAMID GENERATOR
+     * LAPLACIAN PYRAMID GENERATOR
      * - - - - - - - - - - - - - - - - - - - -
      * Given Multiple Images ( RGB ) Returns their Laplacian Pyramids ( N * 4 Layers )
      *
-     * @param bmpInMultiExposures   Multiple RGB images
-     * @return  N Laplacian Pyramids ( 4 Layers ) <= (Bitmap[][])
+     * @param bmpInMultiExposures Multiple RGB images
+     * @return N Laplacian Pyramids ( 4 Layers ) <= (Bitmap[][])
      */
     @Override
     public Bitmap[][] generateLaplacianPyramids(Bitmap[] bmpInMultiExposures) {
@@ -403,7 +361,7 @@ public class HDRFilter implements HDRManager.Presenter {
     public Bitmap[] generateResultant(Bitmap[][] gaussianPyramids, Bitmap[][] laplacianPyramids) {
 
         // Check, |Gi| == |Li|
-        if(gaussianPyramids.length != laplacianPyramids.length){
+        if (gaussianPyramids.length != laplacianPyramids.length) {
             Log.e(TAG, "generateResultant: Parameter Length not equal | PARAM_LENGTH_ERROR ");
         }
 
@@ -490,19 +448,90 @@ public class HDRFilter implements HDRManager.Presenter {
         return hdrOutput;
     }
 
-    @Override
-    public void destoryRenderScript() {
-        renderScript.destroy();
-        scriptGaussian.destroy();
-        scriptCollapse.destroy();
+    static List<Bitmap> convertAllocationToBMP(List<Allocation> inAllocList) {
+        scriptUtils = new ScriptC_utils(renderScript);
+
+        Allocation outAlloc;
+        Bitmap outBmp;
+        List<Bitmap> outBmpList = new ArrayList<>(inAllocList.size());
+
+        for (int i = 0; i < inAllocList.size(); i++) {
+            // Allocate
+            outBmp = Bitmap.createBitmap(width, height, config);
+            outAlloc = Allocation.createFromBitmap(renderScript, outBmp);
+
+            // Perform
+            scriptUtils.set_inAlloc(inAllocList.get(i));
+            scriptUtils.forEach_convertFtoU4(outAlloc);
+
+            outAlloc.copyTo(outBmp);
+            outBmpList.add(outBmp);
+
+            outAlloc.destroy();
+            inAllocList.get(i).destroy();
+        }
+
+        scriptUtils.destroy();
+        return outBmpList;
     }
 
-    // Create a 2D Array of certain w, h, element
-    public Allocation create2d(int width, int height, Element elementType){
-        Type.Builder vectorBufferBuilder = new Type.Builder(renderScript, elementType);
-        vectorBufferBuilder.setX(width);
-        vectorBufferBuilder.setY(height);
-        return Allocation.createTyped(renderScript, vectorBufferBuilder.create(), Allocation.USAGE_SCRIPT);
-    }
+
 }
 
+//    @Override
+//    public Bitmap applyConvolution3x3Filter(Bitmap bmpImage) {
+//        // - - - - - - - - - - - - - - - - - - - - -
+//        //      Perform Convolution
+//        // - - - - - - - - - - - - - - - - - - - - -
+//        float[] filter = {0, 1, 0, 1, -4, 1, 0, 1, 0};
+//        scriptConv = ScriptIntrinsicConvolve3x3.create(renderScript, elementFloat);
+//        scriptUtils = new ScriptC_utils(renderScript);
+//
+//        width = bmpImage.getWidth();
+//        height = bmpImage.getHeight();
+//        config = bmpImage.getConfig();
+//
+//        Allocation inAlloc = Allocation.createFromBitmap(renderScript, bmpImage);
+//        Allocation grayAlloc = RsUtils.create2d(renderScript, width, height, elementFloat);
+//        Allocation outAlloc = RsUtils.create2d(renderScript, width, height, elementFloat);
+//
+//
+//        scriptUtils.set_inGrayAlloc(inAlloc);
+//        scriptUtils.forEach_convertRGBAToGray(grayAlloc);
+//
+//        scriptConv.setInput(grayAlloc);
+//        scriptConv.setCoefficients(filter);
+//        scriptConv.forEach(outAlloc);
+//
+//        inAlloc.destroy();
+//        grayAlloc.destroy();
+//
+//        return convertAllocationToBitmap(outAlloc, bmpImage, elementFloat);
+//    }
+
+//    @Override
+//    public Bitmap applyExposureFilter(Bitmap bmpImage) {
+//        scriptExposure = new ScriptC_Exposure(renderScript);
+//
+//        int bitmapWidth = bmpImage.getWidth();
+//        int bitmapHeight = bmpImage.getHeight();
+//
+//        // Allocate
+//        Allocation inAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
+//        Allocation outAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
+//
+//        // Script
+//        scriptExposure.set_inAllocation(inAllocation);
+//        scriptExposure.forEach_expose(outAllocation);
+//
+//        // Output
+//        Bitmap outBitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpImage.getConfig());
+//        outAllocation.copyTo(outBitmap);
+//
+//        //Destroy
+//        inAllocation.destroy();
+//        outAllocation.destroy();
+//        scriptExposure.destroy();
+//
+//        return outBitmap;
+//    }

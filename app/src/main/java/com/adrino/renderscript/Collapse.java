@@ -59,32 +59,32 @@ public class Collapse extends AppCompatActivity {
     }
 
     Bitmap[] generateResultant() {
-        if (bmpImages == null) {
-            bmpImages = new Bitmap[3];
-            BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
-            imgLoadOption.inSampleSize = 4;
-            bmpImages[0] = BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption);
-            bmpImages[1] = BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption);
-            bmpImages[2] = BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption);
-
-            Bitmap[][] laplacianPyramids = hdrFilter.generateLaplacianPyramids(bmpImages);
-
-            Bitmap[] normalImage = hdrFilter.computeNormalWeighted(bmpImages);
-
-//            Bitmap[] normalImage = new Bitmap[3];
-//            normalImage[0] = BitmapFactory.decodeResource(getResources(), R.drawable.norm1, imgLoadOption);
-//            normalImage[1] = BitmapFactory.decodeResource(getResources(), R.drawable.norm2, imgLoadOption);
-//            normalImage[2] = BitmapFactory.decodeResource(getResources(), R.drawable.norm3, imgLoadOption);
-
-            Bitmap[][] gaussianPyramid = new Bitmap[3][4];
-            gaussianPyramid[0] = hdrFilter.generateGaussianPyramid(normalImage[0]);
-            gaussianPyramid[1] = hdrFilter.generateGaussianPyramid(normalImage[1]);
-            gaussianPyramid[2] = hdrFilter.generateGaussianPyramid(normalImage[2]);
-
-            // Resultant Image calculation
-            return hdrFilter.generateResultant(gaussianPyramid, laplacianPyramids);
-//            return laplacianPyramids[2];
-        }
+//        if (bmpImages == null) {
+//            bmpImages = new Bitmap[3];
+//            BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
+//            imgLoadOption.inSampleSize = 4;
+//            bmpImages[0] = BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption);
+//            bmpImages[1] = BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption);
+//            bmpImages[2] = BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption);
+//
+//            Bitmap[][] laplacianPyramids = hdrFilter.generateLaplacianPyramids(bmpImages);
+//
+//            Bitmap[] normalImage = hdrFilter.computeNormalWeighted(bmpImages);
+//
+////            Bitmap[] normalImage = new Bitmap[3];
+////            normalImage[0] = BitmapFactory.decodeResource(getResources(), R.drawable.norm1, imgLoadOption);
+////            normalImage[1] = BitmapFactory.decodeResource(getResources(), R.drawable.norm2, imgLoadOption);
+////            normalImage[2] = BitmapFactory.decodeResource(getResources(), R.drawable.norm3, imgLoadOption);
+//
+//            Bitmap[][] gaussianPyramid = new Bitmap[3][4];
+//            gaussianPyramid[0] = hdrFilter.generateGaussianPyramid(normalImage[0]);
+//            gaussianPyramid[1] = hdrFilter.generateGaussianPyramid(normalImage[1]);
+//            gaussianPyramid[2] = hdrFilter.generateGaussianPyramid(normalImage[2]);
+//
+//            // Resultant Image calculation
+//            return hdrFilter.generateResultant(gaussianPyramid, laplacianPyramids);
+////            return laplacianPyramids[2];
+//        }
         return new Bitmap[0];
     }
 
