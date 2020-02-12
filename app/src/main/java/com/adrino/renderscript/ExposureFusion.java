@@ -13,12 +13,15 @@ public class ExposureFusion implements HDRManager.Presenter {
     private static final String TAG = "ExposureFusion";
     private static int SELECTED_INDEX = 0;
     private HDRFilter hdrFilter;
-    enum Actions { CONTRAST, SATURATION, EXPOSED, NORMAL, GAUSSIAN};
+
+    enum Actions { CONTRAST, SATURATION, EXPOSED, NORMAL, GAUSSIAN, LAPLACIAN};
+
     private static List<Allocation> contrast;
     private static List<Allocation> saturation;
     private static List<Allocation> well_exposedness;
     private static List<Allocation> normal;
     private static List<List<Allocation>> gaussian;
+    private static List<List<Allocation>> laplacian;
 
     ExposureFusion(Context context){
         hdrFilter = new HDRFilter(context);
@@ -37,6 +40,7 @@ public class ExposureFusion implements HDRManager.Presenter {
         if(well_exposedness == null) well_exposedness = hdrFilter.applyExposureFilter(bmpImagesList);
         if(normal == null) normal = hdrFilter.computeNormalWeighted(contrast, saturation, well_exposedness);
         if(gaussian == null) gaussian = hdrFilter.generateGaussianPyramid(normal, HDRFilter.DATA_TYPE.FLOAT32);
+        if(laplacian == null) laplacian = hdrFilter.generateLaplacianPyramids(bmpImagesList);
 
         switch (action) {
             case CONTRAST:
@@ -49,6 +53,8 @@ public class ExposureFusion implements HDRManager.Presenter {
                 return HDRFilter.convertAllocationToBMP(normal, HDRFilter.DATA_TYPE.FLOAT32);
             case GAUSSIAN:
                 return HDRFilter.convertAllocationToBMP(gaussian.get(SELECTED_INDEX), HDRFilter.DATA_TYPE.FLOAT32_4);
+            case LAPLACIAN:
+                return HDRFilter.convertAllocationToBMP(laplacian.get(SELECTED_INDEX), HDRFilter.DATA_TYPE.FLOAT32_4);
         }
         return null;
     }

@@ -9,10 +9,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
 
-import androidx.renderscript.Allocation;
-
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class Pyramids extends AppCompatActivity {
@@ -22,6 +19,7 @@ public class Pyramids extends AppCompatActivity {
     private static boolean isGauss = true;
     private List<Bitmap> bmpImgList;
     private List<Bitmap> gaussianLayers;
+    private List<Bitmap> laplacianPyr;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,30 +30,32 @@ public class Pyramids extends AppCompatActivity {
         bmpImgList = new ArrayList<>();
     }
 
-//    public void gotoLapPage(View view) {
-//        isGauss = false;
-//
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//            if(gaussianLayes != null){
-//                lapImg = exposureFusion.perform(bmpImgList, ExposureFusion.Actions.GAUSSIAN);
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        (findViewById(R.id.lapButton)).setBackgroundColor(Color.parseColor("#ff262626"));
-//                        (findViewById(R.id.txtGP)).setBackgroundColor(Color.parseColor("#ff060606"));
-//                        ((ImageView)findViewById(R.id.g0)).setImageBitmap(lapImg.get(SELECTED_INDEX)[0]);
-//                        ((ImageView)findViewById(R.id.g1)).setImageBitmap(lapImg[SELECTED_INDEX][1]);
-//                        ((ImageView)findViewById(R.id.g2)).setImageBitmap(lapImg[SELECTED_INDEX][2]);
-//                        ((ImageView)findViewById(R.id.g3)).setImageBitmap(lapImg[SELECTED_INDEX][3]);
-//                    }
-//                });
-//            }
-//            }
-//        }).start();
-//
-//    }
+    public void createLaplacian(View view) {
+        isGauss = false;
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+            if(gaussianLayers != null){
+                laplacianPyr = exposureFusion.perform(bmpImgList, ExposureFusion.Actions.LAPLACIAN, SELECTED_INDEX);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        (findViewById(R.id.lapButton)).setBackgroundColor(Color.parseColor("#ff262626"));
+                        (findViewById(R.id.txtGP)).setBackgroundColor(Color.parseColor("#ff060606"));
+                        ((ImageView)findViewById(R.id.g0)).setImageBitmap(laplacianPyr.get(0));
+                        ((ImageView)findViewById(R.id.g1)).setImageBitmap(laplacianPyr.get(1));
+                        ((ImageView)findViewById(R.id.g2)).setImageBitmap(laplacianPyr.get(2));
+                        ((ImageView)findViewById(R.id.g3)).setImageBitmap(laplacianPyr.get(3));
+                        ((ImageView)findViewById(R.id.g4)).setImageBitmap(laplacianPyr.get(4));
+                        ((ImageView)findViewById(R.id.g5)).setImageBitmap(laplacianPyr.get(5));
+                    }
+                });
+            }
+            }
+        }).start();
+
+    }
 
     public void createGauzz(View view) {
             isGauss = true;
@@ -64,7 +64,7 @@ public class Pyramids extends AppCompatActivity {
                 @Override
                 public void run() {
                     BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
-                    imgLoadOption.inSampleSize = 4;
+                    imgLoadOption.inSampleSize = 8;
                     bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption));
                     bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption));
                     bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption));
@@ -90,12 +90,14 @@ public class Pyramids extends AppCompatActivity {
             }).start();
     }
 
+
+
     public void set1(View view) {
         SELECTED_INDEX = 0;
         if(isGauss){
             createGauzz(view);
         }else{
-            //gotoLapPage(view);
+            createLaplacian(view);
         }
     }
 
@@ -104,7 +106,7 @@ public class Pyramids extends AppCompatActivity {
         if(isGauss){
             createGauzz(view);
         }else{
-            //gotoLapPage(view);
+            createLaplacian(view);
         }
     }
 
@@ -113,7 +115,7 @@ public class Pyramids extends AppCompatActivity {
         if(isGauss){
             createGauzz(view);
         }else{
-            //gotoLapPage(view);
+            createLaplacian(view);
         }
     }
 }

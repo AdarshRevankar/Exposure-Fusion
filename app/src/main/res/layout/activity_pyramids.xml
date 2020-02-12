@@ -25,7 +25,7 @@
         android:textColor="#FFFFFF"
         android:textSize="20sp"
         android:text="Laplacian Pyramid"
-        android:onClick="gotoLapPage"
+        android:onClick="createLaplacian"
         android:background="#060606"
         android:gravity="center"/>
 

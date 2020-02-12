@@ -17,7 +17,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
     private static final String TAG = "MainActivity";
     ExposureFusion expFusion;
     List<Bitmap> bmpImgList, saturation, contrast, exposed, norm;
-    private static final int SAMPLE_SIZE = 4;
+    private static final int SAMPLE_SIZE = 8;
 
 
     @Override
