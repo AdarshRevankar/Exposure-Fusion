@@ -26,6 +26,7 @@ public class Collapse extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_collapse);
         exposureFusion = new ExposureFusion(this);
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -57,10 +58,10 @@ public class Collapse extends AppCompatActivity {
             bmpImages = new ArrayList<>();
             BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
             imgLoadOption.inSampleSize = 8;
-            bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption));
-            bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption));
-            bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption));
-
+            bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.iphone1, imgLoadOption));
+            bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.iphone2, imgLoadOption));
+            bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.iphone3, imgLoadOption));
+            exposureFusion.setMeta(bmpImages.get(0).getWidth(), bmpImages.get(0).getHeight(), bmpImages.get(0).getConfig());
             return exposureFusion.perform(bmpImages, ExposureFusion.Actions.RESULTANT);
         }
         return null;

@@ -30,7 +30,7 @@ public class HDRFilter implements HDRManager.Performer {
 
     // Constants
     private final static String TAG = "HDRFilter";
-    private static int PYRAMID_LEVELS = 4;
+    private static int PYRAMID_LEVELS = 11;
 
     // Attributes
     private static RenderScript renderScript;
@@ -58,13 +58,15 @@ public class HDRFilter implements HDRManager.Performer {
         renderScript = RenderScript.create(context);
         elementFloat4 = Element.F32_4(renderScript);
         elementFloat = Element.F32(renderScript);
+        RsUtils.ErrorViewer(this, "NUMBER OF LEVELS", ""+PYRAMID_LEVELS);
     }
 
     @Override
     public void setMeta(int imWidth, int imHeight, Bitmap.Config imConfig) {
-        this.width = imWidth;
-        this.height = imHeight;
-        this.config = imConfig;
+        width = imWidth;
+        height = imHeight;
+        config = imConfig;
+        RsUtils.ErrorViewer(this, "IMAGE DIMENTIONS", " W :"+width+" H :"+height);
     }
 
     @Override
@@ -209,9 +211,6 @@ public class HDRFilter implements HDRManager.Performer {
         // - - - - - - - - - - - - - - - - - - - -
         scriptGaussian = new ScriptC_Gaussian(renderScript);
         scriptUtils = new ScriptC_utils(renderScript);
-        PYRAMID_LEVELS = 9;
-
-        Log.e(TAG, "generateGaussianPyramid: Number of Pyramids =" + PYRAMID_LEVELS);
 
         List<List<Allocation>> outGaussianAllocationList = new ArrayList<>(3);
 
@@ -371,25 +370,25 @@ public class HDRFilter implements HDRManager.Performer {
         scriptCollapse = new ScriptC_Collapse(renderScript);
         List<Allocation> collapsedList = new ArrayList<>(PYRAMID_LEVELS);
 
-        Allocation outAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
         Allocation middleAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
         Allocation inAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
         inAllocation.copyFrom(resultant.get(0));
         middleAllocation.copyFrom(resultant.get(1));
 
-        for (int level = 1; level < PYRAMID_LEVELS - 1; level++) {
-
+        Allocation outAllocation = null;
+        for (int level = 1; level < PYRAMID_LEVELS; level++) {
             outAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
 
             scriptCollapse.set_collapseLevel(middleAllocation);
             scriptCollapse.forEach_collapse(inAllocation, outAllocation);
 
-            inAllocation.copyFrom(resultant.get(level+1));
-            middleAllocation.copyFrom(outAllocation);
-
+            if(level < PYRAMID_LEVELS - 1) {
+                inAllocation.copyFrom(resultant.get(level + 1));
+                middleAllocation.copyFrom(outAllocation);
+            }
         }
         collapsedList.add(outAllocation);
-        middleAllocation.destroy();
+        RsUtils.ErrorViewer(this, " PROGRESS", "HDR Process Finished");
         return collapsedList;
     }
 
