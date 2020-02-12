@@ -25,7 +25,7 @@ public interface HDRManager {
         List<List<Allocation>> generateLaplacianPyramids(List<Bitmap> bmpImages);
 
         List<Allocation> generateResultant(List<List<Allocation>> gaussianPyramids, List<List<Allocation>> laplacianPyramids);
-        Bitmap collapseResultant(Bitmap[] resultant);
+        List<Allocation> collapseResultant(List<Allocation> resultant);
     }
 
     interface Presenter{

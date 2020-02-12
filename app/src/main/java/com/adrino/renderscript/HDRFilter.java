@@ -209,7 +209,7 @@ public class HDRFilter implements HDRManager.Performer {
         // - - - - - - - - - - - - - - - - - - - -
         scriptGaussian = new ScriptC_Gaussian(renderScript);
         scriptUtils = new ScriptC_utils(renderScript);
-        PYRAMID_LEVELS = 6;
+        PYRAMID_LEVELS = 9;
 
         Log.e(TAG, "generateGaussianPyramid: Number of Pyramids =" + PYRAMID_LEVELS);
 
@@ -366,30 +366,31 @@ public class HDRFilter implements HDRManager.Performer {
     }
 
     @Override
-    public Bitmap collapseResultant(Bitmap[] resultant) {
+    public List<Allocation> collapseResultant(List<Allocation> resultant) {
 
         scriptCollapse = new ScriptC_Collapse(renderScript);
+        List<Allocation> collapsedList = new ArrayList<>(PYRAMID_LEVELS);
 
-        Allocation inAllocation = Allocation.createFromBitmap(renderScript, resultant[0]);
-        Allocation middleResultAllocation = Allocation.createFromBitmap(renderScript, resultant[1]);
-        Allocation outAllocation = Allocation.createFromBitmap(renderScript, resultant[0]);
+        Allocation outAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
+        Allocation middleAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
+        Allocation inAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
+        inAllocation.copyFrom(resultant.get(0));
+        middleAllocation.copyFrom(resultant.get(1));
 
-        scriptCollapse.set_collapseLevel(middleResultAllocation);
-        scriptCollapse.forEach_collapse(inAllocation, outAllocation);
-        middleResultAllocation.copyFrom(outAllocation);
-        inAllocation.copyFrom(resultant[2]);
+        for (int level = 1; level < PYRAMID_LEVELS - 1; level++) {
 
-        scriptCollapse.set_collapseLevel(middleResultAllocation);
-        scriptCollapse.forEach_collapse(inAllocation, outAllocation);
-        middleResultAllocation.copyFrom(outAllocation);
-        inAllocation.copyFrom(resultant[3]);
+            outAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
 
-        scriptCollapse.set_collapseLevel(middleResultAllocation);
-        scriptCollapse.forEach_collapse(inAllocation, outAllocation);
+            scriptCollapse.set_collapseLevel(middleAllocation);
+            scriptCollapse.forEach_collapse(inAllocation, outAllocation);
 
-        Bitmap hdrOutput = Bitmap.createBitmap(width, height, resultant[0].getConfig());
-        outAllocation.copyTo(hdrOutput);
-        return hdrOutput;
+            inAllocation.copyFrom(resultant.get(level+1));
+            middleAllocation.copyFrom(outAllocation);
+
+        }
+        collapsedList.add(outAllocation);
+        middleAllocation.destroy();
+        return collapsedList;
     }
 
     static List<Bitmap> convertAllocationToBMP(List<Allocation> inAllocList, DATA_TYPE data_type) {
