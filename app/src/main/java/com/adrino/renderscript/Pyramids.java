@@ -9,47 +9,53 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
 
+import androidx.renderscript.Allocation;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 public class Pyramids extends AppCompatActivity {
 
-    HDRFilter hdrFilter;
-    Bitmap[] bmpImages;
-    Bitmap[][] lapImg;
-    Bitmap[] gaussianLayes;
+    ExposureFusion exposureFusion;
     private static int SELECTED_INDEX = 0;
     private static boolean isGauss = true;
+    private List<Bitmap> bmpImgList;
+    private List<Bitmap> gaussianLayers;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pyramids);
-        bmpImages = new Bitmap[3];
-        hdrFilter = new HDRFilter( this);
+
+        exposureFusion = new ExposureFusion(this);
+        bmpImgList = new ArrayList<>();
     }
 
-    public void gotoLapPage(View view) {
-        isGauss = false;
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-            if(gaussianLayes != null){
-                lapImg = hdrFilter.generateLaplacianPyramids(bmpImages);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        (findViewById(R.id.lapButton)).setBackgroundColor(Color.parseColor("#ff262626"));
-                        (findViewById(R.id.txtGP)).setBackgroundColor(Color.parseColor("#ff060606"));
-                        ((ImageView)findViewById(R.id.g0)).setImageBitmap(lapImg[SELECTED_INDEX][0]);
-                        ((ImageView)findViewById(R.id.g1)).setImageBitmap(lapImg[SELECTED_INDEX][1]);
-                        ((ImageView)findViewById(R.id.g2)).setImageBitmap(lapImg[SELECTED_INDEX][2]);
-                        ((ImageView)findViewById(R.id.g3)).setImageBitmap(lapImg[SELECTED_INDEX][3]);
-                    }
-                });
-            }
-            }
-        }).start();
-
-    }
+//    public void gotoLapPage(View view) {
+//        isGauss = false;
+//
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//            if(gaussianLayes != null){
+//                lapImg = exposureFusion.perform(bmpImgList, ExposureFusion.Actions.GAUSSIAN);
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        (findViewById(R.id.lapButton)).setBackgroundColor(Color.parseColor("#ff262626"));
+//                        (findViewById(R.id.txtGP)).setBackgroundColor(Color.parseColor("#ff060606"));
+//                        ((ImageView)findViewById(R.id.g0)).setImageBitmap(lapImg.get(SELECTED_INDEX)[0]);
+//                        ((ImageView)findViewById(R.id.g1)).setImageBitmap(lapImg[SELECTED_INDEX][1]);
+//                        ((ImageView)findViewById(R.id.g2)).setImageBitmap(lapImg[SELECTED_INDEX][2]);
+//                        ((ImageView)findViewById(R.id.g3)).setImageBitmap(lapImg[SELECTED_INDEX][3]);
+//                    }
+//                });
+//            }
+//            }
+//        }).start();
+//
+//    }
 
     public void createGauzz(View view) {
             isGauss = true;
@@ -59,21 +65,24 @@ public class Pyramids extends AppCompatActivity {
                 public void run() {
                     BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
                     imgLoadOption.inSampleSize = 4;
-                    bmpImages[0] = BitmapFactory.decodeResource(getResources(), R.drawable.norm1, imgLoadOption);
-                    bmpImages[1] = BitmapFactory.decodeResource(getResources(), R.drawable.norm2, imgLoadOption);
-                    bmpImages[2] = BitmapFactory.decodeResource(getResources(), R.drawable.norm3, imgLoadOption);
+                    bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption));
+                    bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption));
+                    bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption));
+                    exposureFusion.setMeta(bmpImgList.get(0).getWidth(), bmpImgList.get(0).getHeight(), bmpImgList.get(0).getConfig());
 
-                    gaussianLayes = hdrFilter.generateGaussianPyramid(bmpImages[SELECTED_INDEX]);
+                    gaussianLayers = exposureFusion.perform(bmpImgList, ExposureFusion.Actions.GAUSSIAN, SELECTED_INDEX);
 
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             (findViewById(R.id.lapButton)).setBackgroundColor(Color.parseColor("#ff060606"));
                             (findViewById(R.id.txtGP)).setBackgroundColor(Color.parseColor("#ff262626"));
-                            ((ImageView) findViewById(R.id.g0)).setImageBitmap(gaussianLayes[0]);
-                            ((ImageView) findViewById(R.id.g1)).setImageBitmap(gaussianLayes[1]);
-                            ((ImageView) findViewById(R.id.g2)).setImageBitmap(gaussianLayes[2]);
-                            ((ImageView) findViewById(R.id.g3)).setImageBitmap(gaussianLayes[3]);
+                            ((ImageView) findViewById(R.id.g0)).setImageBitmap(gaussianLayers.get(0));
+                            ((ImageView) findViewById(R.id.g1)).setImageBitmap(gaussianLayers.get(1));
+                            ((ImageView) findViewById(R.id.g2)).setImageBitmap(gaussianLayers.get(2));
+                            ((ImageView) findViewById(R.id.g3)).setImageBitmap(gaussianLayers.get(3));
+                            ((ImageView) findViewById(R.id.g4)).setImageBitmap(gaussianLayers.get(4));
+                            ((ImageView) findViewById(R.id.g5)).setImageBitmap(gaussianLayers.get(5));
                         }
                     });
 
@@ -86,7 +95,7 @@ public class Pyramids extends AppCompatActivity {
         if(isGauss){
             createGauzz(view);
         }else{
-            gotoLapPage(view);
+            //gotoLapPage(view);
         }
     }
 
@@ -95,7 +104,7 @@ public class Pyramids extends AppCompatActivity {
         if(isGauss){
             createGauzz(view);
         }else{
-            gotoLapPage(view);
+            //gotoLapPage(view);
         }
     }
 
@@ -104,7 +113,7 @@ public class Pyramids extends AppCompatActivity {
         if(isGauss){
             createGauzz(view);
         }else{
-            gotoLapPage(view);
+            //gotoLapPage(view);
         }
     }
 }

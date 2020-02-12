@@ -11,16 +11,16 @@ import java.util.List;
 public class ExposureFusion implements HDRManager.Presenter {
 
     private static final String TAG = "ExposureFusion";
-    private Context mainActivityContext;
+    private static int SELECTED_INDEX = 0;
     private HDRFilter hdrFilter;
-    enum Actions { CONTRAST, SATURATION, EXPOSED, NORMAL};
+    enum Actions { CONTRAST, SATURATION, EXPOSED, NORMAL, GAUSSIAN};
     private static List<Allocation> contrast;
     private static List<Allocation> saturation;
     private static List<Allocation> well_exposedness;
     private static List<Allocation> normal;
+    private static List<List<Allocation>> gaussian;
 
     ExposureFusion(Context context){
-        this.mainActivityContext = context;
         hdrFilter = new HDRFilter(context);
     }
 
@@ -36,17 +36,26 @@ public class ExposureFusion implements HDRManager.Presenter {
         if(saturation == null) saturation = hdrFilter.applySaturationFilter(bmpImagesList);
         if(well_exposedness == null) well_exposedness = hdrFilter.applyExposureFilter(bmpImagesList);
         if(normal == null) normal = hdrFilter.computeNormalWeighted(contrast, saturation, well_exposedness);
+        if(gaussian == null) gaussian = hdrFilter.generateGaussianPyramid(normal, HDRFilter.DATA_TYPE.FLOAT32);
 
         switch (action) {
             case CONTRAST:
-                return HDRFilter.convertAllocationToBMP(contrast);
+                return HDRFilter.convertAllocationToBMP(contrast, HDRFilter.DATA_TYPE.FLOAT32);
             case SATURATION:
-                return HDRFilter.convertAllocationToBMP(saturation);
+                return HDRFilter.convertAllocationToBMP(saturation, HDRFilter.DATA_TYPE.FLOAT32);
             case EXPOSED:
-                return HDRFilter.convertAllocationToBMP(well_exposedness);
+                return HDRFilter.convertAllocationToBMP(well_exposedness, HDRFilter.DATA_TYPE.FLOAT32);
             case NORMAL:
-                return HDRFilter.convertAllocationToBMP(normal);
+                return HDRFilter.convertAllocationToBMP(normal, HDRFilter.DATA_TYPE.FLOAT32);
+            case GAUSSIAN:
+                return HDRFilter.convertAllocationToBMP(gaussian.get(SELECTED_INDEX), HDRFilter.DATA_TYPE.FLOAT32_4);
         }
         return null;
+    }
+
+    @Override
+    public List<Bitmap> perform(List<Bitmap> bmpImagesList, Actions action, int selected) {
+        SELECTED_INDEX = selected;
+        return perform(bmpImagesList, action);
     }
 }

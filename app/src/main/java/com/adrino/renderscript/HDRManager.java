@@ -19,8 +19,10 @@ public interface HDRManager {
         List<Allocation> computeNormalWeighted(List<Allocation> contrast,
                                                List<Allocation> saturation,
                                                List<Allocation> well_exposedness);
+        // Pyramids
+        List<List<Allocation>> generateGaussianPyramid(List<Bitmap> bmpImageList);
+        List<List<Allocation>> generateGaussianPyramid(List<Allocation> floatAlloc, HDRFilter.DATA_TYPE data_type);
 
-        Bitmap[] generateGaussianPyramid(Bitmap bmpImages);
         Bitmap[][] generateLaplacianPyramids(Bitmap[] bmpImages);
         Bitmap[] generateResultant(Bitmap[][] gaussianPyramids, Bitmap[][] laplacianPyramids);
         Bitmap collapseResultant(Bitmap[] resultant);
@@ -28,6 +30,7 @@ public interface HDRManager {
 
     interface Presenter{
         List<Bitmap> perform(List<Bitmap> bmpImagesList, ExposureFusion.Actions action);
+        List<Bitmap> perform(List<Bitmap> bmpImagesList, ExposureFusion.Actions action, int selected);
         void setMeta(int imgWidth, int imgHeight, Bitmap.Config imgConfig);
     }
 

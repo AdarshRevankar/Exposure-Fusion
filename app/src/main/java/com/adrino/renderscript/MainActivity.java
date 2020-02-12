@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
 //        expFusion.destoryRenderScript();
 //    }
 
-    public void gotoNextPage(View view) {
+    public void doGaussianLaplacian(View view) {
         Intent i = new Intent(MainActivity.this, Pyramids.class);
         startActivity(i);
     }

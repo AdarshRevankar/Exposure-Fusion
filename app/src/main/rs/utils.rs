@@ -37,9 +37,9 @@ rs_allocation inAlloc;
 uchar4 __attribute__((kernel)) convertF4toU4(uint32_t x, uint32_t y) {
     uchar4 pixel;
     float4 in = rsGetElementAt_float4(inAlloc, x, y);
-    pixel.r = in.x;
-    pixel.g = in.y;
-    pixel.b = in.z;
+    pixel.r = in.r * 255;
+    pixel.g = in.g * 255;
+    pixel.b = in.b * 255;
     pixel.a = 255;
     return pixel;
 }
@@ -52,3 +52,18 @@ uchar4 __attribute__((kernel)) convertFtoU4(uint32_t x, uint32_t y) {
     return pixel;
 }
 
+float4 __attribute__((kernel)) convertU4toF4(uint32_t x, uint32_t y) {
+    float4 out;
+    float4 in = convert_float4(rsGetElementAt_uchar4(inAlloc, x, y)) / 255;
+    out.r = in.r;
+    out.g = in.g;
+    out.b = in.b;
+    out.a = 1;
+    return out;
+}
+
+float4 __attribute__((kernel)) convertFtoF4(uint32_t x, uint32_t y){
+    float4 out = rsGetElementAt_float(inAlloc, x, y);
+    out.a = 1;
+    return out;
+}

@@ -184,7 +184,7 @@
             android:layout_height="50dp"
             android:textSize="8sp"
             android:text="Pyramids"
-            android:onClick="gotoNextPage"/>
+            android:onClick="doGaussianLaplacian"/>
         <Button
             android:layout_weight="1"
             android:id="@+id/collapse"
