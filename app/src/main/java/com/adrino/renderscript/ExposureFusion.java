@@ -2,7 +2,6 @@ package com.adrino.renderscript;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.util.Log;
 
 import androidx.renderscript.Allocation;
 
@@ -10,16 +9,12 @@ import java.util.List;
 
 public class ExposureFusion implements HDRManager.Presenter {
 
+    public static final int SAMPLE_SIZE = 6;
     private static final String TAG = "ExposureFusion";
     private static int SELECTED_INDEX = 0;
-    private HDRFilter hdrFilter;
+    private static HDRFilter hdrFilter;
     private static List<Allocation> resultant;
-    private List<Allocation> collapse;
-
-    enum Actions {CONTRAST, SATURATION, EXPOSED, NORMAL, GAUSSIAN, LAPLACIAN, RESULTANT, COLLAPSE}
-
-    ;
-
+    private static List<Allocation> collapse;
     private static List<Allocation> contrast;
     private static List<Allocation> saturation;
     private static List<Allocation> well_exposedness;
@@ -27,8 +22,11 @@ public class ExposureFusion implements HDRManager.Presenter {
     private static List<List<Allocation>> gaussian;
     private static List<List<Allocation>> laplacian;
 
+    enum Actions {CONTRAST, SATURATION, EXPOSED, NORMAL, GAUSSIAN, LAPLACIAN, RESULTANT, COLLAPSE};
+
     ExposureFusion(Context context) {
-        hdrFilter = new HDRFilter(context);
+        if(hdrFilter == null)
+            hdrFilter = new HDRFilter(context);
     }
 
     @Override
@@ -39,17 +37,16 @@ public class ExposureFusion implements HDRManager.Presenter {
     @Override
     public List<Bitmap> perform(List<Bitmap> bmpImagesList, Actions action) {
 
-        if (contrast == null) contrast = hdrFilter.applyConvolution3x3Filter(bmpImagesList);
-        if (saturation == null) saturation = hdrFilter.applySaturationFilter(bmpImagesList);
-        if (well_exposedness == null)
-            well_exposedness = hdrFilter.applyExposureFilter(bmpImagesList);
-        if (normal == null)
-            normal = hdrFilter.computeNormalWeighted(contrast, saturation, well_exposedness);
-        if (gaussian == null)
-            gaussian = hdrFilter.generateGaussianPyramid(normal, HDRFilter.DATA_TYPE.FLOAT32);
-        if (laplacian == null) laplacian = hdrFilter.generateLaplacianPyramids(bmpImagesList);
+//        if (contrast == null) contrast = hdrFilter.applyConvolution3x3Filter(bmpImagesList);
+//        if (saturation == null) saturation = hdrFilter.applySaturationFilter(bmpImagesList);
+//        if (well_exposedness == null)
+//            well_exposedness = hdrFilter.applyExposureFilter(bmpImagesList);
+//        if (normal == null && contrast != null && saturation != null && well_exposedness != null)
+        if(normal == null) normal = hdrFilter.computeNormalWeighted(hdrFilter.applyConvolution3x3Filter(bmpImagesList), hdrFilter.applySaturationFilter(bmpImagesList),  hdrFilter.applyExposureFilter(bmpImagesList));
         if (resultant == null) {
-            resultant = hdrFilter.generateResultant(gaussian, laplacian);
+            resultant = hdrFilter.generateResultant(hdrFilter.generateGaussianPyramid(normal, HDRFilter.DATA_TYPE.FLOAT32), hdrFilter.generateLaplacianPyramids(bmpImagesList));
+        }
+        if(collapse == null && resultant != null){
             collapse = hdrFilter.collapseResultant(resultant);
         }
 

@@ -64,7 +64,7 @@ public class Pyramids extends AppCompatActivity {
                 @Override
                 public void run() {
                     BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
-                    imgLoadOption.inSampleSize = 8;
+                    imgLoadOption.inSampleSize = ExposureFusion.SAMPLE_SIZE;
                     bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption));
                     bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption));
                     bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption));

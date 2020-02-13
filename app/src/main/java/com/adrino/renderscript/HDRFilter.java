@@ -30,7 +30,7 @@ public class HDRFilter implements HDRManager.Performer {
 
     // Constants
     private final static String TAG = "HDRFilter";
-    private static int PYRAMID_LEVELS = 11;
+    private static int PYRAMID_LEVELS = 7;
 
     // Attributes
     private static RenderScript renderScript;
@@ -424,61 +424,3 @@ public class HDRFilter implements HDRManager.Performer {
 
 
 }
-
-//    @Override
-//    public Bitmap applyConvolution3x3Filter(Bitmap bmpImage) {
-//        // - - - - - - - - - - - - - - - - - - - - -
-//        //      Perform Convolution
-//        // - - - - - - - - - - - - - - - - - - - - -
-//        float[] filter = {0, 1, 0, 1, -4, 1, 0, 1, 0};
-//        scriptConv = ScriptIntrinsicConvolve3x3.create(renderScript, elementFloat);
-//        scriptUtils = new ScriptC_utils(renderScript);
-//
-//        width = bmpImage.getWidth();
-//        height = bmpImage.getHeight();
-//        config = bmpImage.getConfig();
-//
-//        Allocation inAlloc = Allocation.createFromBitmap(renderScript, bmpImage);
-//        Allocation grayAlloc = RsUtils.create2d(renderScript, width, height, elementFloat);
-//        Allocation outAlloc = RsUtils.create2d(renderScript, width, height, elementFloat);
-//
-//
-//        scriptUtils.set_inGrayAlloc(inAlloc);
-//        scriptUtils.forEach_convertRGBAToGray(grayAlloc);
-//
-//        scriptConv.setInput(grayAlloc);
-//        scriptConv.setCoefficients(filter);
-//        scriptConv.forEach(outAlloc);
-//
-//        inAlloc.destroy();
-//        grayAlloc.destroy();
-//
-//        return convertAllocationToBitmap(outAlloc, bmpImage, elementFloat);
-//    }
-
-//    @Override
-//    public Bitmap applyExposureFilter(Bitmap bmpImage) {
-//        scriptExposure = new ScriptC_Exposure(renderScript);
-//
-//        int bitmapWidth = bmpImage.getWidth();
-//        int bitmapHeight = bmpImage.getHeight();
-//
-//        // Allocate
-//        Allocation inAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-//        Allocation outAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-//
-//        // Script
-//        scriptExposure.set_inAllocation(inAllocation);
-//        scriptExposure.forEach_expose(outAllocation);
-//
-//        // Output
-//        Bitmap outBitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpImage.getConfig());
-//        outAllocation.copyTo(outBitmap);
-//
-//        //Destroy
-//        inAllocation.destroy();
-//        outAllocation.destroy();
-//        scriptExposure.destroy();
-//
-//        return outBitmap;
-//    }

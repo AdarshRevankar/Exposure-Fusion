@@ -35,5 +35,21 @@ float4 __attribute__((kernel)) multiplyBMP( int32_t x, int32_t y) {
 rs_allocation collapseLevel; // uchar4
 
 float4 __attribute__((kernel)) collapse(float4 in, int32_t x, int32_t y) {
-    return rsGetElementAt_float4(collapseLevel, x, y) + in;
+    float4 res = rsGetElementAt_float4(collapseLevel, x, y) + in;
+
+
+    if(res.r > 1){
+        res.r = 1;
+    }
+
+    if(res.g > 1){
+        res.g = 1;
+    }
+
+    if(res.b > 1){
+        res.b = 1;
+    }
+
+    res.a = 1;
+    return res;
 }

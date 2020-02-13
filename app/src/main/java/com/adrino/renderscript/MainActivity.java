@@ -17,7 +17,6 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
     private static final String TAG = "MainActivity";
     ExposureFusion expFusion;
     List<Bitmap> bmpImgList, saturation, contrast, exposed, norm;
-    private static final int SAMPLE_SIZE = 8;
 
 
     @Override
@@ -29,7 +28,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
         /*---------------------- Load Images ----------------------*/
         bmpImgList = new ArrayList<>(3);
         BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
-        imgLoadOption.inSampleSize = SAMPLE_SIZE;
+        imgLoadOption.inSampleSize = ExposureFusion.SAMPLE_SIZE;
         bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption));
         bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption));
         bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption));
