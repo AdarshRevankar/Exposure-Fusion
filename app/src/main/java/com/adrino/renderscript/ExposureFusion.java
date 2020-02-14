@@ -9,7 +9,7 @@ import java.util.List;
 
 public class ExposureFusion implements HDRManager.Presenter {
 
-    public static final int SAMPLE_SIZE = 7;
+    public static final int SAMPLE_SIZE = 9;
     private static final String TAG = "ExposureFusion";
     private static int SELECTED_INDEX = 0;
     private static HDRFilter hdrFilter;

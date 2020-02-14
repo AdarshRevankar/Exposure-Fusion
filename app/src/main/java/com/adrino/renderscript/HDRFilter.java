@@ -30,7 +30,7 @@ public class HDRFilter implements HDRManager.Performer {
 
     // Constants
     private final static String TAG = "HDRFilter";
-    private static int PYRAMID_LEVELS = 7;
+    private static int PYRAMID_LEVELS = 12;
 
     // Attributes
     private static RenderScript renderScript;
@@ -361,27 +361,48 @@ public class HDRFilter implements HDRManager.Performer {
     public List<Allocation> collapseResultant(List<Allocation> resultant) {
 
         scriptCollapse = new ScriptC_Collapse(renderScript);
+        scriptGaussian = new ScriptC_Gaussian(renderScript);
         List<Allocation> collapsedList = new ArrayList<>(PYRAMID_LEVELS);
 
         Allocation middleAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
         Allocation inAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
+
         inAllocation.copyFrom(resultant.get(0));
         middleAllocation.copyFrom(resultant.get(1));
 
         Allocation outAllocation = null;
-        for (int level = 1; level < PYRAMID_LEVELS; level++) {
-            outAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
 
-            scriptCollapse.set_collapseLevel(middleAllocation);
+        for (int level = 1; level < PYRAMID_LEVELS - 1; level++) {
+            outAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
+            Allocation expandedAlloc = RsUtils.create2d(renderScript, width, height, elementFloat4);
+
+            // Expand inAlloc [ level - 1]
+            for (int j = level; j > 0; j--) {
+                int expandDenom = (int) Math.pow(2, j) / 2;
+                scriptGaussian.set_expandTargetWidth(width * expandDenom);
+                scriptGaussian.set_expandTargetHeight(height * expandDenom);
+
+                scriptGaussian.set_expandSource(middleAllocation);
+                scriptGaussian.forEach_expandFloat4Step1(outAllocation);
+                scriptGaussian.set_expandSource(outAllocation);
+                scriptGaussian.forEach_expandFloat4Step2(expandedAlloc);
+
+                middleAllocation.copyFrom(expandedAlloc);
+            }
+
+            // Collapse [ level + (level -1 )]
+            scriptCollapse.set_collapseLevel(expandedAlloc);
             scriptCollapse.forEach_collapse(inAllocation, outAllocation);
 
-            if(level < PYRAMID_LEVELS - 1) {
-                inAllocation.copyFrom(resultant.get(level + 1));
-                middleAllocation.copyFrom(outAllocation);
-            }
+            inAllocation.destroy();
+            inAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
+
+            middleAllocation.copyFrom(resultant.get(level + 1));
+            inAllocation.copyFrom(outAllocation);
         }
         collapsedList.add(outAllocation);
-        RsUtils.ErrorViewer(this, " PROGRESS", "HDR Process Finished");
+        scriptGaussian.destroy();
+        scriptCollapse.destroy();
         return collapsedList;
     }
 
