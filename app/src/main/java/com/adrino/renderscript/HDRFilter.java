@@ -214,18 +214,14 @@ public class HDRFilter implements HDRManager.Performer {
 
         List<List<Allocation>> outGaussianAllocationList = new ArrayList<>(3);
 
-        Allocation inAlloc, outAlloc, midAlloc, expandInAlloc, expandOutAlloc, convertAlloc, startAlloc;
-
         for (int i = 0; i < bmpImageList.size(); i++) {
             List<Allocation> outGaussLevelList = new ArrayList<>(PYRAMID_LEVELS);
 
             // - - - - - - Allocation - - - - - - -
             // Convert U4 to F4
-            startAlloc = Allocation.createFromBitmap(renderScript, bmpImageList.get(i));
-            convertAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
-            inAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
-            midAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
-            outAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
+            Allocation startAlloc = Allocation.createFromBitmap(renderScript, bmpImageList.get(i));
+            Allocation convertAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
+            Allocation inAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
 
             scriptUtils.set_inAlloc(startAlloc);
             scriptUtils.forEach_convertU4toF4(convertAlloc);
@@ -239,6 +235,9 @@ public class HDRFilter implements HDRManager.Performer {
 
             for (int level = 1; level < PYRAMID_LEVELS; level++) {
 
+                Allocation outAlloc = RsUtils.create2d(renderScript,width,height, Element.F32_4(renderScript));
+                Allocation midAlloc = RsUtils.create2d(renderScript,width, height, Element.F32_4(renderScript));
+
                 // REDUCE
                 int compressDenom = (int) Math.pow(2, level);
                 scriptGaussian.set_compressTargetWidth(width / compressDenom);
@@ -248,32 +247,14 @@ public class HDRFilter implements HDRManager.Performer {
                 scriptGaussian.forEach_compressFloat4Step1(midAlloc);
                 scriptGaussian.set_compressSource(midAlloc);
                 scriptGaussian.forEach_compressFloat4Step2(outAlloc);
-
-                expandInAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
-                expandOutAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
-
-                expandInAlloc.copyFrom(outAlloc);
-                inAlloc.copyFrom(outAlloc);
-
-                // EXPAND
-                for (int j = level - 1; j >= 0; j--) {
-                    int expandDenom = (int) Math.pow(2, i);
-                    scriptGaussian.set_expandTargetWidth(width * expandDenom);
-                    scriptGaussian.set_expandTargetHeight(height * expandDenom);
-
-                    scriptGaussian.set_expandSource(expandInAlloc);
-                    scriptGaussian.forEach_expandFloat4Step1(midAlloc);
-                    scriptGaussian.set_expandSource(midAlloc);
-                    scriptGaussian.forEach_expandFloat4Step2(expandOutAlloc);
-
-                    expandInAlloc.copyFrom(expandOutAlloc);
-                }
+                inAlloc.destroy();
+                midAlloc.destroy();
 
                 // Store Result
-                expandInAlloc.destroy();
-                outGaussLevelList.add(expandOutAlloc);
+                inAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
+                inAlloc.copyFrom(outAlloc);
+                outGaussLevelList.add(outAlloc);
             }
-            midAlloc.destroy();
             outGaussianAllocationList.add(outGaussLevelList);
         }
 
@@ -314,9 +295,21 @@ public class HDRFilter implements HDRManager.Performer {
             int lapLevel = 0;
             for (; lapLevel < PYRAMID_LEVELS - 1; lapLevel++) {
                 Allocation outAlloc = RsUtils.create2d(renderScript, width, height, elementFloat4);
+                Allocation expandedAlloc = RsUtils.create2d(renderScript, width, height, elementFloat4);
+
+                int expandDenom = (int) Math.pow(2, lapLevel);
+                scriptGaussian.set_expandTargetWidth(width * expandDenom);
+                scriptGaussian.set_expandTargetHeight(height * expandDenom);
+
+                scriptGaussian.set_expandSource(inGauss.get(lapLevel + 1));
+                scriptGaussian.forEach_expandFloat4Step1(outAlloc);
+                scriptGaussian.set_expandSource(outAlloc);
+                scriptGaussian.forEach_expandFloat4Step2(expandedAlloc);
+
                 scriptLaplacian.set_laplacianLowerLevel(inGauss.get(lapLevel));
-                scriptLaplacian.forEach_laplacian(inGauss.get(lapLevel + 1), outAlloc);
+                scriptLaplacian.forEach_laplacian(expandedAlloc, outAlloc);
                 outLap.add(outAlloc);
+
             }
 
             // - - - - - L(N) - - - - - - - - - -
