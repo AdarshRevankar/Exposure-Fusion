@@ -30,32 +30,32 @@ public class Pyramids extends AppCompatActivity {
         bmpImgList = new ArrayList<>();
     }
 
-//    public void createLaplacian(View view) {
-//        isGauss = false;
-//
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//            if(gaussianLayers != null){
-//                laplacianPyr = exposureFusion.perform(bmpImgList, ExposureFusion.Actions.LAPLACIAN, SELECTED_INDEX);
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        (findViewById(R.id.lapButton)).setBackgroundColor(Color.parseColor("#ff262626"));
-//                        (findViewById(R.id.txtGP)).setBackgroundColor(Color.parseColor("#ff060606"));
-//                        ((ImageView)findViewById(R.id.g0)).setImageBitmap(laplacianPyr.get(0));
-//                        ((ImageView)findViewById(R.id.g1)).setImageBitmap(laplacianPyr.get(1));
-//                        ((ImageView)findViewById(R.id.g2)).setImageBitmap(laplacianPyr.get(2));
-//                        ((ImageView)findViewById(R.id.g3)).setImageBitmap(laplacianPyr.get(3));
-//                        ((ImageView)findViewById(R.id.g4)).setImageBitmap(laplacianPyr.get(4));
-//                        ((ImageView)findViewById(R.id.g5)).setImageBitmap(laplacianPyr.get(5));
-//                    }
-//                });
-//            }
-//            }
-//        }).start();
-//
-//    }
+    public void createLaplacian(View view) {
+        isGauss = false;
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+            if(gaussianLayers != null){
+                laplacianPyr = exposureFusion.laplacianPyramid(bmpImgList, ExposureFusion.Actions.LAPLACIAN, SELECTED_INDEX);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        (findViewById(R.id.lapButton)).setBackgroundColor(Color.parseColor("#ff262626"));
+                        (findViewById(R.id.txtGP)).setBackgroundColor(Color.parseColor("#ff060606"));
+                        ((ImageView)findViewById(R.id.g0)).setImageBitmap(laplacianPyr.get(0));
+                        ((ImageView)findViewById(R.id.g1)).setImageBitmap(laplacianPyr.get(1));
+                        ((ImageView)findViewById(R.id.g2)).setImageBitmap(laplacianPyr.get(2));
+                        ((ImageView)findViewById(R.id.g3)).setImageBitmap(laplacianPyr.get(3));
+                        ((ImageView)findViewById(R.id.g4)).setImageBitmap(laplacianPyr.get(4));
+                        ((ImageView)findViewById(R.id.g5)).setImageBitmap(laplacianPyr.get(5));
+                    }
+                });
+            }
+            }
+        }).start();
+
+    }
 
     public void createGauzz(View view) {
         isGauss = true;
@@ -97,7 +97,7 @@ public class Pyramids extends AppCompatActivity {
         if(isGauss){
             createGauzz(view);
         }else{
-            //createLaplacian(view);
+            createLaplacian(view);
         }
     }
 
@@ -106,7 +106,7 @@ public class Pyramids extends AppCompatActivity {
         if(isGauss){
             createGauzz(view);
         }else{
-            // createLaplacian(view);
+             createLaplacian(view);
         }
     }
 
@@ -115,7 +115,7 @@ public class Pyramids extends AppCompatActivity {
         if(isGauss){
             createGauzz(view);
         }else{
-            // createLaplacian(view);
+             createLaplacian(view);
         }
     }
 }

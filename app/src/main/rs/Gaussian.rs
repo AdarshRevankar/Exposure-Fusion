@@ -68,7 +68,7 @@ float4 __attribute__((kernel)) expandFloat4Step1(int32_t x, int32_t y) {
 
     float4 out = 0;
 
-    if(y >= 1 && y <= (expandTargetHeight - 2)) {
+    if(y > 1 && y < (expandTargetHeight - 2)) {
         int yp = y / 2;
         if(yp * 2 == y) {
             // Even number, we are in-line with the source
@@ -91,7 +91,7 @@ float4 __attribute__((kernel)) expandFloat4Step2(int32_t x, int32_t y) {
 
     float4 out = 0;
 
-    if(x >= 1 && x <= (expandTargetWidth - 2)) {
+    if(x > 1 && x < (expandTargetWidth - 2)) {
         int xp = x / 2;
 
         if(xp * 2 == x) {

@@ -84,6 +84,15 @@ public class ExposureFusion implements HDRManager.Presenter {
 
     List<Bitmap> gaussianPyramid(List<Bitmap> inImage, Actions action, int selected){
         SELECTED_INDEX = selected;
-        return HDRFilter.convertAllocationBMPDyamic(hdrFilter.generateGaussianPyramid(inImage).get(SELECTED_INDEX));
+        return hdrFilter.convertAllocationBMPDyamic(hdrFilter.generateGaussianPyramid(hdrFilter.computeNormalWeighted(
+                hdrFilter.applyConvolution3x3Filter(inImage),
+                hdrFilter.applySaturationFilter(inImage),
+                hdrFilter.applyExposureFilter(inImage)
+        ), HDRFilter.DATA_TYPE.FLOAT32).get(SELECTED_INDEX));
+    }
+
+    List<Bitmap> laplacianPyramid(List<Bitmap> inImage, Actions action, int selected){
+        SELECTED_INDEX = selected;
+        return hdrFilter.convertAllocationBMPDyamic(hdrFilter.generateLaplacianPyramids(inImage).get(SELECTED_INDEX));
     }
 }
