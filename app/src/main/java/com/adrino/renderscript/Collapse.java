@@ -12,80 +12,59 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Collapse extends AppCompatActivity {
-    HDRFilter hdrFilter;
-    Bitmap[] bmpImages;
-    Bitmap hdrOutput;
+    ExposureFusion exposureFusion;
+    List<Bitmap> bmpImages;
     private static final String TAG = "Collapse";
+    private List<Bitmap> hdrOutput;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_collapse);
-        hdrFilter = new HDRFilter(this);
+        exposureFusion = new ExposureFusion(this);
+
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final Bitmap[] resBmp = generateResultant();
-
-                for (int i = 0; i <resBmp.length; i++) {
-
-                }
+                final List<Bitmap> resultant = generateResultant();
 
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Log.e(TAG, "run: " + " Length(R) :" + resBmp.length);
-                        ((ImageView) findViewById(R.id.res1)).setImageBitmap(resBmp[0]);
-                        ((ImageView) findViewById(R.id.res2)).setImageBitmap(resBmp[1]);
-                        ((ImageView) findViewById(R.id.res3)).setImageBitmap(resBmp[2]);
-                        ((ImageView) findViewById(R.id.res4)).setImageBitmap(resBmp[3]);
+                        ((ImageView) findViewById(R.id.res1)).setImageBitmap(resultant.get(0));
+                        ((ImageView) findViewById(R.id.res2)).setImageBitmap(resultant.get(1));
+                        ((ImageView) findViewById(R.id.res3)).setImageBitmap(resultant.get(2));
+                        ((ImageView) findViewById(R.id.res4)).setImageBitmap(resultant.get(3));
                     }
                 });
 
-                hdrOutput = hdrFilter.collapseResultant(resBmp);
-
-                saveBitmaps(hdrOutput, "HDROutput.jpg");
-
+                hdrOutput = exposureFusion.perform(bmpImages, ExposureFusion.Actions.COLLAPSE);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        ((ImageView) findViewById(R.id.hdr)).setImageBitmap(hdrOutput);
+                        ((ImageView) findViewById(R.id.hdr)).setImageBitmap(hdrOutput.get(0));
                     }
                 });
             }
         }).start();
     }
 
-    Bitmap[] generateResultant() {
+    List<Bitmap> generateResultant() {
         if (bmpImages == null) {
-            bmpImages = new Bitmap[3];
+            bmpImages = new ArrayList<>();
             BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
-            imgLoadOption.inSampleSize = 4;
-            bmpImages[0] = BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption);
-            bmpImages[1] = BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption);
-            bmpImages[2] = BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption);
-
-            Bitmap[][] laplacianPyramids = hdrFilter.generateLaplacianPyramids(bmpImages);
-
-            Bitmap[] normalImage = hdrFilter.computeNormalWeighted(bmpImages);
-
-//            Bitmap[] normalImage = new Bitmap[3];
-//            normalImage[0] = BitmapFactory.decodeResource(getResources(), R.drawable.norm1, imgLoadOption);
-//            normalImage[1] = BitmapFactory.decodeResource(getResources(), R.drawable.norm2, imgLoadOption);
-//            normalImage[2] = BitmapFactory.decodeResource(getResources(), R.drawable.norm3, imgLoadOption);
-
-            Bitmap[][] gaussianPyramid = new Bitmap[3][4];
-            gaussianPyramid[0] = hdrFilter.generateGaussianPyramid(normalImage[0]);
-            gaussianPyramid[1] = hdrFilter.generateGaussianPyramid(normalImage[1]);
-            gaussianPyramid[2] = hdrFilter.generateGaussianPyramid(normalImage[2]);
-
-            // Resultant Image calculation
-            return hdrFilter.generateResultant(gaussianPyramid, laplacianPyramids);
-//            return laplacianPyramids[2];
+            imgLoadOption.inSampleSize = ExposureFusion.SAMPLE_SIZE;
+            bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption));
+            bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption));
+            bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption));
+            exposureFusion.setMeta(bmpImages.get(0).getWidth(), bmpImages.get(0).getHeight(), bmpImages.get(0).getConfig());
+            return exposureFusion.perform(bmpImages, ExposureFusion.Actions.RESULTANT);
         }
-        return new Bitmap[0];
+        return null;
     }
 
     private void saveBitmaps(Bitmap bitmap, String filename){

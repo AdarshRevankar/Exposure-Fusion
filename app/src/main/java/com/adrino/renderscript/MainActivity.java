@@ -8,40 +8,47 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements HDRManager.Viewer {
 
-    HDRFilter hdrFilter;
-    Bitmap[] bmpImages;
+    private static final String TAG = "MainActivity";
+    ExposureFusion expFusion;
+    List<Bitmap> bmpImgList, saturation, contrast, exposed, norm;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        hdrFilter = new HDRFilter(this);
+        expFusion = new ExposureFusion(this);
         setContentView(R.layout.activity_main);
 
         /*---------------------- Load Images ----------------------*/
-        bmpImages = new Bitmap[3];
+        bmpImgList = new ArrayList<>(3);
         BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
-        imgLoadOption.inSampleSize = 4;
-        bmpImages[0] = BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption);
-        bmpImages[1] = BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption);
-        bmpImages[2] = BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption);
+        imgLoadOption.inSampleSize = ExposureFusion.SAMPLE_SIZE;
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption));
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption));
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption));
 
         /*---------------------- Set Images ----------------------*/
-        ((ImageView) findViewById(R.id.pic1)).setImageBitmap(bmpImages[0]);
-        ((ImageView) findViewById(R.id.pic2)).setImageBitmap(bmpImages[1]);
-        ((ImageView) findViewById(R.id.pic3)).setImageBitmap(bmpImages[2]);
+        ((ImageView) findViewById(R.id.pic1)).setImageBitmap(bmpImgList.get(0));
+        ((ImageView) findViewById(R.id.pic2)).setImageBitmap(bmpImgList.get(1));
+        ((ImageView) findViewById(R.id.pic3)).setImageBitmap(bmpImgList.get(2));
+
+        /*---------------------- Init ----------------------*/
+        expFusion.setMeta(bmpImgList.get(0).getWidth(), bmpImgList.get(0).getHeight(), bmpImgList.get(0).getConfig());
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        hdrFilter.destoryRenderScript();
-    }
+//    @Override
+//    protected void onDestroy() {
+//        super.onDestroy();
+//        expFusion.destoryRenderScript();
+//    }
 
-    public void gotoNextPage(View view) {
+    public void doGaussianLaplacian(View view) {
         Intent i = new Intent(MainActivity.this, Pyramids.class);
         startActivity(i);
     }
@@ -56,21 +63,17 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final Bitmap conv1 = hdrFilter.applyConvolution3x3Filter(hdrFilter.applyGrayScaleFilter(bmpImages[0]));
-                final Bitmap conv2 = hdrFilter.applyConvolution3x3Filter(hdrFilter.applyGrayScaleFilter(bmpImages[1]));
-                final Bitmap conv3 = hdrFilter.applyConvolution3x3Filter(hdrFilter.applyGrayScaleFilter(bmpImages[2]));
-
+                if(contrast == null) contrast = expFusion.perform(bmpImgList, ExposureFusion.Actions.CONTRAST);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        ((ImageView) findViewById(R.id.out1)).setImageBitmap(conv1);
-                        ((ImageView) findViewById(R.id.out2)).setImageBitmap(conv2);
-                        ((ImageView) findViewById(R.id.out3)).setImageBitmap(conv3);
+                        ((ImageView) findViewById(R.id.out1)).setImageBitmap(contrast.get(0));
+                        ((ImageView) findViewById(R.id.out2)).setImageBitmap(contrast.get(1));
+                        ((ImageView) findViewById(R.id.out3)).setImageBitmap(contrast.get(2));
                     }
                 });
             }
         }).start();
-
     }
 
     public void setSaturation(View view) {
@@ -78,16 +81,13 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final Bitmap saturation1 = hdrFilter.applySaturationFilter(bmpImages[0]);
-                final Bitmap saturation2 = hdrFilter.applySaturationFilter(bmpImages[1]);
-                final Bitmap saturation3 = hdrFilter.applySaturationFilter(bmpImages[2]);
-
+                if(saturation == null) saturation = expFusion.perform(bmpImgList, ExposureFusion.Actions.SATURATION);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        ((ImageView) findViewById(R.id.out1)).setImageBitmap(saturation1);
-                        ((ImageView) findViewById(R.id.out2)).setImageBitmap(saturation2);
-                        ((ImageView) findViewById(R.id.out3)).setImageBitmap(saturation3);
+                        ((ImageView) findViewById(R.id.out1)).setImageBitmap(saturation.get(0));
+                        ((ImageView) findViewById(R.id.out2)).setImageBitmap(saturation.get(1));
+                        ((ImageView) findViewById(R.id.out3)).setImageBitmap(saturation.get(2));
                     }
                 });
             }
@@ -99,33 +99,34 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final Bitmap exp1 = hdrFilter.applyExposureFilter(bmpImages[0]);
-                final Bitmap exp2 = hdrFilter.applyExposureFilter(bmpImages[1]);
-                final Bitmap exp3 = hdrFilter.applyExposureFilter(bmpImages[2]);
-
+                if(exposed == null) exposed = expFusion.perform(bmpImgList, ExposureFusion.Actions.EXPOSED);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        ((ImageView) findViewById(R.id.out1)).setImageBitmap(exp1);
-                        ((ImageView) findViewById(R.id.out2)).setImageBitmap(exp2);
-                        ((ImageView) findViewById(R.id.out3)).setImageBitmap(exp3);
+                        ((ImageView) findViewById(R.id.out1)).setImageBitmap(exposed.get(0));
+                        ((ImageView) findViewById(R.id.out2)).setImageBitmap(exposed.get(1));
+                        ((ImageView) findViewById(R.id.out3)).setImageBitmap(exposed.get(2));
                     }
                 });
             }
         }).start();
     }
 
-    public void setNormal(View view){
+    public void setNormal(View view) {
+        (findViewById(R.id.llView)).setVisibility(View.VISIBLE);
+
         new Thread(new Runnable() {
             @Override
             public void run() {
-                (findViewById(R.id.llView)).setVisibility(View.VISIBLE);
-                /*---------------------- Apply Filters ----------------------*/
-                Bitmap[] normal = hdrFilter.computeNormalWeighted(bmpImages);
-
-                ((ImageView) findViewById(R.id.out1)).setImageBitmap(normal[0]);
-                ((ImageView) findViewById(R.id.out2)).setImageBitmap(normal[1]);
-                ((ImageView) findViewById(R.id.out3)).setImageBitmap(normal[2]);
+                if(norm == null) norm = expFusion.perform(bmpImgList, ExposureFusion.Actions.NORMAL);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ((ImageView) findViewById(R.id.out1)).setImageBitmap(norm.get(0));
+                        ((ImageView) findViewById(R.id.out2)).setImageBitmap(norm.get(1));
+                        ((ImageView) findViewById(R.id.out3)).setImageBitmap(norm.get(2));
+                    }
+                });
             }
         }).start();
     }

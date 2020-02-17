@@ -25,7 +25,7 @@
         android:textColor="#FFFFFF"
         android:textSize="20sp"
         android:text="Laplacian Pyramid"
-        android:onClick="gotoLapPage"
+        android:onClick="createLaplacian"
         android:background="#060606"
         android:gravity="center"/>
 
@@ -94,7 +94,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
                 <ImageView
-                    android:id="@+id/g2"
+                    android:id="@+id/g3"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
@@ -106,9 +106,10 @@
                     android:textAlignment="center"
                     android:layout_weight="3"
                     android:textColor="#FFFFFF"
-                    android:text="G2"/>
+                    android:text="G3"/>
             </LinearLayout>
         </LinearLayout>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -140,7 +141,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
                 <ImageView
-                    android:id="@+id/g3"
+                    android:id="@+id/g4"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
 
@@ -152,7 +153,54 @@
                     android:textAlignment="center"
                     android:layout_weight="3"
                     android:textColor="#FFFFFF"
-                    android:text="G3"/>
+                    android:text="G4"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_weight="1">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <ImageView
+                    android:id="@+id/g2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_broken_image_black_24dp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:textAlignment="center"
+                    android:layout_weight="3"
+                    android:textColor="#FFFFFF"
+                    android:text="G2"/>
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <ImageView
+                    android:id="@+id/g5"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_broken_image_black_24dp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:textAlignment="center"
+                    android:layout_weight="3"
+                    android:textColor="#FFFFFF"
+                    android:text="G5"/>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

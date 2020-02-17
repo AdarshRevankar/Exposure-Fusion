@@ -4,31 +4,28 @@
 // ============================================================================================
 // Product Pyramid Formation = SUMi(LPi[l] * GPi[l])
 // ============================================================================================
-rs_allocation LP1; // uchar4
+rs_allocation LP1; // float4
 rs_allocation LP2;
 rs_allocation LP3;
 
-rs_allocation GP1; // uchar4
+rs_allocation GP1; // float4s
 rs_allocation GP2;
 rs_allocation GP3;
 
-uchar4 __attribute__((kernel)) multiplyBMP( int32_t x, int32_t y) {
+float4 __attribute__((kernel)) multiplyBMP( int32_t x, int32_t y) {
 
     // Load Items
-    float4 fLP1 = convert_float4(rsGetElementAt_uchar4(LP1, x, y));
-    float4 fLP2 = convert_float4(rsGetElementAt_uchar4(LP2, x, y));
-    float4 fLP3 = convert_float4(rsGetElementAt_uchar4(LP3, x, y));
-    float4 fGP1 = convert_float4(rsGetElementAt_uchar4(GP1, x, y));
-    float4 fGP2 = convert_float4(rsGetElementAt_uchar4(GP2, x, y));
-    float4 fGP3 = convert_float4(rsGetElementAt_uchar4(GP3, x, y));
+    float4 fLP1 = rsGetElementAt_float4(LP1, x, y);
+    float4 fLP2 = rsGetElementAt_float4(LP2, x, y);
+    float4 fLP3 = rsGetElementAt_float4(LP3, x, y);
+    float4 fGP1 = rsGetElementAt_float4(GP1, x, y);
+    float4 fGP2 = rsGetElementAt_float4(GP2, x, y);
+    float4 fGP3 = rsGetElementAt_float4(GP3, x, y);
 
     // Compute
-    float4 res = (fLP1 * fGP1 + fLP2 * fGP2 + fLP3 * fGP3) / 255.0f;
+    float4 res = (fLP1 * fGP1 + fLP2 * fGP2 + fLP3 * fGP3);
 
-    // Return pixel
-    uchar4 pixel = convert_uchar4(res * 255.0f);
-    pixel.a = 255.0f;
-    return  pixel;
+    return res;
 }
 
 // ============================================================================================
@@ -37,6 +34,22 @@ uchar4 __attribute__((kernel)) multiplyBMP( int32_t x, int32_t y) {
 
 rs_allocation collapseLevel; // uchar4
 
-uchar4 __attribute__((kernel)) collapse(uchar4 in, int32_t x, int32_t y) {
-    return rsGetElementAt_uchar4(collapseLevel, x, y) + in;
+float4 __attribute__((kernel)) collapse(float4 in, int32_t x, int32_t y) {
+    float4 res = rsGetElementAt_float4(collapseLevel, x, y) + in;
+
+
+    if(res.r > 1){
+        res.r = 1;
+    }
+
+    if(res.g > 1){
+        res.g = 1;
+    }
+
+    if(res.b > 1){
+        res.b = 1;
+    }
+
+    res.a = 1;
+    return res;
 }

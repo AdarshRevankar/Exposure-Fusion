@@ -2,12 +2,17 @@ package com.adrino.renderscript;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import androidx.renderscript.Allocation;
 import androidx.renderscript.Element;
 import androidx.renderscript.RenderScript;
-import androidx.renderscript.Type;
+import androidx.renderscript.ScriptIntrinsicBlur;
+import androidx.renderscript.ScriptIntrinsicConvolve3x3;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Filter Class which has requried HDR Functions
@@ -21,389 +26,308 @@ import androidx.renderscript.Type;
  * 7. Product formation
  * 8. Collapse
  */
-public class HDRFilter implements HDRManager.Presenter {
+public class HDRFilter implements HDRManager.Performer {
 
     // Constants
     private final static String TAG = "HDRFilter";
-    private static final int PYRAMID_LEVELS = 4;
+    private static int PYRAMID_LEVELS = 12;
 
     // Attributes
     private static RenderScript renderScript;
-    private ScriptC_RGBtoGray scriptGray;
-    private ScriptC_Convolve scriptConvolve;
+
+    private static ScriptC_utils scriptUtils;
+    private ScriptIntrinsicConvolve3x3 scriptConv;
     private ScriptC_Saturation scriptSaturation;
     private ScriptC_Exposure scriptExposure;
     private ScriptC_NormalizeWeights scriptNorm;
-    private int width, height;
     private ScriptC_Laplacian scriptLaplacian;
     private ScriptC_Collapse scriptCollapse;
-    private ScriptC_gaussian scriptGaussian;
-    private static float[] laplacianKernel = {
-            0.f, 1.f, 0.f,
-            1.f, -4.f, 1.f,
-            0.f, 1.f, 0.f
-    };
+    private ScriptC_Gaussian scriptGaussian;
+    private Element elementFloat4, elementFloat;
+
+    enum DATA_TYPE {FLOAT32_4, FLOAT32}
+
+    ;
+
+    // Image meta
+    private static Bitmap.Config config;
+    private static int width, height;
 
     // Methods
     HDRFilter(Context context) {
         renderScript = RenderScript.create(context);
+        elementFloat4 = Element.F32_4(renderScript);
+        elementFloat = Element.F32(renderScript);
+        RsUtils.ErrorViewer(this, "NUMBER OF LEVELS", ""+PYRAMID_LEVELS);
     }
 
     @Override
-    public Bitmap applyGrayScaleFilter(Bitmap bmpImage) {
-        scriptGray = new ScriptC_RGBtoGray(renderScript);
-
-        int bitmapWidth = bmpImage.getWidth();
-        int bitmapHeight = bmpImage.getHeight();
-
-        // Allocate
-        Allocation inAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-        Allocation outAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-
-
-
-        // Script
-        scriptGray.set_inAllocation(inAllocation);
-        scriptGray.forEach_convertRGBAToGray(outAllocation);
-
-
-        Bitmap outBitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpImage.getConfig());
-        outAllocation.copyTo(outBitmap);
-
-        //Destroy
-        inAllocation.destroy();
-        outAllocation.destroy();
-        scriptGray.destroy();
-
-        return outBitmap;
+    public void setMeta(int imWidth, int imHeight, Bitmap.Config imConfig) {
+        width = imWidth;
+        height = imHeight;
+        config = imConfig;
+        RsUtils.ErrorViewer(this, "IMAGE DIMENTIONS", " W :"+width+" H :"+height);
     }
 
     @Override
-    public Bitmap applyConvolution3x3Filter(Bitmap bmpImage) {
-        scriptConvolve = new ScriptC_Convolve(renderScript);
+    public List<Allocation> applyConvolution3x3Filter(List<Bitmap> bmpImages) {
+        // - - - - - - - - - - - - - - - - - - - - -
+        //      Perform Convolution
+        // - - - - - - - - - - - - - - - - - - - - -
+        float[] filter = {0, 1, 0, 1, -4, 1, 0, 1, 0};                                  // Filter
+        scriptConv = ScriptIntrinsicConvolve3x3.create(renderScript, elementFloat);     // Convolution intrinsic
+        scriptUtils = new ScriptC_utils(renderScript);                                  // For Gray Scale image
 
-        int bitmapWidth = bmpImage.getWidth();
-        int bitmapHeight = bmpImage.getHeight();
+        Allocation inAlloc, grayAlloc, outAlloc;
+        List<Allocation> outAllocList = new ArrayList<>(3);
 
-        // Allocate
-        Allocation inAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-        Allocation outAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-        Allocation kernalAllocation = Allocation.createSized(renderScript,
-                Element.F32(renderScript),
-                laplacianKernel.length);
+        for (Bitmap inImage : bmpImages) {
+            inAlloc = Allocation.createFromBitmap(renderScript, inImage);
+            grayAlloc = RsUtils.create2d(renderScript, width, height, elementFloat);
+            outAlloc = RsUtils.create2d(renderScript, width, height, elementFloat);
 
-        kernalAllocation.copyFrom(laplacianKernel);
-        scriptConvolve.bind_conv_kernel(kernalAllocation);
-        scriptConvolve.set_gIn(inAllocation);
-        scriptConvolve.invoke_setup();
-        scriptConvolve.forEach_root(inAllocation, outAllocation);
+            // Bitmap -> RGB
+            scriptUtils.set_inGrayAlloc(inAlloc);
+            scriptUtils.forEach_convertRGBAToGray(grayAlloc);
 
+            // RGB -> Convoluted
+            scriptConv.setInput(grayAlloc);
+            scriptConv.setCoefficients(filter);
+            scriptConv.forEach(outAlloc);
 
-        Bitmap outBitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpImage.getConfig());
-        outAllocation.copyTo(outBitmap);
+            // Add it to List
+            outAllocList.add(outAlloc);
 
-        //Destroy
-        inAllocation.destroy();
-        outAllocation.destroy();
-        scriptConvolve.destroy();
-
-        return outBitmap;
+            inAlloc.destroy();
+            grayAlloc.destroy();
+        }
+        scriptConv.destroy();
+        scriptUtils.destroy();
+        return outAllocList;
     }
 
     @Override
-    public Bitmap applySaturationFilter(Bitmap bmpImage) {
-
+    public List<Allocation> applySaturationFilter(List<Bitmap> bmpImages) {
+        // - - - - - - - - - - - - - - - - - - -
+        //          Apply Saturation
+        // - - - - - - - - - - - - - - - - - - -
         scriptSaturation = new ScriptC_Saturation(renderScript);
 
+        List<Allocation> outAllocList = new ArrayList<>(3);
+        Allocation inAllocation, outAllocation;
 
-        int bitmapWidth = bmpImage.getWidth();
-        int bitmapHeight = bmpImage.getHeight();
+        for (Bitmap inImage : bmpImages) {
+            inAllocation = Allocation.createFromBitmap(renderScript, inImage);
+            outAllocation = RsUtils.create2d(renderScript, width, height, elementFloat);
 
-        // Allocate
-        Allocation inAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-        Allocation outAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
+            // Perform Saturation Script
+            scriptSaturation.set_inAlloc(inAllocation);
+            scriptSaturation.forEach_saturate(outAllocation);
 
-        // Script
-        scriptSaturation.set_inAlloc(inAllocation);
-        scriptSaturation.forEach_saturate(outAllocation);
+            outAllocList.add(outAllocation);
 
-        Bitmap outBitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpImage.getConfig());
-        outAllocation.copyTo(outBitmap);
-
-        //Destroy
-        inAllocation.destroy();
-        outAllocation.destroy();
-        scriptSaturation.destroy();
-
-        return outBitmap;
-    }
-
-    @Override
-    public Bitmap applyExposureFilter(Bitmap bmpImage) {
-        scriptExposure = new ScriptC_Exposure(renderScript);
-
-        int bitmapWidth = bmpImage.getWidth();
-        int bitmapHeight = bmpImage.getHeight();
-
-        // Allocate
-        Allocation inAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-        Allocation outAllocation = Allocation.createFromBitmap(renderScript, bmpImage);
-
-        // Script
-        scriptExposure.set_inAllocation(inAllocation);
-        scriptExposure.forEach_expose(outAllocation);
-
-        // Output
-        Bitmap outBitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpImage.getConfig());
-        outAllocation.copyTo(outBitmap);
-
-        //Destroy
-        inAllocation.destroy();
-        outAllocation.destroy();
-        scriptExposure.destroy();
-
-        return outBitmap;
-    }
-
-    @Override
-    public Bitmap[] computeNormalWeighted(Bitmap[] bmpImages) {
-        Bitmap[] bmpListContrast = new Bitmap[3];
-        Bitmap[] bmpListSaturation = new Bitmap[3];
-        Bitmap[] bmpListExposure = new Bitmap[3];
-
-        int bitmapWidth = bmpImages[0].getWidth();
-        int bitmapHeight = bmpImages[0].getHeight();
-
-        // Calculate Weighted Images
-        for (int i = 0; i < 3; i++) {
-            bmpListContrast[i] = applyConvolution3x3Filter(applyGrayScaleFilter(bmpImages[i]));
-            bmpListSaturation[i] = applySaturationFilter(bmpImages[i]);
-            bmpListExposure[i] = applyExposureFilter(bmpImages[i]);
+            // Destroy
+            inAllocation.destroy();
         }
 
-        // Allocate & Execute
-        Allocation c1 = Allocation.createFromBitmap(renderScript, bmpListContrast[0]);
-        Allocation c2 = Allocation.createFromBitmap(renderScript, bmpListContrast[1]);
-        Allocation c3 = Allocation.createFromBitmap(renderScript, bmpListContrast[2]);
+        scriptSaturation.destroy();
+        return outAllocList;
+    }
 
-        Allocation s1 = Allocation.createFromBitmap(renderScript, bmpListSaturation[0]);
-        Allocation s2 = Allocation.createFromBitmap(renderScript, bmpListSaturation[1]);
-        Allocation s3 = Allocation.createFromBitmap(renderScript, bmpListSaturation[2]);
+    @Override
+    public List<Allocation> applyExposureFilter(List<Bitmap> bmpImages) {
+        // - - - - - - - - - - - - - - - - - - -
+        //          Apply Exposedness
+        // - - - - - - - - - - - - - - - - - - -
+        scriptExposure = new ScriptC_Exposure(renderScript);
 
-        Allocation e1 = Allocation.createFromBitmap(renderScript, bmpListExposure[0]);
-        Allocation e2 = Allocation.createFromBitmap(renderScript, bmpListExposure[1]);
-        Allocation e3 = Allocation.createFromBitmap(renderScript, bmpListExposure[2]);
+        List<Allocation> outAllocList = new ArrayList<>(3);
+        Allocation inAllocation, outAllocation;
 
-        Allocation outAlloc1 = Allocation.createFromBitmap(renderScript, bmpImages[0]);
-        Allocation outAlloc2 = Allocation.createFromBitmap(renderScript, bmpImages[0]);
-        Allocation outAlloc3 = Allocation.createFromBitmap(renderScript, bmpImages[0]);
+        for (Bitmap inImage : bmpImages) {
+            // Allocate
+            inAllocation = Allocation.createFromBitmap(renderScript, inImage);
+            outAllocation = RsUtils.create2d(renderScript, width, height, elementFloat);
 
+            // Perform
+            scriptExposure.set_inAllocation(inAllocation);
+            scriptExposure.forEach_expose(outAllocation);
+
+            outAllocList.add(outAllocation);
+
+            inAllocation.destroy();
+        }
+        scriptExposure.destroy();
+
+        return outAllocList;
+    }
+
+    @Override
+    public List<Allocation> computeNormalWeighted(List<Allocation> contrast,
+                                                  List<Allocation> saturation,
+                                                  List<Allocation> wellExposeness) {
+
+        // - - - - - - - - - - - - - - - -
+        //          Normal Weight
+        // - - - - - - - - - - - - - - - -
         scriptNorm = new ScriptC_NormalizeWeights(renderScript);
 
-        scriptNorm.set_nImageOut2(outAlloc2);
-        scriptNorm.set_nImageOut3(outAlloc3);
+        Allocation outAlloc1 = RsUtils.create2d(renderScript, width, height, elementFloat);
+        Allocation outAlloc2 = RsUtils.create2d(renderScript, width, height, elementFloat);
+        Allocation outAlloc3 = RsUtils.create2d(renderScript, width, height, elementFloat);
 
-        scriptNorm.set_C1(c1);
-        scriptNorm.set_C2(c2);
-        scriptNorm.set_C3(c3);
+        scriptNorm.set_out2(outAlloc2);
+        scriptNorm.set_out3(outAlloc3);
 
-        scriptNorm.set_S1(s1);
-        scriptNorm.set_S2(s2);
-        scriptNorm.set_S3(s3);
+        scriptNorm.set_C1(contrast.get(0));
+        scriptNorm.set_C2(contrast.get(1));
+        scriptNorm.set_C3(contrast.get(2));
 
-        scriptNorm.set_E1(e1);
-        scriptNorm.set_E2(e2);
-        scriptNorm.set_E3(e3);
+        scriptNorm.set_S1(saturation.get(0));
+        scriptNorm.set_S2(saturation.get(1));
+        scriptNorm.set_S3(saturation.get(2));
+
+        scriptNorm.set_E1(wellExposeness.get(0));
+        scriptNorm.set_E2(wellExposeness.get(1));
+        scriptNorm.set_E3(wellExposeness.get(2));
 
         // Compute
         scriptNorm.forEach_normalizeWeights(outAlloc1);
 
-        // Prepare out Bitmaps
-        Bitmap[] bmpOut = new Bitmap[3];
-        for (int i = 0; i < 3; i++) {
-            bmpOut[i] = Bitmap.createBitmap(bitmapWidth, bitmapHeight, bmpImages[0].getConfig());
-        }
-        outAlloc1.copyTo(bmpOut[0]);
-        outAlloc2.copyTo(bmpOut[1]);
-        outAlloc3.copyTo(bmpOut[2]);
+        List<Allocation> outAllocList = new ArrayList<>(3);
+        outAllocList.add(outAlloc1);
+        outAllocList.add(outAlloc2);
+        outAllocList.add(outAlloc3);
 
-        // Destroy
-        outAlloc1.destroy();
-        outAlloc2.destroy();
-        outAlloc3.destroy();
-        c1.destroy();
-        c2.destroy();
-        c3.destroy();
-        e1.destroy();
-        e2.destroy();
-        e3.destroy();
-        s1.destroy();
-        s2.destroy();
-        s3.destroy();
         scriptNorm.destroy();
-        return bmpOut;
+
+        return outAllocList;
     }
 
-    /**
-     * - - - - - - - - - - - - - - - - - - - -
-     *      GAUSSIAN PYRAMID GENERATOR
-     * - - - - - - - - - - - - - - - - - - - -
-     * Given a single image ( GRAY ) Returns the Gaussian Pyramid ( 4 Layers )
-     *
-     * @param bmpSingleExp Single Exposure Image
-     * @return 4 BmpImageArray == 4 Layers ( G0 == Bmp[0] and so on. )
-     */
     @Override
-    public Bitmap[] generateGaussianPyramid(Bitmap bmpSingleExp) {
-
-        // - - - - - Init - - - - - - -
-        scriptGaussian = new ScriptC_gaussian(renderScript);
-        Bitmap[] outBmpGaussian = new Bitmap[4];
-        width = bmpSingleExp.getWidth();
-        height = bmpSingleExp.getHeight();
-        for (int i = 1; i < 4; i++) {
-            outBmpGaussian[i] = Bitmap.createBitmap(width, height, bmpSingleExp.getConfig());
-        }
-
+    public List<List<Allocation>> generateGaussianPyramid(List<Bitmap> bmpImageList) {
         // - - - - - - - - - - - - - - - - - - - -
-        // RenderScript - gaussian.rs ( Convolve )
+        // RenderScript - Gaussian.rs ( Convolve )
         // - - - - - - - - - - - - - - - - - - - -
+        scriptGaussian = new ScriptC_Gaussian(renderScript);
+        scriptUtils = new ScriptC_utils(renderScript);
 
-        // 1. - - - Allocation - - - -
-        Allocation inAlloc = Allocation.createFromBitmap(renderScript, bmpSingleExp);
-        Allocation midAlloc = Allocation.createFromBitmap(renderScript, bmpSingleExp);
-        Allocation outAlloc = Allocation.createFromBitmap(renderScript, bmpSingleExp);
-        Allocation tempAlloc = Allocation.createFromBitmap(renderScript, bmpSingleExp);
+        List<List<Allocation>> outGaussianAllocationList = new ArrayList<>(3);
 
-        // 2. - - - Computation - - - -
+        for (int i = 0; i < bmpImageList.size(); i++) {
+            List<Allocation> outGaussLevelList = new ArrayList<>(PYRAMID_LEVELS);
 
-        outBmpGaussian[0] = bmpSingleExp;
+            // - - - - - - Allocation - - - - - - -
+            // Convert U4 to F4
+            Allocation startAlloc = Allocation.createFromBitmap(renderScript, bmpImageList.get(i));
+            Allocation convertAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
+            Allocation inAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
 
-        for (int level = 1; level < PYRAMID_LEVELS; level++) {
+            scriptUtils.set_inAlloc(startAlloc);
+            scriptUtils.forEach_convertU4toF4(convertAlloc);
+            startAlloc.destroy();
 
-            // REDUCE
-            int compressDenom = (int) Math.pow(2, level);
-            scriptGaussian.set_compressTargetWidth(width / compressDenom);
-            scriptGaussian.set_compressTargetHeight(height / compressDenom);
-            scriptGaussian.set_compressSource(inAlloc);
-            scriptGaussian.forEach_compressStep1(midAlloc);
-            scriptGaussian.set_compressSource(midAlloc);
-            scriptGaussian.forEach_compressStep2(outAlloc);
-            tempAlloc.copyFrom(outAlloc);
-            inAlloc.copyFrom(outAlloc);
+            // - - - - - - Computation - - - - - -
 
-            // EXPAND
-            for (int i = level - 1; i >= 0; i--) {
-                int expandDenom = (int) Math.pow(2, i);
-                scriptGaussian.set_expandTargetWidth(width * expandDenom);
-                scriptGaussian.set_expandTargetHeight(height * expandDenom);
-                scriptGaussian.set_expandSource(inAlloc);
-                scriptGaussian.forEach_expandStep1(midAlloc);
-                scriptGaussian.set_expandSource(midAlloc);
-                scriptGaussian.forEach_expandStep2(outAlloc);
+            // G0 = Original Image
+            inAlloc.copyFrom(convertAlloc);
+            outGaussLevelList.add(convertAlloc);
+
+            for (int level = 1; level < PYRAMID_LEVELS; level++) {
+
+                Allocation outAlloc = RsUtils.create2d(renderScript,width,height, Element.F32_4(renderScript));
+                Allocation midAlloc = RsUtils.create2d(renderScript,width, height, Element.F32_4(renderScript));
+
+                // REDUCE
+                int compressDenom = (int) Math.pow(2, level);
+                scriptGaussian.set_compressTargetWidth(width / compressDenom);
+                scriptGaussian.set_compressTargetHeight(height / compressDenom);
+
+                scriptGaussian.set_compressSource(inAlloc);
+                scriptGaussian.forEach_compressFloat4Step1(midAlloc);
+                scriptGaussian.set_compressSource(midAlloc);
+                scriptGaussian.forEach_compressFloat4Step2(outAlloc);
+                inAlloc.destroy();
+                midAlloc.destroy();
+
+                // Store Result
+                inAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
                 inAlloc.copyFrom(outAlloc);
+                outGaussLevelList.add(outAlloc);
             }
-
-            // Store Result
-            outAlloc.copyTo(outBmpGaussian[level]);
-            inAlloc.copyFrom(tempAlloc);
+            outGaussianAllocationList.add(outGaussLevelList);
         }
 
         // 3. - - - Destroy & Return - - - -
-        inAlloc.destroy();
-        outAlloc.destroy();
-        midAlloc.destroy();
-        tempAlloc.destroy();
-
-        return outBmpGaussian;
+        return outGaussianAllocationList;
     }
 
-    /**
-     * - - - - - - - - - - - - - - - - - - -
-     *      LAPLACIAN PYRAMID GENERATOR
-     * - - - - - - - - - - - - - - - - - - - -
-     * Given Multiple Images ( RGB ) Returns their Laplacian Pyramids ( N * 4 Layers )
-     *
-     * @param bmpInMultiExposures   Multiple RGB images
-     * @return  N Laplacian Pyramids ( 4 Layers ) <= (Bitmap[][])
-     */
     @Override
-    public Bitmap[][] generateLaplacianPyramids(Bitmap[] bmpInMultiExposures) {
+    public List<List<Allocation>> generateGaussianPyramid(List<Allocation> floatAlloc, DATA_TYPE data_type) {
+        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        // RenderScript - Gaussian.rs ( Convolve ) Float Allocation
+        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        return generateGaussianPyramid(convertAllocationToBMP(floatAlloc, DATA_TYPE.FLOAT32));
+    }
 
-        // - - - - - - - - - - - - - - - - - - - -
-        // Obtain - 3 Gaussian Pyramids ( 3 BMP )
-        // - - - - - - - - - - - - - - - - - - - -
-        Bitmap[][] bmpGaussianPyramids = new Bitmap[bmpInMultiExposures.length][PYRAMID_LEVELS];
-        for (int i = 0; i < bmpInMultiExposures.length; i++) {
 
-            // Gaussian Pyramids
-            bmpGaussianPyramids[i] = generateGaussianPyramid(bmpInMultiExposures[i]);
-        }
-
-        // - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        // Laplacian Pyramid - laplacian.rs ( Diff b/n Gaussian Pyr.
-        // - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-        // - - - - Output Images - - - - - -
-        Bitmap[][] bmpLaplacianPyramids = new Bitmap[bmpInMultiExposures.length][PYRAMID_LEVELS];
-
-        for (int i = 0; i < bmpInMultiExposures.length; i++) {
-            for (int j = 0; j < PYRAMID_LEVELS; j++) {
-                bmpLaplacianPyramids[i][j] = Bitmap.createBitmap(width, height, bmpInMultiExposures[0].getConfig());
-            }
-        }
-
-        // - - - - Script - - - - - -
+    @Override
+    public List<List<Allocation>> generateLaplacianPyramids(List<Bitmap> bmpInMultiExposures) {
+        // + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+        // |    Laplacian Pyramid - laplacian.rs ( Diff b/n Gaussian Pyr.)   |
+        // + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
         scriptLaplacian = new ScriptC_Laplacian(renderScript);
 
-        Allocation G0 = Allocation.createFromBitmap(renderScript, bmpGaussianPyramids[0][0]);
-        Allocation G1 = Allocation.createFromBitmap(renderScript, bmpGaussianPyramids[0][1]);
-        Allocation G2 = Allocation.createFromBitmap(renderScript, bmpGaussianPyramids[0][2]);
-        Allocation G3 = Allocation.createFromBitmap(renderScript, bmpGaussianPyramids[0][3]);
-        Allocation outAlloc = Allocation.createFromBitmap(renderScript, bmpGaussianPyramids[0][0]);
+        // - - - - Generate Gaussian Pyramid - - - - - -
+        List<List<Allocation>> gaussPyramidList = generateGaussianPyramid(bmpInMultiExposures);
 
-        for (int i = 0; i < bmpGaussianPyramids.length; i++) {
+        // - - - - Output Images - - - - - - - - - - - -
+        List<List<Allocation>> laplacianPyramidList = new ArrayList<>(gaussPyramidList.size());
 
-            // - - - - Allocation - - - -
-            G0.copyFrom(bmpGaussianPyramids[i][0]);
-            G1.copyFrom(bmpGaussianPyramids[i][1]);
-            G2.copyFrom(bmpGaussianPyramids[i][2]);
-            G3.copyFrom(bmpGaussianPyramids[i][3]);
+        // - - - - Script - - - - - - - - - - - - - - - -
+        for (int i = 0; i < gaussPyramidList.size(); i++) {
 
-            // - - - - PRODUCE : L0 = G0 - G1 - - - -
-            scriptLaplacian.set_laplacianLowerLevel(G0);
-            scriptLaplacian.forEach_laplacian(G1, outAlloc);
-            outAlloc.copyTo(bmpLaplacianPyramids[i][0]);
+            // - - - - Buffer Allocation - - - - - -
+            List<Allocation> inGauss = gaussPyramidList.get(i);
+            List<Allocation> outLap = new ArrayList<>(PYRAMID_LEVELS);
 
-            // - - - - PRODUCE : L1 = G1 - G2 - - - -
-            scriptLaplacian.set_laplacianLowerLevel(G1);
-            scriptLaplacian.forEach_laplacian(G2, outAlloc);
-            outAlloc.copyTo(bmpLaplacianPyramids[i][1]);
+            // - - - - - LAPLACIAN PYRAMID : L0 = G0 - G1
+            int lapLevel = 0;
+            for (; lapLevel < PYRAMID_LEVELS - 1; lapLevel++) {
+                Allocation outAlloc = RsUtils.create2d(renderScript, width, height, elementFloat4);
+                Allocation expandedAlloc = RsUtils.create2d(renderScript, width, height, elementFloat4);
 
-            // - - - - PRODUCE : L2 = G2 - G3 - - - -
-            scriptLaplacian.set_laplacianLowerLevel(G2);
-            scriptLaplacian.forEach_laplacian(G3, outAlloc);
-            outAlloc.copyTo(bmpLaplacianPyramids[i][2]);
+                int expandDenom = (int) Math.pow(2, lapLevel);
+                scriptGaussian.set_expandTargetWidth(width * expandDenom);
+                scriptGaussian.set_expandTargetHeight(height * expandDenom);
 
-            // - - - - PRODUCE : L3 = G3 - - - -
-            bmpLaplacianPyramids[i][3] = bmpGaussianPyramids[i][3];
+                scriptGaussian.set_expandSource(inGauss.get(lapLevel + 1));
+                scriptGaussian.forEach_expandFloat4Step1(outAlloc);
+                scriptGaussian.set_expandSource(outAlloc);
+                scriptGaussian.forEach_expandFloat4Step2(expandedAlloc);
 
+                scriptLaplacian.set_laplacianLowerLevel(inGauss.get(lapLevel));
+                scriptLaplacian.forEach_laplacian(expandedAlloc, outAlloc);
+                outLap.add(outAlloc);
+
+            }
+
+            // - - - - - L(N) - - - - - - - - - -
+            outLap.add(inGauss.get(lapLevel));
+
+            // Attach to List
+            laplacianPyramidList.add(outLap);
         }
-
         scriptLaplacian.destroy();
-        G0.destroy();
-        G1.destroy();
-        G2.destroy();
-        G3.destroy();
 
-        return bmpLaplacianPyramids;
+        return laplacianPyramidList;
     }
 
     @Override
-    public Bitmap[] generateResultant(Bitmap[][] gaussianPyramids, Bitmap[][] laplacianPyramids) {
+    public List<Allocation> generateResultant(List<List<Allocation>> gaussianPyramids, List<List<Allocation>> laplacianPyramids) {
 
         // Check, |Gi| == |Li|
-        if(gaussianPyramids.length != laplacianPyramids.length){
+        if (gaussianPyramids.size() != laplacianPyramids.size()) {
             Log.e(TAG, "generateResultant: Parameter Length not equal | PARAM_LENGTH_ERROR ");
         }
 
@@ -412,97 +336,105 @@ public class HDRFilter implements HDRManager.Presenter {
         // - - - - - - - - - - - - - - - - - - -
         scriptCollapse = new ScriptC_Collapse(renderScript);
 
-        Bitmap[] bmpResultantPyramid = new Bitmap[PYRAMID_LEVELS];
-
-        int level = 0;
-        Allocation GP1 = Allocation.createFromBitmap(renderScript, gaussianPyramids[0][level]);
-        Allocation GP2 = Allocation.createFromBitmap(renderScript, gaussianPyramids[1][level]);
-        Allocation GP3 = Allocation.createFromBitmap(renderScript, gaussianPyramids[2][level]);
-
-        Allocation LP1 = Allocation.createFromBitmap(renderScript, laplacianPyramids[0][level]);
-        Allocation LP2 = Allocation.createFromBitmap(renderScript, laplacianPyramids[1][level]);
-        Allocation LP3 = Allocation.createFromBitmap(renderScript, laplacianPyramids[2][level]);
-
-        Allocation outAlloc = Allocation.createFromBitmap(renderScript, gaussianPyramids[0][level]);
+        List<Allocation> resultantPyramid = new ArrayList<>(PYRAMID_LEVELS);
 
         // - - - - For Each level - - - - -
-        for (level = 0; level < PYRAMID_LEVELS; level++) {
-
-            // - - - - Allocate - - - - -
-            if (level > 0) {
-                GP1.copyFrom(gaussianPyramids[0][level]);
-                GP2.copyFrom(gaussianPyramids[1][level]);
-                GP3.copyFrom(gaussianPyramids[2][level]);
-
-                LP1.copyFrom(laplacianPyramids[0][level]);
-                LP2.copyFrom(laplacianPyramids[1][level]);
-                LP3.copyFrom(laplacianPyramids[2][level]);
-            }
+        for (int level = 0; level < PYRAMID_LEVELS; level++) {
+            Allocation outAlloc = RsUtils.create2d(renderScript, width, height, elementFloat4);
 
             // - - - - Script - - - - -
-            scriptCollapse.set_GP1(GP1);
-            scriptCollapse.set_GP2(GP2);
-            scriptCollapse.set_GP3(GP3);
-            scriptCollapse.set_LP1(LP1);
-            scriptCollapse.set_LP2(LP2);
-            scriptCollapse.set_LP3(LP3);
+            scriptCollapse.set_GP1(gaussianPyramids.get(0).get(level));
+            scriptCollapse.set_GP2(gaussianPyramids.get(1).get(level));
+            scriptCollapse.set_GP3(gaussianPyramids.get(2).get(level));
+            scriptCollapse.set_LP1(laplacianPyramids.get(0).get(level));
+            scriptCollapse.set_LP2(laplacianPyramids.get(1).get(level));
+            scriptCollapse.set_LP3(laplacianPyramids.get(2).get(level));
             scriptCollapse.forEach_multiplyBMP(outAlloc);
 
-            bmpResultantPyramid[level] = Bitmap.createBitmap(width, height, laplacianPyramids[0][level].getConfig());
-            outAlloc.copyTo(bmpResultantPyramid[level]);
+            resultantPyramid.add(outAlloc);
         }
 
-        GP1.destroy();
-        GP2.destroy();
-        GP3.destroy();
-        LP1.destroy();
-        LP2.destroy();
-        LP3.destroy();
-        outAlloc.destroy();
-
-        return bmpResultantPyramid;
+        return resultantPyramid;
     }
 
     @Override
-    public Bitmap collapseResultant(Bitmap[] resultant) {
+    public List<Allocation> collapseResultant(List<Allocation> resultant) {
 
         scriptCollapse = new ScriptC_Collapse(renderScript);
+        scriptGaussian = new ScriptC_Gaussian(renderScript);
+        List<Allocation> collapsedList = new ArrayList<>(PYRAMID_LEVELS);
 
-        Allocation inAllocation = Allocation.createFromBitmap(renderScript, resultant[0]);
-        Allocation middleResultAllocation = Allocation.createFromBitmap(renderScript, resultant[1]);
-        Allocation outAllocation = Allocation.createFromBitmap(renderScript, resultant[0]);
+        Allocation middleAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
+        Allocation inAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
 
-        scriptCollapse.set_collapseLevel(middleResultAllocation);
-        scriptCollapse.forEach_collapse(inAllocation, outAllocation);
-        middleResultAllocation.copyFrom(outAllocation);
-        inAllocation.copyFrom(resultant[2]);
+        inAllocation.copyFrom(resultant.get(0));
+        middleAllocation.copyFrom(resultant.get(1));
 
-        scriptCollapse.set_collapseLevel(middleResultAllocation);
-        scriptCollapse.forEach_collapse(inAllocation, outAllocation);
-        middleResultAllocation.copyFrom(outAllocation);
-        inAllocation.copyFrom(resultant[3]);
+        Allocation outAllocation = null;
 
-        scriptCollapse.set_collapseLevel(middleResultAllocation);
-        scriptCollapse.forEach_collapse(inAllocation, outAllocation);
+        for (int level = 1; level < PYRAMID_LEVELS - 1; level++) {
+            outAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
+            Allocation expandedAlloc = RsUtils.create2d(renderScript, width, height, elementFloat4);
 
-        Bitmap hdrOutput = Bitmap.createBitmap(width, height, resultant[0].getConfig());
-        outAllocation.copyTo(hdrOutput);
-        return hdrOutput;
-    }
+            // Expand inAlloc [ level - 1]
+            for (int j = level; j > 0; j--) {
+                int expandDenom = (int) Math.pow(2, j) / 2;
+                scriptGaussian.set_expandTargetWidth(width * expandDenom);
+                scriptGaussian.set_expandTargetHeight(height * expandDenom);
 
-    @Override
-    public void destoryRenderScript() {
-        renderScript.destroy();
+                scriptGaussian.set_expandSource(middleAllocation);
+                scriptGaussian.forEach_expandFloat4Step1(outAllocation);
+                scriptGaussian.set_expandSource(outAllocation);
+                scriptGaussian.forEach_expandFloat4Step2(expandedAlloc);
+
+                middleAllocation.copyFrom(expandedAlloc);
+            }
+
+            // Collapse [ level + (level -1 )]
+            scriptCollapse.set_collapseLevel(expandedAlloc);
+            scriptCollapse.forEach_collapse(inAllocation, outAllocation);
+
+            inAllocation.destroy();
+            inAllocation = RsUtils.create2d(renderScript, width, height, elementFloat4);
+
+            middleAllocation.copyFrom(resultant.get(level + 1));
+            inAllocation.copyFrom(outAllocation);
+        }
+        collapsedList.add(outAllocation);
         scriptGaussian.destroy();
         scriptCollapse.destroy();
+        return collapsedList;
     }
 
-    // Create a 2D Array of certain w, h, element
-    public Allocation create2d(int width, int height, Element elementType){
-        Type.Builder vectorBufferBuilder = new Type.Builder(renderScript, elementType);
-        vectorBufferBuilder.setX(width);
-        vectorBufferBuilder.setY(height);
-        return Allocation.createTyped(renderScript, vectorBufferBuilder.create(), Allocation.USAGE_SCRIPT);
+    static List<Bitmap> convertAllocationToBMP(List<Allocation> inAllocList, DATA_TYPE data_type) {
+        scriptUtils = new ScriptC_utils(renderScript);
+
+        Allocation outAlloc;
+        Bitmap outBmp;
+        List<Bitmap> outBmpList = new ArrayList<>(inAllocList.size());
+
+        for (int i = 0; i < inAllocList.size(); i++) {
+            // Allocate
+            outBmp = Bitmap.createBitmap(width, height, config);
+            outAlloc = Allocation.createFromBitmap(renderScript, outBmp);
+
+            // Perform
+            scriptUtils.set_inAlloc(inAllocList.get(i));
+
+            if (data_type == DATA_TYPE.FLOAT32) {
+                scriptUtils.forEach_convertFtoU4(outAlloc);
+            } else {
+                scriptUtils.forEach_convertF4toU4(outAlloc);
+            }
+
+            outAlloc.copyTo(outBmp);
+            outBmpList.add(outBmp);
+
+            outAlloc.destroy();
+        }
+        scriptUtils.destroy();
+        return outBmpList;
     }
+
+
 }
-
