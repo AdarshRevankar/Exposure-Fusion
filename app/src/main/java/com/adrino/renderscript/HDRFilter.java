@@ -2,13 +2,11 @@ package com.adrino.renderscript;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import androidx.renderscript.Allocation;
 import androidx.renderscript.Element;
 import androidx.renderscript.RenderScript;
-import androidx.renderscript.ScriptIntrinsicBlur;
 import androidx.renderscript.ScriptIntrinsicConvolve3x3;
 
 import java.util.ArrayList;
@@ -30,7 +28,7 @@ public class HDRFilter implements HDRManager.Performer {
 
     // Constants
     private final static String TAG = "HDRFilter";
-    private static int PYRAMID_LEVELS = 12;
+    private static int PYRAMID_LEVELS;
 
     // Attributes
     private static RenderScript renderScript;
@@ -58,7 +56,6 @@ public class HDRFilter implements HDRManager.Performer {
         renderScript = RenderScript.create(context);
         elementFloat4 = Element.F32_4(renderScript);
         elementFloat = Element.F32(renderScript);
-        RsUtils.ErrorViewer(this, "NUMBER OF LEVELS", ""+PYRAMID_LEVELS);
     }
 
     @Override
@@ -66,7 +63,9 @@ public class HDRFilter implements HDRManager.Performer {
         width = imWidth;
         height = imHeight;
         config = imConfig;
-        RsUtils.ErrorViewer(this, "IMAGE DIMENTIONS", " W :"+width+" H :"+height);
+        PYRAMID_LEVELS = (int) (Math.log(Math.min(imWidth, imHeight))/Math.log(2));
+        RsUtils.ErrorViewer(this, "IMAGE DIMENTIONS", " W :" + width + " H :" + height);
+        RsUtils.ErrorViewer(this, "NUMBER OF LEVELS", "" + PYRAMID_LEVELS);
     }
 
     @Override
@@ -233,27 +232,38 @@ public class HDRFilter implements HDRManager.Performer {
             inAlloc.copyFrom(convertAlloc);
             outGaussLevelList.add(convertAlloc);
 
+            int levelWidth = width;
+            int levelHeight = height;
+
             for (int level = 1; level < PYRAMID_LEVELS; level++) {
 
-                Allocation outAlloc = RsUtils.create2d(renderScript,width,height, Element.F32_4(renderScript));
-                Allocation midAlloc = RsUtils.create2d(renderScript,width, height, Element.F32_4(renderScript));
+                int prevW = levelWidth;
+                int prevH = levelHeight;
+
+                levelWidth = levelWidth % 2 == 0 ? levelWidth / 2 : (levelWidth - 1) / 2;
+                levelHeight = levelHeight % 2 == 0 ? levelHeight / 2 : (levelHeight - 1) / 2;
+
+                Log.e(TAG, "generateGaussianPyramid: W : "+levelWidth+" H : "+levelHeight );
+
+                Allocation midAlloc = RsUtils.create2d(renderScript, prevW, prevH, Element.F32_4(renderScript));
 
                 // REDUCE
-                int compressDenom = (int) Math.pow(2, level);
-                scriptGaussian.set_compressTargetWidth(width / compressDenom);
-                scriptGaussian.set_compressTargetHeight(height / compressDenom);
+                scriptGaussian.set_compressTargetWidth(levelWidth);
+                scriptGaussian.set_compressTargetHeight(levelHeight);
 
                 scriptGaussian.set_compressSource(inAlloc);
                 scriptGaussian.forEach_compressFloat4Step1(midAlloc);
+
+                inAlloc = RsUtils.create2d(renderScript, levelWidth, levelHeight, Element.F32_4(renderScript));
+
                 scriptGaussian.set_compressSource(midAlloc);
-                scriptGaussian.forEach_compressFloat4Step2(outAlloc);
-                inAlloc.destroy();
+                scriptGaussian.forEach_compressFloat4Step2(inAlloc);
+
                 midAlloc.destroy();
 
                 // Store Result
-                inAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
-                inAlloc.copyFrom(outAlloc);
-                outGaussLevelList.add(outAlloc);
+
+                outGaussLevelList.add(inAlloc);
             }
             outGaussianAllocationList.add(outGaussLevelList);
         }
@@ -433,6 +443,33 @@ public class HDRFilter implements HDRManager.Performer {
             outAlloc.destroy();
         }
         scriptUtils.destroy();
+        return outBmpList;
+    }
+
+    public static List<Bitmap> convertAllocationBMPDyamic(List<Allocation> inLstAllocation){
+        Allocation outAlloc;
+        Bitmap outBmp;
+        List<Bitmap> outBmpList = new ArrayList<>(inLstAllocation.size());
+
+        int levelWidth = width, levelHeight = height;
+
+        for (int i = 0; i < inLstAllocation.size(); i++) {
+
+            outBmp = Bitmap.createBitmap(levelWidth, levelHeight, config);
+            outAlloc = Allocation.createFromBitmap(renderScript, outBmp);
+
+            // Perform
+            scriptUtils.set_inAlloc(inLstAllocation.get(i));
+            scriptUtils.forEach_convertF4toU4(outAlloc);
+
+            outAlloc.copyTo(outBmp);
+            outBmpList.add(outBmp);
+
+            outAlloc.destroy();
+
+            levelWidth = levelWidth % 2 == 0 ? levelWidth / 2 : (levelWidth - 1) / 2;
+            levelHeight = levelHeight % 2 == 0 ? levelHeight / 2 : (levelHeight - 1) / 2;
+        }
         return outBmpList;
     }
 

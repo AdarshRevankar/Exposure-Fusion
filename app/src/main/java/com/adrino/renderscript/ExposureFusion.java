@@ -81,4 +81,9 @@ public class ExposureFusion implements HDRManager.Presenter {
         SELECTED_INDEX = selected;
         return perform(bmpImagesList, action);
     }
+
+    List<Bitmap> gaussianPyramid(List<Bitmap> inImage, Actions action, int selected){
+        SELECTED_INDEX = selected;
+        return HDRFilter.convertAllocationBMPDyamic(hdrFilter.generateGaussianPyramid(inImage).get(SELECTED_INDEX));
+    }
 }
