@@ -85,10 +85,6 @@ float4 __attribute__((kernel)) expandFloat4Step1(int32_t x, int32_t y) {
     else if(y == 0 || y == 1){
         out += rsGetElementAt_float4(expandSource, x, y);
     }
-    else{
-        out += 1;
-    }
-
     return out;
 }
 
@@ -103,9 +99,9 @@ float4 __attribute__((kernel)) expandFloat4Step2(int32_t x, int32_t y) {
 
         if(xp * 2 == x) {
             // Even number, we are in-line with the source
-            out += rsGetElementAt_float4(expandSource, xp - 1, y) * 0.275f;
-            out += rsGetElementAt_float4(expandSource, xp, y) * 0.45f;
-            out += rsGetElementAt_float4(expandSource, xp + 1, y) * 0.275f;
+            out += rsGetElementAt_float4(expandSource, xp - 1, y) * 0.175f;
+            out += rsGetElementAt_float4(expandSource, xp, y) * 0.65f;
+            out += rsGetElementAt_float4(expandSource, xp + 1, y) * 0.175f;
 
         } else {
             // Odd number, we are in-between the source
@@ -115,9 +111,6 @@ float4 __attribute__((kernel)) expandFloat4Step2(int32_t x, int32_t y) {
     }
     else if(x == 0 || x == 1){
         out += rsGetElementAt_float4(expandSource, x, y);
-    }
-    else{
-        out += 1;
     }
 
     return out;

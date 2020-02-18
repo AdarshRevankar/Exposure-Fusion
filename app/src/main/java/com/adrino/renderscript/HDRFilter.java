@@ -264,6 +264,8 @@ public class HDRFilter implements HDRManager.Performer {
 
                 Allocation midAlloc = RsUtils.create2d(renderScript, prevW, prevH, Element.F32_4(renderScript));
 
+                Log.e(TAG, "gaussianPyramid: W : " + levelWidth + " H : " + levelHeight);
+
                 // REDUCE
                 scriptGaussian.set_compressTargetWidth(levelWidth);
                 scriptGaussian.set_compressTargetHeight(levelHeight);
@@ -330,6 +332,7 @@ public class HDRFilter implements HDRManager.Performer {
                 Allocation outAlloc = RsUtils.create2d(renderScript, prevW, lapH, elementFloat4);
                 Allocation expandedAlloc = RsUtils.create2d(renderScript, lapW, lapH, elementFloat4);
 
+                Log.e(TAG, "generateLaplacianPyramids: W : " + lapW + " H : " + lapH);
 
                 scriptGaussian.set_expandTargetWidth(lapW);
                 scriptGaussian.set_expandTargetHeight(lapH);
@@ -380,6 +383,7 @@ public class HDRFilter implements HDRManager.Performer {
         for (int level = 0; level < PYRAMID_LEVELS; level++) {
             Allocation outAlloc = RsUtils.create2d(renderScript, levelsMeta.get(level).width, levelsMeta.get(level).height, elementFloat4);
 
+            Log.e(TAG, "generateResultant: W : "+levelsMeta.get(level).width+" H : "+levelsMeta.get(level).height );
             // - - - - Script - - - - -
             scriptCollapse.set_GP1(gaussianPyramids.get(0).get(level));
             scriptCollapse.set_GP2(gaussianPyramids.get(1).get(level));
@@ -390,22 +394,15 @@ public class HDRFilter implements HDRManager.Performer {
             scriptCollapse.forEach_multiplyBMP(outAlloc);
 
             resultantPyramid.add(outAlloc);
-
-            gaussianPyramids.get(0).get(level).destroy();
-            gaussianPyramids.get(1).get(level).destroy();
-            gaussianPyramids.get(2).get(level).destroy();
-            laplacianPyramids.get(0).get(level).destroy();
-            laplacianPyramids.get(1).get(level).destroy();
-            laplacianPyramids.get(2).get(level).destroy();
         }
 
-        RsUtils.ErrorViewer(this, "RESULTANT PYRAMID", "FINISHED");
+        RsUtils.ErrorViewer(this, "RESULTANT PYRAMID", "FINISHED  - Length : "+resultantPyramid.size());
         return resultantPyramid;
     }
 
     @Override
     public List<Allocation> collapseResultant(List<Allocation> resultant) {
-
+        int lowestLevel = PYRAMID_LEVELS - 1;
         scriptCollapse = new ScriptC_Collapse(renderScript);
         scriptGaussian = new ScriptC_Gaussian(renderScript);
         List<Allocation> collapsedList = new ArrayList<>(PYRAMID_LEVELS);
@@ -415,7 +412,7 @@ public class HDRFilter implements HDRManager.Performer {
                                                     levelsMeta.get(PYRAMID_LEVELS-2).height,
                                                     elementFloat4);
 
-        for (int level = PYRAMID_LEVELS - 2; level >= 0; level--) {
+        for (int level = lowestLevel - 1; level >= 0; level--) {
             int lapW = levelsMeta.get(level).width;
             int lapH = levelsMeta.get(level).height;
             int prevW = levelsMeta.get(level + 1).width;
@@ -539,6 +536,7 @@ public class HDRFilter implements HDRManager.Performer {
         Allocation outAlloc;
         Bitmap outBmp;
         List<Bitmap> outBmpList = new ArrayList<>(inLstAllocation.size());
+        scriptUtils = new ScriptC_utils(renderScript);
 
         int levelWidth = levelsMeta.get(0).width, levelHeight = levelsMeta.get(0).height;
 

@@ -15,6 +15,10 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.adrino.renderscript.MainActivity.SOURCE1;
+import static com.adrino.renderscript.MainActivity.SOURCE2;
+import static com.adrino.renderscript.MainActivity.SOURCE3;
+
 public class Collapse extends AppCompatActivity {
     ExposureFusion exposureFusion;
     List<Bitmap> bmpImages;
@@ -46,6 +50,7 @@ public class Collapse extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        ((ImageView)findViewById(R.id.original)).setImageBitmap(bmpImages.get(0));
                         ((ImageView) findViewById(R.id.hdr)).setImageBitmap(hdrOutput.get(0));
                     }
                 });
@@ -58,10 +63,9 @@ public class Collapse extends AppCompatActivity {
             bmpImages = new ArrayList<>();
             BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
             imgLoadOption.inSampleSize = ExposureFusion.SAMPLE_SIZE;
-            bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption));
-            bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption));
-            bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption));
-            exposureFusion.setMeta(bmpImages.get(0).getWidth(), bmpImages.get(0).getHeight(), bmpImages.get(0).getConfig());
+            bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE1, imgLoadOption));
+            bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE2, imgLoadOption));
+            bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE3, imgLoadOption));
             return exposureFusion.perform(bmpImages, ExposureFusion.Actions.RESULTANT);
         }
         return null;
