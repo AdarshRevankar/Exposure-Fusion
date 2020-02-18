@@ -9,7 +9,7 @@ import java.util.List;
 
 public class ExposureFusion implements HDRManager.Presenter {
 
-    public static final int SAMPLE_SIZE = 9;
+    public static final int SAMPLE_SIZE = 5;
     private static final String TAG = "ExposureFusion";
     private static int SELECTED_INDEX = 0;
     private static HDRFilter hdrFilter;
@@ -24,7 +24,6 @@ public class ExposureFusion implements HDRManager.Presenter {
 
     enum Actions {CONTRAST, SATURATION, EXPOSED, NORMAL, GAUSSIAN, LAPLACIAN, RESULTANT, COLLAPSE}
 
-    ;
 
     ExposureFusion(Context context) {
         if (hdrFilter == null)
@@ -65,13 +64,13 @@ public class ExposureFusion implements HDRManager.Presenter {
             case NORMAL:
                 return HDRFilter.convertAllocationToBMP(normal, HDRFilter.DATA_TYPE.FLOAT32);
             case GAUSSIAN:
-                return HDRFilter.convertAllocationToBMP(gaussian.get(SELECTED_INDEX), HDRFilter.DATA_TYPE.FLOAT32_4);
+                return hdrFilter.convertAllocationBMPDyamic(gaussian.get(SELECTED_INDEX));
             case LAPLACIAN:
-                return HDRFilter.convertAllocationToBMP(laplacian.get(SELECTED_INDEX), HDRFilter.DATA_TYPE.FLOAT32_4);
+                return hdrFilter.convertAllocationBMPDyamic(laplacian.get(SELECTED_INDEX));
             case RESULTANT:
-                return HDRFilter.convertAllocationToBMP(resultant, HDRFilter.DATA_TYPE.FLOAT32_4);
+                return hdrFilter.convertAllocationBMPDyamic(resultant);
             case COLLAPSE:
-                return HDRFilter.convertAllocationToBMP(collapse, HDRFilter.DATA_TYPE.FLOAT32_4);
+                return hdrFilter.convertAllocationBMPDyamic(collapse);
         }
         return null;
     }
@@ -80,5 +79,35 @@ public class ExposureFusion implements HDRManager.Presenter {
     public List<Bitmap> perform(List<Bitmap> bmpImagesList, Actions action, int selected) {
         SELECTED_INDEX = selected;
         return perform(bmpImagesList, action);
+    }
+
+//    List<Bitmap> gaussianPyramid(List<Bitmap> inImage, Actions action, int selected){
+//        SELECTED_INDEX = selected;
+//        return hdrFilter.convertAllocationBMPDyamic(hdrFilter.generateGaussianPyramid(hdrFilter.computeNormalWeighted(
+//                hdrFilter.applyConvolution3x3Filter(inImage),
+//                hdrFilter.applySaturationFilter(inImage),
+//                hdrFilter.applyExposureFilter(inImage)
+//        ), HDRFilter.DATA_TYPE.FLOAT32).get(SELECTED_INDEX));
+//    }
+//
+//    List<Bitmap> laplacianPyramid(List<Bitmap> inImage, Actions action, int selected){
+//        SELECTED_INDEX = selected;
+//        return hdrFilter.convertAllocationBMPDyamic(hdrFilter.generateLaplacianPyramids(inImage).get(SELECTED_INDEX));
+//    }
+
+    @Override
+    public Bitmap computeHDR(List<Bitmap> bmpInImages) {
+        return hdrFilter.convertAllocationBMPDyamic(hdrFilter.collapseResultant(
+                hdrFilter.generateResultant(
+                        hdrFilter.generateGaussianPyramid(
+                                hdrFilter.computeNormalWeighted(
+                                        hdrFilter.applyConvolution3x3Filter(bmpInImages),
+                                        hdrFilter.applySaturationFilter(bmpInImages),
+                                        hdrFilter.applyExposureFilter(bmpInImages)
+                                ), HDRFilter.DATA_TYPE.FLOAT32
+                        ),
+                        hdrFilter.generateLaplacianPyramids(bmpInImages)
+                )
+        )).get(0);
     }
 }

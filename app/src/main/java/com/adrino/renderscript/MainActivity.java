@@ -17,6 +17,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
     private static final String TAG = "MainActivity";
     ExposureFusion expFusion;
     List<Bitmap> bmpImgList, saturation, contrast, exposed, norm;
+    static int SOURCE1, SOURCE2, SOURCE3;
 
 
     @Override
@@ -24,14 +25,17 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
         super.onCreate(savedInstanceState);
         expFusion = new ExposureFusion(this);
         setContentView(R.layout.activity_main);
+        SOURCE1 = R.drawable.iphone1;
+        SOURCE2 = R.drawable.iphone2;
+        SOURCE3 = R.drawable.iphone3;
 
         /*---------------------- Load Images ----------------------*/
         bmpImgList = new ArrayList<>(3);
         BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
         imgLoadOption.inSampleSize = ExposureFusion.SAMPLE_SIZE;
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption));
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption));
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption));
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE1, imgLoadOption));
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE2, imgLoadOption));
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE3, imgLoadOption));
 
         /*---------------------- Set Images ----------------------*/
         ((ImageView) findViewById(R.id.pic1)).setImageBitmap(bmpImgList.get(0));

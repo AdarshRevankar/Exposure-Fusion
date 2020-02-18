@@ -38,17 +38,14 @@ float4 __attribute__((kernel)) collapse(float4 in, int32_t x, int32_t y) {
     float4 res = rsGetElementAt_float4(collapseLevel, x, y) + in;
 
 
-    if(res.r > 1){
-        res.r = 1;
-    }
+    res.r = res.r > 1 ? 1:res.r;
+    res.r = res.r < 0 ? 0:res.r;
 
-    if(res.g > 1){
-        res.g = 1;
-    }
+    res.g = res.g > 1 ? 1:res.g;
+    res.g = res.g < 0 ? 0:res.g;
 
-    if(res.b > 1){
-        res.b = 1;
-    }
+    res.b = res.b > 1 ? 1:res.b;
+    res.b = res.b < 0 ? 0:res.b;
 
     res.a = 1;
     return res;

@@ -1,65 +1,89 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000"
+    android:orientation="vertical"
     tools:context=".Pyramids">
-    <Button
-        android:id="@+id/txtGP"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        android:text="Gaussian Pyramid"
-        android:background="#262626"
-        android:onClick="createGauzz"
-        android:gravity="center"/>
-
-    <Button
-        android:id="@+id/lapButton"
-        android:layout_below="@+id/txtGP"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        android:text="Laplacian Pyramid"
-        android:onClick="createLaplacian"
-        android:background="#060606"
-        android:gravity="center"/>
 
     <LinearLayout
-        android:id="@+id/options"
-        android:layout_below="@id/lapButton"
+        android:id="@+id/llButtons"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:orientation="horizontal">
-        <Button
-            android:onClick="set1"
-            android:layout_weight="1"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="1"/>
+            android:layout_weight="1"
+            android:layout_height="match_parent">
+            <Button
+                android:id="@+id/btnGP"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:text="Gaussian Pyramid"
+                android:background="#262626"
+                android:onClick="createGauzz"
+                android:gravity="center"/>
 
-        <Button
-            android:onClick="set2"
-            android:layout_weight="1"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="2"/>
+            <Button
+                android:id="@+id/btnLP"
+                android:layout_below="@+id/btnGP"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:text="Laplacian Pyramid"
+                android:onClick="createLaplacian"
+                android:background="#060606"
+                android:gravity="center"/>
+            <LinearLayout
+                android:id="@+id/options"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:orientation="horizontal">
+                <Button
+                    android:onClick="set1"
+                    android:layout_weight="1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="1"/>
 
-        <Button
-            android:onClick="set3"
-            android:layout_weight="1"
-            android:layout_width="match_parent"
+                <Button
+                    android:onClick="set2"
+                    android:layout_weight="1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="2"/>
+
+                <Button
+                    android:onClick="set3"
+                    android:layout_weight="1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="3"/>
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:text="3"/>
+            android:layout_weight="1">
+            <Button
+                android:id="@+id/HDR"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="HDR"
+                android:onClick="computeHDR"/>
+        </LinearLayout>
     </LinearLayout>
 
+
     <LinearLayout
-        android:layout_below="@+id/options"
         android:layout_width="match_parent"
+        android:id="@id/options"
         android:layout_height="match_parent"
         android:orientation="horizontal"
         android:layout_weight="1">
@@ -204,4 +228,4 @@
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
-</RelativeLayout>
+</LinearLayout>

@@ -40,3 +40,12 @@ public class RsUtils {
 
     }
 }
+
+class Level{
+    int width, height;
+
+    Level(int width, int height){
+        this.width = width;
+        this.height = height;
+    }
+}
