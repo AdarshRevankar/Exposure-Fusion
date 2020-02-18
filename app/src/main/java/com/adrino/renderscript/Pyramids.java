@@ -28,94 +28,117 @@ public class Pyramids extends AppCompatActivity {
 
         exposureFusion = new ExposureFusion(this);
         bmpImgList = new ArrayList<>();
+
+        BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
+        imgLoadOption.inSampleSize = 9;
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption));
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption));
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption));
+        exposureFusion.setMeta(bmpImgList.get(0).getWidth(), bmpImgList.get(0).getHeight(), bmpImgList.get(0).getConfig());
     }
 
-    public void createLaplacian(View view) {
-        isGauss = false;
+//    public void createLaplacian(View view) {
+//        isGauss = false;
+//
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                if (gaussianLayers != null) {
+//                    laplacianPyr = exposureFusion.laplacianPyramid(bmpImgList, ExposureFusion.Actions.LAPLACIAN, SELECTED_INDEX);
+//                    runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            (findViewById(R.id.btnLP)).setBackgroundColor(Color.parseColor("#ff262626"));
+//                            (findViewById(R.id.btnGP)).setBackgroundColor(Color.parseColor("#ff060606"));
+//                            (findViewById(R.id.HDR)).setBackgroundColor(Color.parseColor("#ff060606"));
+//                            ((ImageView) findViewById(R.id.g0)).setImageBitmap(laplacianPyr.get(0));
+//                            ((ImageView) findViewById(R.id.g1)).setImageBitmap(laplacianPyr.get(1));
+//                            ((ImageView) findViewById(R.id.g2)).setImageBitmap(laplacianPyr.get(2));
+//                            ((ImageView) findViewById(R.id.g3)).setImageBitmap(laplacianPyr.get(3));
+//                            ((ImageView) findViewById(R.id.g4)).setImageBitmap(laplacianPyr.get(4));
+//                            ((ImageView) findViewById(R.id.g5)).setImageBitmap(laplacianPyr.get(5));
+//                        }
+//                    });
+//                }
+//            }
+//        }).start();
+//
+//    }
 
+    public void computeHDR(View view) {
         new Thread(new Runnable() {
             @Override
             public void run() {
-            if(gaussianLayers != null){
-                laplacianPyr = exposureFusion.laplacianPyramid(bmpImgList, ExposureFusion.Actions.LAPLACIAN, SELECTED_INDEX);
+                final Bitmap hdr = exposureFusion.computeHDR(bmpImgList);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        (findViewById(R.id.lapButton)).setBackgroundColor(Color.parseColor("#ff262626"));
-                        (findViewById(R.id.txtGP)).setBackgroundColor(Color.parseColor("#ff060606"));
-                        ((ImageView)findViewById(R.id.g0)).setImageBitmap(laplacianPyr.get(0));
-                        ((ImageView)findViewById(R.id.g1)).setImageBitmap(laplacianPyr.get(1));
-                        ((ImageView)findViewById(R.id.g2)).setImageBitmap(laplacianPyr.get(2));
-                        ((ImageView)findViewById(R.id.g3)).setImageBitmap(laplacianPyr.get(3));
-                        ((ImageView)findViewById(R.id.g4)).setImageBitmap(laplacianPyr.get(4));
-                        ((ImageView)findViewById(R.id.g5)).setImageBitmap(laplacianPyr.get(5));
+                        ((ImageView)findViewById(R.id.g0)).setImageBitmap(hdr);
                     }
                 });
             }
-            }
-        }).start();
-
-    }
-
-    public void createGauzz(View view) {
-        isGauss = true;
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
-                imgLoadOption.inSampleSize = ExposureFusion.SAMPLE_SIZE;
-                bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption));
-                bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption));
-                bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption));
-                exposureFusion.setMeta(bmpImgList.get(0).getWidth(), bmpImgList.get(0).getHeight(), bmpImgList.get(0).getConfig());
-
-                gaussianLayers = exposureFusion.gaussianPyramid(bmpImgList, ExposureFusion.Actions.GAUSSIAN, SELECTED_INDEX);
-
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        (findViewById(R.id.lapButton)).setBackgroundColor(Color.parseColor("#ff060606"));
-                        (findViewById(R.id.txtGP)).setBackgroundColor(Color.parseColor("#ff262626"));
-                        ((ImageView) findViewById(R.id.g0)).setImageBitmap(gaussianLayers.get(0));
-                        ((ImageView) findViewById(R.id.g1)).setImageBitmap(gaussianLayers.get(1));
-                        ((ImageView) findViewById(R.id.g2)).setImageBitmap(gaussianLayers.get(2));
-                        ((ImageView) findViewById(R.id.g3)).setImageBitmap(gaussianLayers.get(3));
-                        ((ImageView) findViewById(R.id.g4)).setImageBitmap(gaussianLayers.get(4));
-                        ((ImageView) findViewById(R.id.g5)).setImageBitmap(gaussianLayers.get(5));
-                    }
-                });
-
-            }
         }).start();
     }
-
-
-
-    public void set1(View view) {
-        SELECTED_INDEX = 0;
-        if(isGauss){
-            createGauzz(view);
-        }else{
-            createLaplacian(view);
-        }
-    }
-
-    public void set2(View view) {
-        SELECTED_INDEX = 1;
-        if(isGauss){
-            createGauzz(view);
-        }else{
-             createLaplacian(view);
-        }
-    }
-
-    public void set3(View view) {
-        SELECTED_INDEX = 2;
-        if(isGauss){
-            createGauzz(view);
-        }else{
-             createLaplacian(view);
-        }
-    }
+//
+//    public void createGauzz(View view) {
+//        isGauss = true;
+//
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
+//                imgLoadOption.inSampleSize = ExposureFusion.SAMPLE_SIZE;
+//                bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp1, imgLoadOption));
+//                bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp2, imgLoadOption));
+//                bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.exp3, imgLoadOption));
+//                exposureFusion.setMeta(bmpImgList.get(0).getWidth(), bmpImgList.get(0).getHeight(), bmpImgList.get(0).getConfig());
+//
+//                gaussianLayers = exposureFusion.gaussianPyramid(bmpImgList, ExposureFusion.Actions.GAUSSIAN, SELECTED_INDEX);
+//
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        (findViewById(R.id.btnLP)).setBackgroundColor(Color.parseColor("#ff060606"));
+//                        (findViewById(R.id.btnGP)).setBackgroundColor(Color.parseColor("#ff262626"));
+//                        (findViewById(R.id.HDR)).setBackgroundColor(Color.parseColor("#ff060606"));
+//                        ((ImageView) findViewById(R.id.g0)).setImageBitmap(gaussianLayers.get(0));
+//                        ((ImageView) findViewById(R.id.g1)).setImageBitmap(gaussianLayers.get(1));
+//                        ((ImageView) findViewById(R.id.g2)).setImageBitmap(gaussianLayers.get(2));
+//                        ((ImageView) findViewById(R.id.g3)).setImageBitmap(gaussianLayers.get(3));
+//                        ((ImageView) findViewById(R.id.g4)).setImageBitmap(gaussianLayers.get(4));
+//                        ((ImageView) findViewById(R.id.g5)).setImageBitmap(gaussianLayers.get(5));
+//                    }
+//                });
+//
+//            }
+//        }).start();
+//    }
+//
+//
+//    public void set1(View view) {
+//        SELECTED_INDEX = 0;
+//        if (isGauss) {
+//            createGauzz(view);
+//        } else {
+//            createLaplacian(view);
+//        }
+//    }
+//
+//    public void set2(View view) {
+//        SELECTED_INDEX = 1;
+//        if (isGauss) {
+//            createGauzz(view);
+//        } else {
+//            createLaplacian(view);
+//        }
+//    }
+//
+//    public void set3(View view) {
+//        SELECTED_INDEX = 2;
+//        if (isGauss) {
+//            createGauzz(view);
+//        } else {
+//            createLaplacian(view);
+//        }
+//    }
 }

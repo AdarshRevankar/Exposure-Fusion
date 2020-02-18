@@ -82,9 +82,16 @@ float4 __attribute__((kernel)) expandFloat4Step1(int32_t x, int32_t y) {
             out += rsGetElementAt_float4(expandSource, x, yp + 1) * 0.5f;
         }
     }
+    else if(y == 0 || y == 1){
+        out += rsGetElementAt_float4(expandSource, x, y);
+    }
+    else{
+        out += 1;
+    }
 
     return out;
 }
+
 
 // Step 2: expand the X direction
 float4 __attribute__((kernel)) expandFloat4Step2(int32_t x, int32_t y) {
@@ -106,6 +113,13 @@ float4 __attribute__((kernel)) expandFloat4Step2(int32_t x, int32_t y) {
             out += rsGetElementAt_float4(expandSource, xp + 1, y) * 0.5f;
         }
     }
+    else if(x == 0 || x == 1){
+        out += rsGetElementAt_float4(expandSource, x, y);
+    }
+    else{
+        out += 1;
+    }
+
     return out;
 }
 
