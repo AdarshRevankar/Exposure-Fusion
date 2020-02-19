@@ -85,6 +85,9 @@ float4 __attribute__((kernel)) expandFloat4Step1(int32_t x, int32_t y) {
     else if(y == 0 || y == 1){
         out += rsGetElementAt_float4(expandSource, x, y);
     }
+    else {
+        out += 1;
+    }
     return out;
 }
 
@@ -112,7 +115,9 @@ float4 __attribute__((kernel)) expandFloat4Step2(int32_t x, int32_t y) {
     else if(x == 0 || x == 1){
         out += rsGetElementAt_float4(expandSource, x, y);
     }
-
+    else {
+        out += 1;
+    }
     return out;
 }
 

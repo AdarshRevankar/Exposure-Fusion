@@ -32,7 +32,6 @@ public interface HDRManager {
         List<Bitmap> perform(List<Bitmap> bmpImagesList, ExposureFusion.Actions action);
         List<Bitmap> perform(List<Bitmap> bmpImagesList, ExposureFusion.Actions action, int selected);
         void setMeta(int imgWidth, int imgHeight, Bitmap.Config imgConfig);
-        Bitmap computeHDR(List<Bitmap> bmpInImages);
     }
 
     interface Viewer{

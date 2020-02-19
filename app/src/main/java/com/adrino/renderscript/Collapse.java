@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,9 +13,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.adrino.renderscript.MainActivity.SCALE_THRUSHOLD;
 import static com.adrino.renderscript.MainActivity.SOURCE1;
 import static com.adrino.renderscript.MainActivity.SOURCE2;
 import static com.adrino.renderscript.MainActivity.SOURCE3;
@@ -24,6 +27,7 @@ public class Collapse extends AppCompatActivity {
     List<Bitmap> bmpImages;
     private static final String TAG = "Collapse";
     private List<Bitmap> hdrOutput;
+    private boolean set = false;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -46,26 +50,58 @@ public class Collapse extends AppCompatActivity {
                     }
                 });
 
+                long start = System.currentTimeMillis();
                 hdrOutput = exposureFusion.perform(bmpImages, ExposureFusion.Actions.COLLAPSE);
+                long end = System.currentTimeMillis();
+
+                Log.e(TAG, "run: Total time : "+(float)(end - start)/1000+" s");
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        ((ImageView)findViewById(R.id.original)).setImageBitmap(bmpImages.get(0));
+                        ((ImageView)findViewById(R.id.original)).setImageBitmap(bmpImages.get(2));
                         ((ImageView) findViewById(R.id.hdr)).setImageBitmap(hdrOutput.get(0));
                     }
                 });
             }
         }).start();
+
+        (findViewById(R.id.hdr)).setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+
+                ImageView imgView = findViewById(R.id.expanded_image);
+                if(!set){
+                    if(hdrOutput!=null) {
+                        imgView.setVisibility(View.VISIBLE);
+                        imgView.setImageBitmap(hdrOutput.get(0));
+                        set = true;
+                    }
+                }
+                else{
+                    imgView.setVisibility(View.INVISIBLE);
+                    set = false;
+                }
+
+                return true;
+            }
+        });
     }
 
     List<Bitmap> generateResultant() {
         if (bmpImages == null) {
             bmpImages = new ArrayList<>();
-            BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
-            imgLoadOption.inSampleSize = ExposureFusion.SAMPLE_SIZE;
-            bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE1, imgLoadOption));
-            bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE2, imgLoadOption));
-            bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE3, imgLoadOption));
+
+            bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE1));
+            bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE2));
+            bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE3));
+
+            int imgWidth = bmpImages.get(0).getWidth();
+            int imgHeight = bmpImages.get(0).getHeight();
+            int scaledWidth = imgHeight > imgWidth ? (imgWidth * SCALE_THRUSHOLD) / imgHeight : SCALE_THRUSHOLD;
+            int scaledHeight = imgHeight > imgWidth ? SCALE_THRUSHOLD : (imgHeight * SCALE_THRUSHOLD) / imgWidth ;
+            for (int i = 0; i < bmpImages.size(); i++) {
+                bmpImages.set(i, Bitmap.createScaledBitmap(bmpImages.get(i), scaledWidth, scaledHeight, false));
+            }
             return exposureFusion.perform(bmpImages, ExposureFusion.Actions.RESULTANT);
         }
         return null;

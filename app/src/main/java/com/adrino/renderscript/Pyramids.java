@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.adrino.renderscript.MainActivity.SCALE_THRUSHOLD;
 import static com.adrino.renderscript.MainActivity.SOURCE1;
 import static com.adrino.renderscript.MainActivity.SOURCE2;
 import static com.adrino.renderscript.MainActivity.SOURCE3;
@@ -31,13 +32,20 @@ public class Pyramids extends AppCompatActivity {
         setContentView(R.layout.activity_pyramids);
 
         exposureFusion = new ExposureFusion(this);
-        bmpImgList = new ArrayList<>();
 
-        BitmapFactory.Options imgLoadOption = new BitmapFactory.Options();
-        imgLoadOption.inSampleSize = ExposureFusion.SAMPLE_SIZE;
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE1, imgLoadOption));
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE2, imgLoadOption));
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE3, imgLoadOption));
+        bmpImgList = new ArrayList<>();
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE1));
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE2));
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE3));
+
+        int imgWidth = bmpImgList.get(0).getWidth();
+        int imgHeight = bmpImgList.get(0).getHeight();
+        int scaledWidth = imgHeight > imgWidth ? (imgWidth * SCALE_THRUSHOLD) / imgHeight : SCALE_THRUSHOLD;
+        int scaledHeight = imgHeight > imgWidth ? SCALE_THRUSHOLD : (imgHeight * SCALE_THRUSHOLD) / imgWidth ;
+        for (int i = 0; i < bmpImgList.size(); i++) {
+            bmpImgList.set(i, Bitmap.createScaledBitmap(bmpImgList.get(i), scaledWidth, scaledHeight, false));
+        }
+
         exposureFusion.setMeta(bmpImgList.get(0).getWidth(), bmpImgList.get(0).getHeight(), bmpImgList.get(0).getConfig());
     }
 
@@ -54,7 +62,6 @@ public class Pyramids extends AppCompatActivity {
                         public void run() {
                             (findViewById(R.id.btnLP)).setBackgroundColor(Color.parseColor("#ff262626"));
                             (findViewById(R.id.btnGP)).setBackgroundColor(Color.parseColor("#ff060606"));
-                            (findViewById(R.id.HDR)).setBackgroundColor(Color.parseColor("#ff060606"));
                             ((ImageView) findViewById(R.id.g0)).setImageBitmap(laplacianPyr.get(0));
                             ((ImageView) findViewById(R.id.g1)).setImageBitmap(laplacianPyr.get(1));
                             ((ImageView) findViewById(R.id.g2)).setImageBitmap(laplacianPyr.get(2));
@@ -67,21 +74,6 @@ public class Pyramids extends AppCompatActivity {
             }
         }).start();
 
-    }
-
-    public void computeHDR(View view) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                final Bitmap hdr = exposureFusion.computeHDR(bmpImgList);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        ((ImageView)findViewById(R.id.g0)).setImageBitmap(hdr);
-                    }
-                });
-            }
-        }).start();
     }
 
     public void createGauzz(View view) {
@@ -97,7 +89,6 @@ public class Pyramids extends AppCompatActivity {
                     public void run() {
                         (findViewById(R.id.btnLP)).setBackgroundColor(Color.parseColor("#ff060606"));
                         (findViewById(R.id.btnGP)).setBackgroundColor(Color.parseColor("#ff262626"));
-                        (findViewById(R.id.HDR)).setBackgroundColor(Color.parseColor("#ff060606"));
                         ((ImageView) findViewById(R.id.g0)).setImageBitmap(gaussianLayers.get(0));
                         ((ImageView) findViewById(R.id.g1)).setImageBitmap(gaussianLayers.get(1));
                         ((ImageView) findViewById(R.id.g2)).setImageBitmap(gaussianLayers.get(2));

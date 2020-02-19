@@ -86,9 +86,16 @@
                     android:layout_height="match_parent"
                     android:layout_gravity="center"
                     android:layout_weight="1"
-                    android:src="@drawable/exp2"/>
+                    android:src="@drawable/ic_broken_image_black_24dp"/>
 
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
+    <ImageView
+        android:id="@+id/expanded_image"
+        android:layout_width="300dp"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:layout_height="300dp"
+        android:visibility="invisible"/>
 </RelativeLayout>
