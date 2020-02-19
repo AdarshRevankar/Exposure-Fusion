@@ -2,6 +2,7 @@ package com.adrino.renderscript;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import androidx.renderscript.Allocation;
 
@@ -9,7 +10,8 @@ import java.util.List;
 
 public class ExposureFusion implements HDRManager.Presenter {
 
-    public static final int SAMPLE_SIZE = 5;
+    public static boolean MEM_BOOST;
+    public static final int SAMPLE_SIZE = 1;
     private static final String TAG = "ExposureFusion";
     private static int SELECTED_INDEX = 0;
     private static HDRFilter hdrFilter;
@@ -38,6 +40,7 @@ public class ExposureFusion implements HDRManager.Presenter {
     @Override
     public List<Bitmap> perform(List<Bitmap> bmpImagesList, Actions action) {
 
+        Log.e(TAG, "perform: contrast : "+contrast);
         if (contrast == null) contrast = hdrFilter.applyConvolution3x3Filter(bmpImagesList);
         if (saturation == null) saturation = hdrFilter.applySaturationFilter(bmpImagesList);
         if (well_exposedness == null)
@@ -94,20 +97,4 @@ public class ExposureFusion implements HDRManager.Presenter {
 //        SELECTED_INDEX = selected;
 //        return hdrFilter.convertAllocationBMPDyamic(hdrFilter.generateLaplacianPyramids(inImage).get(SELECTED_INDEX));
 //    }
-
-    @Override
-    public Bitmap computeHDR(List<Bitmap> bmpInImages) {
-        return hdrFilter.convertAllocationBMPDyamic(hdrFilter.collapseResultant(
-                hdrFilter.generateResultant(
-                        hdrFilter.generateGaussianPyramid(
-                                hdrFilter.computeNormalWeighted(
-                                        hdrFilter.applyConvolution3x3Filter(bmpInImages),
-                                        hdrFilter.applySaturationFilter(bmpInImages),
-                                        hdrFilter.applyExposureFilter(bmpInImages)
-                                ), HDRFilter.DATA_TYPE.FLOAT32
-                        ),
-                        hdrFilter.generateLaplacianPyramids(bmpInImages)
-                )
-        )).get(0);
-    }
 }
