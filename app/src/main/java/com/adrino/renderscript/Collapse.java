@@ -13,7 +13,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,21 +34,36 @@ public class Collapse extends AppCompatActivity {
         setContentView(R.layout.activity_collapse);
         exposureFusion = new ExposureFusion(this);
 
+        bmpImages = new ArrayList<>();
+
+        bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE1));
+        bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE2));
+        bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE3));
+
+        int imgWidth = bmpImages.get(0).getWidth();
+        int imgHeight = bmpImages.get(0).getHeight();
+        int scaledWidth = imgHeight > imgWidth ? (imgWidth * SCALE_THRUSHOLD) / imgHeight : SCALE_THRUSHOLD;
+        int scaledHeight = imgHeight > imgWidth ? SCALE_THRUSHOLD : (imgHeight * SCALE_THRUSHOLD) / imgWidth ;
+        for (int i = 0; i < bmpImages.size(); i++) {
+            bmpImages.set(i, Bitmap.createScaledBitmap(bmpImages.get(i), scaledWidth, scaledHeight, false));
+        }
+
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final List<Bitmap> resultant = generateResultant();
+                if(!HDRFilter.MEM_BOOST) {
+                    final List<Bitmap> resultant = exposureFusion.perform(bmpImages, ExposureFusion.Actions.RESULTANT);
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        ((ImageView) findViewById(R.id.res1)).setImageBitmap(resultant.get(0));
-                        ((ImageView) findViewById(R.id.res2)).setImageBitmap(resultant.get(1));
-                        ((ImageView) findViewById(R.id.res3)).setImageBitmap(resultant.get(2));
-                        ((ImageView) findViewById(R.id.res4)).setImageBitmap(resultant.get(3));
-                    }
-                });
-
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((ImageView) findViewById(R.id.res1)).setImageBitmap(resultant.get(0));
+                            ((ImageView) findViewById(R.id.res2)).setImageBitmap(resultant.get(1));
+                            ((ImageView) findViewById(R.id.res3)).setImageBitmap(resultant.get(2));
+                            ((ImageView) findViewById(R.id.res4)).setImageBitmap(resultant.get(3));
+                        }
+                    });
+                }
                 long start = System.currentTimeMillis();
                 hdrOutput = exposureFusion.perform(bmpImages, ExposureFusion.Actions.COLLAPSE);
                 long end = System.currentTimeMillis();
@@ -85,26 +99,6 @@ public class Collapse extends AppCompatActivity {
                 return true;
             }
         });
-    }
-
-    List<Bitmap> generateResultant() {
-        if (bmpImages == null) {
-            bmpImages = new ArrayList<>();
-
-            bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE1));
-            bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE2));
-            bmpImages.add(BitmapFactory.decodeResource(getResources(), SOURCE3));
-
-            int imgWidth = bmpImages.get(0).getWidth();
-            int imgHeight = bmpImages.get(0).getHeight();
-            int scaledWidth = imgHeight > imgWidth ? (imgWidth * SCALE_THRUSHOLD) / imgHeight : SCALE_THRUSHOLD;
-            int scaledHeight = imgHeight > imgWidth ? SCALE_THRUSHOLD : (imgHeight * SCALE_THRUSHOLD) / imgWidth ;
-            for (int i = 0; i < bmpImages.size(); i++) {
-                bmpImages.set(i, Bitmap.createScaledBitmap(bmpImages.get(i), scaledWidth, scaledHeight, false));
-            }
-            return exposureFusion.perform(bmpImages, ExposureFusion.Actions.RESULTANT);
-        }
-        return null;
     }
 
     private void saveBitmaps(Bitmap bitmap, String filename){

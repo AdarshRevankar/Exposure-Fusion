@@ -16,6 +16,8 @@ import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import com.adrino.renderscript.visual.ViewDialog;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -35,20 +37,19 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
     private Runnable periodicUpdate = new Runnable() {
         @Override
         public void run() {
-            assert activityManager != null;
-            activityManager.getMemoryInfo(mi);
-            double availableMegs = mi.availMem / 0x100000L;
-            double totalMemory = mi.totalMem / 0x100000L;
 
-            long current = (long) (totalMemory - availableMegs);
-            ((TextView) findViewById(R.id.memoryStatus)).setText(current + " MB");
+            Runtime rTime = Runtime.getRuntime();
+            double consumedMem = rTime.totalMemory() / 10000.0;
 
-            handler.postDelayed(periodicUpdate, 300);
+            ((TextView) findViewById(R.id.memoryStatus)).setText(" Used : "+consumedMem+ " MB");
+
+            handler.postDelayed(periodicUpdate, 10);
         }
     };
 
     // Memory boost
     static Boolean isTouched = false;
+    private ViewDialog viewDialog;
 
 
     @Override
@@ -57,6 +58,10 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
         expFusion = new ExposureFusion(this);
         activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         mi = new ActivityManager.MemoryInfo();
+        assert activityManager != null;
+        activityManager.getMemoryInfo(mi);
+        viewDialog = new ViewDialog(this);
+
         setContentView(R.layout.activity_main);
 
         /* - - - - - - - - Get images - - - - - - - */
@@ -110,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isTouched) {
                     isTouched = false;
-                    ExposureFusion.MEM_BOOST = isChecked;
+                    HDRFilter.MEM_BOOST = isChecked;
                     if(isChecked){
                         (findViewById(R.id.Contrast)).setVisibility(View.GONE);
                         (findViewById(R.id.Saturation)).setVisibility(View.GONE);
@@ -127,6 +132,14 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
                 }
             }
         });
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if(HDRFilter.MEM_BOOST)
+            expFusion.destroy();
     }
 
     @Override
@@ -147,8 +160,9 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
 
     public void setContrast(View view) {
         final String functionName = "Contrast";
-
         (findViewById(R.id.llView)).setVisibility(View.VISIBLE);
+        showCustomLoadingDialog(view);
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -173,6 +187,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
 
     public void setSaturation(View view) {
         final String functionName = "Saturation";
+        showCustomLoadingDialog(view);
 
         (findViewById(R.id.llView)).setVisibility(View.VISIBLE);
         new Thread(new Runnable() {
@@ -199,6 +214,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
 
     public void setExposure(View view) {
         final String functionName = "Exposure";
+        showCustomLoadingDialog(view);
 
         (findViewById(R.id.llView)).setVisibility(View.VISIBLE);
         new Thread(new Runnable() {
@@ -226,6 +242,8 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
     public void setNormal(View view) {
         final String functionName = "Normalization";
         (findViewById(R.id.llView)).setVisibility(View.VISIBLE);
+        showCustomLoadingDialog(view);
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -246,5 +264,18 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
                 });
             }
         }).start();
+    }
+
+    public void showCustomLoadingDialog(View view) {
+
+        viewDialog.showDialog();
+
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                viewDialog.hideDialog();
+            }
+        }, 500);
     }
 }

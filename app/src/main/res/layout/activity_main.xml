@@ -163,28 +163,28 @@
             <ImageButton
                 android:layout_weight="1"
                 android:id="@+id/Contrast"
-                android:padding="3dp"
+                android:padding="10dp"
                 android:layout_width="100dp"
                 android:layout_height="50dp"
                 android:onClick="setContrast"
                 android:scaleType="fitCenter"
                 android:background="#000000"
-                android:src="@drawable/icon_contast"/>
+                android:src="@drawable/icon_c"/>
 
             <ImageButton
                 android:id="@+id/Saturation"
-                android:padding="5dp"
+                android:padding="10dp"
                 android:layout_width="100dp"
                 android:layout_height="50dp"
                 android:layout_weight="1"
                 android:onClick="setSaturation"
                 android:scaleType="fitCenter"
                 android:background="#000000"
-                android:src="@drawable/icon_saturation" />
+                android:src="@drawable/icon_s" />
 
             <ImageButton
                 android:layout_weight="1"
-                android:padding="5dp"
+                android:padding="10dp"
                 android:id="@+id/Exposure"
                 android:layout_width="100dp"
                 android:layout_height="50dp"
@@ -192,16 +192,16 @@
                 android:onClick="setExposure"
                 android:scaleType="fitCenter"
 
-                android:src="@drawable/icon_exposure"/>
+                android:src="@drawable/icon_e"/>
 
             <ImageButton
                 android:layout_weight="1"
-                android:padding="5dp"
+                android:padding="10dp"
                 android:id="@+id/normal"
                 android:layout_width="100dp"
                 android:layout_height="50dp"
                 android:onClick="setNormal"
-                android:src="@drawable/icon_normal"
+                android:src="@drawable/icon_n"
                 android:scaleType="fitCenter"
                 android:background="#000000"/>
 

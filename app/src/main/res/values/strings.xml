@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">RenderScript</string>
+    <string name="cameraCapture">Capture</string>
 </resources>

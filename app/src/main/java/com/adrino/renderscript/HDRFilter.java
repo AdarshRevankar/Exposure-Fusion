@@ -3,7 +3,6 @@ package com.adrino.renderscript;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -36,7 +35,7 @@ public class HDRFilter implements HDRManager.Performer {
 
     // Constants
     private final static String TAG = "HDRFilter";
-    private static boolean MEM_BOOST;
+    static boolean MEM_BOOST;
     private static int PYRAMID_LEVELS;
 
     //   +- - - - - - - - - - - - - - - - - - - - - - - - - -+
@@ -192,10 +191,11 @@ public class HDRFilter implements HDRManager.Performer {
                                                   List<Allocation> wellExposeness) {
 
         //   +- - - - - - - - - - - - - - - - - - - - - - - - -+
-        //   |                WELL EXPOSURE                    |
+        //   |                NORMALISATION                    |
         //   +- - - - - - - - - - - - - - - - - - - - - - - - -+
         ScriptC_NormalizeWeights scriptNorm = new ScriptC_NormalizeWeights(renderScript);
 
+        // - - - - - Allocate - - - - - - - -
         Allocation outAlloc1 = RsUtils.create2d(renderScript, width, height, elementFloat);
         Allocation outAlloc2 = RsUtils.create2d(renderScript, width, height, elementFloat);
         Allocation outAlloc3 = RsUtils.create2d(renderScript, width, height, elementFloat);
@@ -215,14 +215,16 @@ public class HDRFilter implements HDRManager.Performer {
         scriptNorm.set_E2(wellExposeness.get(1));
         scriptNorm.set_E3(wellExposeness.get(2));
 
-        // Compute
+        // - - - - - Normalise - - - - - - - -
         scriptNorm.forEach_normalizeWeights(outAlloc1);
 
+        // - - - - - Store - - - - - - - -
         List<Allocation> outAllocList = new ArrayList<>(3);
         outAllocList.add(outAlloc1);
         outAllocList.add(outAlloc2);
         outAllocList.add(outAlloc3);
 
+        // MemBoost Clear the Allocations used & not required
         if (MEM_BOOST) {
             for (int i = 0; i < contrast.size(); i++) {
                 contrast.get(i).destroy();
@@ -238,17 +240,18 @@ public class HDRFilter implements HDRManager.Performer {
 
     @Override
     public List<List<Allocation>> generateGaussianPyramid(List<Bitmap> bmpImageList) {
-        // - - - - - - - - - - - - - - - - - - - -
-        // RenderScript - Gaussian.rs ( Convolve )
-        // - - - - - - - - - - - - - - - - - - - -
+        //   +- - - - - - - - - - - - - - - - - - - - - - - - - - -+
+        //   |                GAUSSIAN PYRAMID                     |
+        //   +- - - - - - - - - - - - - - - - - - - - - - - - - - -+
         scriptGaussian = new ScriptC_Gaussian(renderScript);
 
-        List<List<Allocation>> outGaussianAllocationList = new ArrayList<>(3);
+        List<List<Allocation>> outGaussianAllocationList = new ArrayList<>(bmpImageList.size());
 
         for (int i = 0; i < bmpImageList.size(); i++) {
             List<Allocation> outGaussLevelList = new ArrayList<>(PYRAMID_LEVELS);
 
             // - - - - - - Allocation - - - - - - -
+
             // Convert U4 to F4
             Allocation startAlloc = Allocation.createFromBitmap(renderScript, bmpImageList.get(i));
             Allocation convertAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
@@ -265,36 +268,44 @@ public class HDRFilter implements HDRManager.Performer {
             outGaussLevelList.add(convertAlloc);
 
             int levelWidth, levelHeight;
+
+            // Initialise Level Meta
             if (levelsMeta == null) {
+                // For first Image only, Construct the list
                 levelsMeta = new ArrayList<>(PYRAMID_LEVELS);
-                levelWidth = width;
-                levelHeight = height;
                 levelsMeta.add(new Level(width, height));
-            } else {
-                levelHeight = levelsMeta.get(0).height;
-                levelWidth = levelsMeta.get(0).width;
             }
+
+            levelWidth = width;
+            levelHeight = height;
 
             for (int level = 1; level < PYRAMID_LEVELS; level++) {
 
+                // G1 = REDUCE(G0)
                 int prevW = levelWidth;
                 int prevH = levelHeight;
 
+                // - - - - - - Get Dimension - - - -
                 if (levelsMeta.size() != PYRAMID_LEVELS) {
+
+                    // => G[i] = G[i+1] / 2 - Half as the size of the previous stage
                     levelWidth = levelWidth % 2 == 0 ? levelWidth / 2 : (levelWidth - 1) / 2;
                     levelHeight = levelHeight % 2 == 0 ? levelHeight / 2 : (levelHeight - 1) / 2;
                     levelsMeta.add(new Level(levelWidth, levelHeight));
+
                 } else {
+
+                    // Next time get the same dimension as earlier
                     levelWidth = levelsMeta.get(level).width;
                     levelHeight = levelsMeta.get(level).height;
                 }
 
+
                 Allocation midAlloc = RsUtils.create2d(renderScript, prevW, prevH, Element.F32_4(renderScript));
 
-                // REDUCE
+                // - - - -  - - - - - - REDUCE( G[ - - - - - - - - - -
                 scriptGaussian.set_compressTargetWidth(levelWidth);
                 scriptGaussian.set_compressTargetHeight(levelHeight);
-
                 scriptGaussian.set_compressSource(inAlloc);
                 scriptGaussian.forEach_compressFloat4Step1(midAlloc);
 
@@ -528,6 +539,7 @@ public class HDRFilter implements HDRManager.Performer {
 
             outAlloc.destroy();
         }
+
 
         return outBmpList;
     }
