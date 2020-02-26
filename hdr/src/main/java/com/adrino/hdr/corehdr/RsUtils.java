@@ -1,4 +1,4 @@
-package com.adrino.renderscript;
+package com.adrino.hdr.corehdr;
 
 import android.graphics.Bitmap;
 import android.util.Log;
@@ -48,8 +48,8 @@ public class RsUtils {
         int imgWidth = inBmpImage.getWidth();
         int imgHeight = inBmpImage.getHeight();
 
-        int scaledWidth = imgHeight > imgWidth ? (imgWidth * Constant.SCALE_THRUSHOLD) / imgHeight : Constant.SCALE_THRUSHOLD;
-        int scaledHeight = imgHeight > imgWidth ? Constant.SCALE_THRUSHOLD : (imgHeight * Constant.SCALE_THRUSHOLD) / imgWidth;
+        int scaledWidth = imgHeight > imgWidth ? (imgWidth * Constant.SCALE_THRESHOLD) / imgHeight : Constant.SCALE_THRESHOLD;
+        int scaledHeight = imgHeight > imgWidth ? Constant.SCALE_THRESHOLD : (imgHeight * Constant.SCALE_THRESHOLD) / imgWidth;
         return Bitmap.createScaledBitmap(inBmpImage, scaledWidth, scaledHeight, false);
     }
 

@@ -1,10 +1,10 @@
-package com.adrino.renderscript;
+package com.adrino.hdr.corehdr;
 
 import java.security.InvalidParameterException;
 
-class Constant {
+public class Constant {
 
-    public static final int SCALE_THRUSHOLD = 1200;
+    public static final int SCALE_THRESHOLD = 1200;
     /**
      * INPUT_IMAGE_SIZE - Exact Number of images required for HDR
      */
@@ -13,7 +13,7 @@ class Constant {
      * MEMORY BOOST - Toggle
      * if turned on, then the direct HDR computation is provided
      */
-    static boolean MEM_BOOST = false;
+    public static boolean MEM_BOOST = false;
 
     /**
      * SELECTED_INDEX - Pointer

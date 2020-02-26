@@ -1,5 +1,5 @@
 #pragma version(1)
-#pragma rs java_package_name(com.adrino.renderscript)
+#pragma rs java_package_name(com.adrino.hdr)
 
 //==============================================================================
 //                            RGBA -> GRAY (FLOAT32)

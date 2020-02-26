@@ -9,6 +9,7 @@ import android.widget.ImageView;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.adrino.hdr.corehdr.*;
 
 public class hdr extends AppCompatActivity {
 

@@ -1,4 +1,4 @@
-package com.adrino.renderscript;
+package com.adrino.hdr.corehdr;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,6 +12,14 @@ import androidx.renderscript.Allocation;
 import androidx.renderscript.Element;
 import androidx.renderscript.RenderScript;
 import androidx.renderscript.ScriptIntrinsicConvolve3x3;
+
+import com.adrino.hdr.ScriptC_Collapse;
+import com.adrino.hdr.ScriptC_Exposure;
+import com.adrino.hdr.ScriptC_Gaussian;
+import com.adrino.hdr.ScriptC_Laplacian;
+import com.adrino.hdr.ScriptC_NormalizeWeights;
+import com.adrino.hdr.ScriptC_Saturation;
+import com.adrino.hdr.ScriptC_utils;
 
 
 /**

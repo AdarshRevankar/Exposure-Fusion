@@ -1,4 +1,4 @@
-package com.adrino.renderscript;
+package com.adrino.hdr.corehdr;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -44,7 +44,7 @@ public class CreateHDR implements HDRManager.Presenter {
      *
      * @param context   : Application Context
      */
-    CreateHDR(Context context){
+    public CreateHDR(Context context){
         if (hdrFilter == null) {
             hdrFilter = new HDRFilter(context);
         }
@@ -128,7 +128,7 @@ public class CreateHDR implements HDRManager.Presenter {
      * Destroy the temporary allocation list
      * IMPORTANT : Call this in onDestroy()
      */
-    void destroy() {
+    public void destroy() {
         if (inAllocList != null) {
             for (Allocation alloc :
                     inAllocList) {

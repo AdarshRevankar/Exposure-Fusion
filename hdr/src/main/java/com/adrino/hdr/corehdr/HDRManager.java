@@ -1,4 +1,4 @@
-package com.adrino.renderscript;
+package com.adrino.hdr.corehdr;
 
 import android.graphics.Bitmap;
 
