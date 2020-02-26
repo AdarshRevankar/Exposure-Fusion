@@ -17,7 +17,7 @@ import androidx.renderscript.ScriptIntrinsicConvolve3x3;
 /**
  * Created by Adarsh Revankar
  * Date: 03/02/2019
- * <p>
+ * <b>
  * Filter Class which has requried HDR Functions
  * Contains functions:
  * 1. Convolve
@@ -26,25 +26,17 @@ import androidx.renderscript.ScriptIntrinsicConvolve3x3;
  * 4. Normalization
  * 5. Gaussian Pyramid
  * 6. Laplacian Pyramid
- * 5. Product Pyramid
+ * 5. Product Pyramid ( Resultant )
  * 8. Collapse
+ * </b>
  */
 
 
-public class HDRFilter implements HDRManager.Performer {
+class HDRFilter implements HDRManager.Performer {
 
-    // Constants
     private final static String TAG = "HDRFilter";
-    static boolean MEM_BOOST;
-    private static int PYRAMID_LEVELS;
-
-    //   +- - - - - - - - - - - - - - - - - - - - - - - - - -+
-    //   |               RenderScript Scripts                |
-    //   +- - - - - - - - - - - - - - - - - - - - - - - - - -+
-    private static RenderScript renderScript;
-    private static ScriptC_utils scriptUtils;
-    private ScriptC_Collapse scriptCollapse;
-    private ScriptC_Gaussian scriptGaussian;
+    private int PYRAMID_LEVELS;
+    private RenderScript renderScript;
 
     // Data Meta
     enum DATA_TYPE {FLOAT32}
@@ -58,15 +50,13 @@ public class HDRFilter implements HDRManager.Performer {
 
     HDRFilter(Context context) {
         renderScript = RenderScript.create(context);    // Do not destroy
-        scriptUtils = new ScriptC_utils(renderScript);  // Do not destroy
-
         elementFloat4 = Element.F32_4(renderScript);
         elementFloat = Element.F32(renderScript);
     }
 
     @Override
     public void setMeta(int imWidth, int imHeight, Bitmap.Config imConfig) {
-        MEM_BOOST = false;
+        Constant.MEM_BOOST = false;
 
         // Set image Dim
         width = imWidth;
@@ -88,17 +78,18 @@ public class HDRFilter implements HDRManager.Performer {
         //   Return: List of Allocation of float ( 1 Dim ) Convolved List
 
         float[] filter = {0, 1, 0, 1, -4, 1, 0, 1, 0};
-        ScriptIntrinsicConvolve3x3 scriptConvolve = ScriptIntrinsicConvolve3x3.create(renderScript, elementFloat);     // Convolution intrinsic
+        ScriptIntrinsicConvolve3x3 scriptConvolve = ScriptIntrinsicConvolve3x3.create(renderScript, elementFloat);
+        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
 
         Allocation inAlloc, grayAlloc, outAlloc;
-        List<Allocation> outAllocList = new ArrayList<>(3);
+        List<Allocation> outAllocList = new ArrayList<>(Constant.INPUT_IMAGE_SIZE);
 
         for (Bitmap inImage : bmpImages) {
             inAlloc = Allocation.createFromBitmap(renderScript, inImage);
             grayAlloc = RsUtils.create2d(renderScript, width, height, elementFloat);
             outAlloc = RsUtils.create2d(renderScript, width, height, elementFloat);
 
-            // Bitmap -> RGB
+            // Bitmap -> GrayScale Image
             scriptUtils.set_inGrayAlloc(inAlloc);
             scriptUtils.forEach_convertRGBAToGray(grayAlloc);
 
@@ -130,7 +121,7 @@ public class HDRFilter implements HDRManager.Performer {
         ScriptC_Saturation scriptSaturation = new ScriptC_Saturation(renderScript);
 
         Allocation inAllocation, outAllocation;
-        List<Allocation> outAllocList = new ArrayList<>(3);
+        List<Allocation> outAllocList = new ArrayList<>(Constant.INPUT_IMAGE_SIZE);
 
         for (Bitmap inImage : bmpImages) {
 
@@ -162,7 +153,7 @@ public class HDRFilter implements HDRManager.Performer {
         ScriptC_Exposure scriptExposure = new ScriptC_Exposure(renderScript);
 
         Allocation inAllocation, outAllocation;
-        List<Allocation> outAllocList = new ArrayList<>(3);
+        List<Allocation> outAllocList = new ArrayList<>(Constant.INPUT_IMAGE_SIZE);
 
         for (Bitmap inImage : bmpImages) {
 
@@ -184,6 +175,11 @@ public class HDRFilter implements HDRManager.Performer {
 
         return outAllocList;
     }
+
+    List<Allocation> computeNormalWeighted(List<Bitmap> bitmapList) {
+        return computeNormalWeighted(applyConvolution3x3Filter(bitmapList), applySaturationFilter(bitmapList), applyExposureFilter(bitmapList));
+    }
+
 
     @Override
     public List<Allocation> computeNormalWeighted(List<Allocation> contrast,
@@ -219,13 +215,13 @@ public class HDRFilter implements HDRManager.Performer {
         scriptNorm.forEach_normalizeWeights(outAlloc1);
 
         // - - - - - Store - - - - - - - -
-        List<Allocation> outAllocList = new ArrayList<>(3);
+        List<Allocation> outAllocList = new ArrayList<>(Constant.INPUT_IMAGE_SIZE);
         outAllocList.add(outAlloc1);
         outAllocList.add(outAlloc2);
         outAllocList.add(outAlloc3);
 
         // MemBoost Clear the Allocations used & not required
-        if (MEM_BOOST) {
+        if (Constant.MEM_BOOST) {
             for (int i = 0; i < contrast.size(); i++) {
                 contrast.get(i).destroy();
                 saturation.get(i).destroy();
@@ -243,7 +239,8 @@ public class HDRFilter implements HDRManager.Performer {
         //   +- - - - - - - - - - - - - - - - - - - - - - - - - - -+
         //   |                GAUSSIAN PYRAMID                     |
         //   +- - - - - - - - - - - - - - - - - - - - - - - - - - -+
-        scriptGaussian = new ScriptC_Gaussian(renderScript);
+        ScriptC_Gaussian scriptGaussian = new ScriptC_Gaussian(renderScript);
+        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
 
         List<List<Allocation>> outGaussianAllocationList = new ArrayList<>(bmpImageList.size());
 
@@ -332,7 +329,7 @@ public class HDRFilter implements HDRManager.Performer {
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         // RenderScript - Gaussian.rs ( Convolve ) Float Allocation
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        return generateGaussianPyramid(convertAllocationToBMP(floatAlloc, DATA_TYPE.FLOAT32));
+        return generateGaussianPyramid(convertAllocationFxToBMP(floatAlloc, DATA_TYPE.FLOAT32));
     }
 
 
@@ -341,6 +338,7 @@ public class HDRFilter implements HDRManager.Performer {
         // + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
         // |    Laplacian Pyramid - laplacian.rs ( Diff b/n Gaussian Pyr.)   |
         // + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+        ScriptC_Gaussian scriptGaussian = new ScriptC_Gaussian(renderScript);
         ScriptC_Laplacian scriptLaplacian = new ScriptC_Laplacian(renderScript);
 
         // - - - - Generate Gaussian Pyramid - - - - - -
@@ -362,13 +360,10 @@ public class HDRFilter implements HDRManager.Performer {
 
                 int lapW = levelsMeta.get(lapLevel).width;
                 int lapH = levelsMeta.get(lapLevel).height;
-
                 int prevW = levelsMeta.get(lapLevel + 1).width;
 
                 Allocation outAlloc = RsUtils.create2d(renderScript, prevW, lapH, elementFloat4);
                 Allocation expandedAlloc = RsUtils.create2d(renderScript, lapW, lapH, elementFloat4);
-
-                Log.e(TAG, "generateLaplacianPyramids: W : " + lapW + " H : " + lapH);
 
                 scriptGaussian.set_expandTargetWidth(lapW);
                 scriptGaussian.set_expandTargetHeight(lapH);
@@ -412,7 +407,7 @@ public class HDRFilter implements HDRManager.Performer {
         // - - - - - - - - - - - - - - - - - - -
         //          RESULTANT GENERATOR
         // - - - - - - - - - - - - - - - - - - -
-        scriptCollapse = new ScriptC_Collapse(renderScript);
+        ScriptC_Collapse scriptCollapse = new ScriptC_Collapse(renderScript);
 
         List<Allocation> resultantPyramid = new ArrayList<>(PYRAMID_LEVELS);
 
@@ -433,7 +428,7 @@ public class HDRFilter implements HDRManager.Performer {
             resultantPyramid.add(outAlloc);
         }
 
-        if (MEM_BOOST) {
+        if (Constant.MEM_BOOST) {
             for (int i = 0; i < gaussianPyramids.size(); i++) {
                 for (int j = 0; j < PYRAMID_LEVELS; j++) {
                     gaussianPyramids.get(i).get(j).destroy();
@@ -449,8 +444,8 @@ public class HDRFilter implements HDRManager.Performer {
     @Override
     public List<Allocation> collapseResultant(List<Allocation> resultant) {
         int lowestLevel = PYRAMID_LEVELS - 1;
-        scriptCollapse = new ScriptC_Collapse(renderScript);
-        scriptGaussian = new ScriptC_Gaussian(renderScript);
+        ScriptC_Collapse scriptCollapse = new ScriptC_Collapse(renderScript);
+        ScriptC_Gaussian scriptGaussian = new ScriptC_Gaussian(renderScript);
         List<Allocation> collapsedList = new ArrayList<>(PYRAMID_LEVELS);
 
         Allocation collapseAlloc = RsUtils.create2d(renderScript,
@@ -502,7 +497,7 @@ public class HDRFilter implements HDRManager.Performer {
             }
         }
 
-        if (MEM_BOOST) {
+        if (Constant.MEM_BOOST) {
             for (int i = 0; i < resultant.size(); i++) {
                 resultant.get(i).destroy();
             }
@@ -513,8 +508,8 @@ public class HDRFilter implements HDRManager.Performer {
     }
 
 
-    static List<Bitmap> convertAllocationToBMP(List<Allocation> inAllocList, DATA_TYPE data_type) {
-        scriptUtils = new ScriptC_utils(renderScript);
+    List<Bitmap> convertAllocationFxToBMP(List<Allocation> inAllocList, DATA_TYPE data_type) {
+        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
 
         Allocation outAlloc;
         Bitmap outBmp;
@@ -525,7 +520,6 @@ public class HDRFilter implements HDRManager.Performer {
             outBmp = Bitmap.createBitmap(width, height, config);
             outAlloc = Allocation.createFromBitmap(renderScript, outBmp);
 
-            // Perform
             scriptUtils.set_inAlloc(inAllocList.get(i));
 
             if (data_type == DATA_TYPE.FLOAT32) {
@@ -539,16 +533,18 @@ public class HDRFilter implements HDRManager.Performer {
 
             outAlloc.destroy();
         }
-
-
+        scriptUtils.destroy();
         return outBmpList;
     }
 
-    public List<Bitmap> convertAllocationBMPDyamic(List<Allocation> inLstAllocation) {
+    /**
+     * Covert List of Allocation {@param inListAllocation} which are FLOAT32_4 (RGBA) to List of Bitmap images.
+     */
+    List<Bitmap> convertAllocationBMPDynamic(List<Allocation> inLstAllocation) {
         Allocation outAlloc;
         Bitmap outBmp;
         List<Bitmap> outBmpList = new ArrayList<>(inLstAllocation.size());
-        scriptUtils = new ScriptC_utils(renderScript);
+        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
 
         int levelWidth = levelsMeta.get(0).width, levelHeight = levelsMeta.get(0).height;
 
@@ -571,6 +567,7 @@ public class HDRFilter implements HDRManager.Performer {
                 levelWidth = levelsMeta.get(i + 1).width;
             }
         }
+        scriptUtils.destroy();
         return outBmpList;
     }
 

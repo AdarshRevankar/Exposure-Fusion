@@ -29,12 +29,7 @@ public interface HDRManager {
     }
 
     interface Presenter{
-        List<Bitmap> perform(List<Bitmap> bmpImagesList, ExposureFusion.Actions action);
-        List<Bitmap> perform(List<Bitmap> bmpImagesList, ExposureFusion.Actions action, int selected);
-        void setMeta(int imgWidth, int imgHeight, Bitmap.Config imgConfig);
-    }
-
-    interface Viewer{
-
+        List<Bitmap> perform(List<Bitmap> bmpImagesList, CreateHDR.Actions action);
+        List<Bitmap> perform(List<Bitmap> bmpImagesList, CreateHDR.Actions action, int selected);
     }
 }

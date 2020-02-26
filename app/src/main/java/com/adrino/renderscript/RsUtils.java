@@ -1,11 +1,15 @@
 package com.adrino.renderscript;
 
+import android.graphics.Bitmap;
 import android.util.Log;
 
 import androidx.renderscript.Allocation;
 import androidx.renderscript.Element;
 import androidx.renderscript.RenderScript;
 import androidx.renderscript.Type;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RsUtils {
     public static Allocation create2d(RenderScript rs, int width, int height, Element elementType) {
@@ -38,6 +42,25 @@ public class RsUtils {
         Log.e("EV", " ");
         Log.e("EV", " ");
 
+    }
+
+    public static Bitmap resizeBmp(Bitmap inBmpImage){
+        int imgWidth = inBmpImage.getWidth();
+        int imgHeight = inBmpImage.getHeight();
+
+        int scaledWidth = imgHeight > imgWidth ? (imgWidth * Constant.SCALE_THRUSHOLD) / imgHeight : Constant.SCALE_THRUSHOLD;
+        int scaledHeight = imgHeight > imgWidth ? Constant.SCALE_THRUSHOLD : (imgHeight * Constant.SCALE_THRUSHOLD) / imgWidth;
+        return Bitmap.createScaledBitmap(inBmpImage, scaledWidth, scaledHeight, false);
+    }
+
+    public static List<Bitmap> resizeBmp(List<Bitmap> inBmpImageList){
+        List<Bitmap> outBmpImageList = new ArrayList<>(inBmpImageList.size());
+        for (Bitmap inBmpImage: inBmpImageList) {
+            outBmpImageList.add(
+                    resizeBmp(inBmpImage)
+            );
+        }
+        return outBmpImageList;
     }
 }
 
