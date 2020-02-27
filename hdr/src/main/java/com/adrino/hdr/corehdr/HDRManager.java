@@ -1,4 +1,4 @@
-package com.adrino.renderscript;
+package com.adrino.hdr.corehdr;
 
 import android.graphics.Bitmap;
 
@@ -7,7 +7,13 @@ import androidx.renderscript.Allocation;
 import java.util.List;
 
 public interface HDRManager {
-    interface Performer {
+
+    interface HDRClient {
+        List<Bitmap> perform(List<Bitmap> bmpImagesList, CreateHDR.Actions action);
+        List<Bitmap> perform(List<Bitmap> bmpImagesList, CreateHDR.Actions action, int selected);
+    }
+
+    interface HDRProcessor {
         // Init
         void setMeta(int imgWidth, int imgHeight, Bitmap.Config imgConfig);
 
@@ -26,15 +32,5 @@ public interface HDRManager {
 
         List<Allocation> generateResultant(List<List<Allocation>> gaussianPyramids, List<List<Allocation>> laplacianPyramids);
         List<Allocation> collapseResultant(List<Allocation> resultant);
-    }
-
-    interface Presenter{
-        List<Bitmap> perform(List<Bitmap> bmpImagesList, ExposureFusion.Actions action);
-        List<Bitmap> perform(List<Bitmap> bmpImagesList, ExposureFusion.Actions action, int selected);
-        void setMeta(int imgWidth, int imgHeight, Bitmap.Config imgConfig);
-    }
-
-    interface Viewer{
-
     }
 }

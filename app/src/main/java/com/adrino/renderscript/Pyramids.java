@@ -9,17 +9,14 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.adrino.hdr.corehdr.CreateHDR;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.adrino.renderscript.MainActivity.SCALE_THRUSHOLD;
-import static com.adrino.renderscript.MainActivity.SOURCE1;
-import static com.adrino.renderscript.MainActivity.SOURCE2;
-import static com.adrino.renderscript.MainActivity.SOURCE3;
-
 public class Pyramids extends AppCompatActivity {
 
-    ExposureFusion exposureFusion;
+    CreateHDR createHDR;
     private static int SELECTED_INDEX = 0;
     private static boolean isGauss = true;
     private List<Bitmap> bmpImgList;
@@ -31,22 +28,13 @@ public class Pyramids extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pyramids);
 
-        exposureFusion = new ExposureFusion(this);
+        createHDR = new CreateHDR(this);
 
         bmpImgList = new ArrayList<>();
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE1));
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE2));
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE3));
 
-        int imgWidth = bmpImgList.get(0).getWidth();
-        int imgHeight = bmpImgList.get(0).getHeight();
-        int scaledWidth = imgHeight > imgWidth ? (imgWidth * SCALE_THRUSHOLD) / imgHeight : SCALE_THRUSHOLD;
-        int scaledHeight = imgHeight > imgWidth ? SCALE_THRUSHOLD : (imgHeight * SCALE_THRUSHOLD) / imgWidth ;
-        for (int i = 0; i < bmpImgList.size(); i++) {
-            bmpImgList.set(i, Bitmap.createScaledBitmap(bmpImgList.get(i), scaledWidth, scaledHeight, false));
-        }
-
-        exposureFusion.setMeta(bmpImgList.get(0).getWidth(), bmpImgList.get(0).getHeight(), bmpImgList.get(0).getConfig());
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphon1));
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone2));
+        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone3));
     }
 
     public void createLaplacian(View view) {
@@ -56,7 +44,7 @@ public class Pyramids extends AppCompatActivity {
             @Override
             public void run() {
                 if (gaussianLayers != null) {
-                    laplacianPyr = exposureFusion.perform(bmpImgList, ExposureFusion.Actions.LAPLACIAN, SELECTED_INDEX);
+                    laplacianPyr = createHDR.perform(bmpImgList, CreateHDR.Actions.LAPLACIAN, SELECTED_INDEX);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -82,7 +70,7 @@ public class Pyramids extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                gaussianLayers = exposureFusion.perform(bmpImgList, ExposureFusion.Actions.GAUSSIAN, SELECTED_INDEX);
+                gaussianLayers = createHDR.perform(bmpImgList, CreateHDR.Actions.GAUSSIAN, SELECTED_INDEX);
 
                 runOnUiThread(new Runnable() {
                     @Override

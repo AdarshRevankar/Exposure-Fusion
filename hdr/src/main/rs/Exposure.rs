@@ -1,8 +1,12 @@
 #pragma version(1)
-#pragma rs java_package_name(com.adrino.renderscript)
+#pragma rs java_package_name(com.adrino.hdr)
 
 rs_allocation inAllocation;
 const float alpha = 0.2f;
+
+// ============================================================================================
+//                                      Exposure
+// ============================================================================================
 
 float __attribute__((kernel))expose(uint32_t x, uint32_t y){
 

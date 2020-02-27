@@ -16,19 +16,21 @@ import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import com.adrino.hdr.corehdr.Constants;
+import com.adrino.hdr.corehdr.CreateHDR;
 import com.adrino.renderscript.visual.ViewDialog;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class MainActivity extends AppCompatActivity implements HDRManager.Viewer {
+public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
-    ExposureFusion expFusion;
+    CreateHDR expFusion;
     List<Bitmap> bmpImgList, saturation, contrast, exposed, norm;
     static int SOURCE1, SOURCE2, SOURCE3;
-    final static int SCALE_THRUSHOLD = 1200;
+    final static int SCALE_THRUSHOLD = 1000;
 
     // For memory diagnosis purpose
     final Handler handler = new Handler();
@@ -41,7 +43,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
             Runtime rTime = Runtime.getRuntime();
             double consumedMem = rTime.totalMemory() / 10000.0;
 
-            ((TextView) findViewById(R.id.memoryStatus)).setText(" Used : "+consumedMem+ " MB");
+            ((TextView) findViewById(R.id.memoryStatus)).setText(" Used : " + consumedMem + " MB");
 
             handler.postDelayed(periodicUpdate, 10);
         }
@@ -55,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        expFusion = new ExposureFusion(this);
+        expFusion = new CreateHDR(this);
         activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         mi = new ActivityManager.MemoryInfo();
         assert activityManager != null;
@@ -76,21 +78,12 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
         bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE3));
 
         /*---------------------- Scale Images ----------------------*/
-        int imgWidth = bmpImgList.get(0).getWidth();
-        int imgHeight = bmpImgList.get(0).getHeight();
-        int scaledWidth = imgHeight > imgWidth ? (imgWidth * SCALE_THRUSHOLD) / imgHeight : SCALE_THRUSHOLD;
-        int scaledHeight = imgHeight > imgWidth ? SCALE_THRUSHOLD : (imgHeight * SCALE_THRUSHOLD) / imgWidth;
-        for (int i = 0; i < bmpImgList.size(); i++) {
-            bmpImgList.set(i, Bitmap.createScaledBitmap(bmpImgList.get(i), scaledWidth, scaledHeight, false));
-        }
 
         /*---------------------- Set Images ----------------------*/
         ((ImageView) findViewById(R.id.pic1)).setImageBitmap(bmpImgList.get(0));
         ((ImageView) findViewById(R.id.pic2)).setImageBitmap(bmpImgList.get(1));
         ((ImageView) findViewById(R.id.pic3)).setImageBitmap(bmpImgList.get(2));
 
-        /*---------------------- Init ----------------------*/
-        expFusion.setMeta(bmpImgList.get(0).getWidth(), bmpImgList.get(0).getHeight(), bmpImgList.get(0).getConfig());
 
         // - - - - - - - - - - -+
         // Other UI Stuff       |
@@ -100,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
         Objects.requireNonNull(getSupportActionBar()).setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
         getSupportActionBar().setCustomView(R.layout.action_bar);
 
-        ExposureFusion.MEM_BOOST = false;
+        Constants.MEM_BOOST = false;
 
         // toggle listener
         (findViewById(R.id.memToggle)).setOnTouchListener(new View.OnTouchListener() {
@@ -115,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isTouched) {
                     isTouched = false;
-                    HDRFilter.MEM_BOOST = isChecked;
+                    Constants.MEM_BOOST = isChecked;
                     if(isChecked){
                         (findViewById(R.id.Contrast)).setVisibility(View.GONE);
                         (findViewById(R.id.Saturation)).setVisibility(View.GONE);
@@ -138,7 +131,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
     @Override
     protected void onPause() {
         super.onPause();
-        if(HDRFilter.MEM_BOOST)
+        if(Constants.MEM_BOOST)
             expFusion.destroy();
     }
 
@@ -167,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
             @Override
             public void run() {
                 if (contrast == null)
-                    contrast = expFusion.perform(bmpImgList, ExposureFusion.Actions.CONTRAST);
+                    contrast = expFusion.perform(bmpImgList, CreateHDR.Actions.CONTRAST);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -194,7 +187,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
             @Override
             public void run() {
                 if (saturation == null)
-                    saturation = expFusion.perform(bmpImgList, ExposureFusion.Actions.SATURATION);
+                    saturation = expFusion.perform(bmpImgList, CreateHDR.Actions.SATURATION);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -221,7 +214,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
             @Override
             public void run() {
                 if (exposed == null)
-                    exposed = expFusion.perform(bmpImgList, ExposureFusion.Actions.EXPOSED);
+                    exposed = expFusion.perform(bmpImgList, CreateHDR.Actions.EXPOSED);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -248,7 +241,7 @@ public class MainActivity extends AppCompatActivity implements HDRManager.Viewer
             @Override
             public void run() {
                 if (norm == null)
-                    norm = expFusion.perform(bmpImgList, ExposureFusion.Actions.NORMAL);
+                    norm = expFusion.perform(bmpImgList, CreateHDR.Actions.NORMAL);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {

@@ -1,7 +1,11 @@
 #pragma version(1)
-#pragma rs java_package_name(com.adrino.renderscript)
+#pragma rs java_package_name(com.adrino.hdr)
 
 rs_allocation inAlloc;
+
+// ============================================================================================
+//                                      SATURATE
+// ============================================================================================
 
 float __attribute__((kernel)) saturate (uint32_t x, uint32_t y){
     float4 in = convert_float4(rsGetElementAt_uchar4(inAlloc, x, y)) / 255;

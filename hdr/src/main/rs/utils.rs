@@ -1,5 +1,5 @@
 #pragma version(1)
-#pragma rs java_package_name(com.adrino.renderscript)
+#pragma rs java_package_name(com.adrino.hdr)
 
 //==============================================================================
 //                            RGBA -> GRAY (FLOAT32)
@@ -13,26 +13,17 @@ float __attribute__((kernel)) convertRGBAToGray(uint32_t x, uint32_t y) {
     return pixelOut;
 }
 
-// ------------------------------------------------------------------------------------------------
-// Multiply a buffer with a constant
-// ------------------------------------------------------------------------------------------------
-float multiplyFactor;
-
-float __attribute__((kernel)) multiply(float in, uint32_t x, uint32_t y) {
-    return in * multiplyFactor;
-}
-
-// ------------------------------------------------------------------------------------------------
+//==============================================================================
 // Convert float intensity (0.0 - 1.0) to uchar RBG
-// ------------------------------------------------------------------------------------------------
+//==============================================================================
 
 uchar4 __attribute__((kernel)) calcRgbaIntensity(float in, uint32_t x, uint32_t y) {
     return (int) fmax(0.0f, fmin(255.0f, in * 255.0f));
 }
 
-// ------------------------------------------------------------------------------------------------
-// Float4toUchar4
-// ------------------------------------------------------------------------------------------------
+//==============================================================================
+// Float to Uchar4
+//==============================================================================
 rs_allocation inAlloc;
 uchar4 __attribute__((kernel)) convertF4toU4(uint32_t x, uint32_t y) {
     uchar4 pixel;
@@ -44,6 +35,9 @@ uchar4 __attribute__((kernel)) convertF4toU4(uint32_t x, uint32_t y) {
     return pixel;
 }
 
+//==============================================================================
+// Float to Uchar4
+//==============================================================================
 uchar4 __attribute__((kernel)) convertFtoU4(uint32_t x, uint32_t y) {
     uchar4 pixel;
     float in = rsGetElementAt_float(inAlloc, x, y);
@@ -52,6 +46,9 @@ uchar4 __attribute__((kernel)) convertFtoU4(uint32_t x, uint32_t y) {
     return pixel;
 }
 
+//==============================================================================
+// Uchar4 to Float4
+//==============================================================================
 float4 __attribute__((kernel)) convertU4toF4(uint32_t x, uint32_t y) {
     float4 out;
     float4 in = convert_float4(rsGetElementAt_uchar4(inAlloc, x, y)) / 255;
@@ -62,6 +59,9 @@ float4 __attribute__((kernel)) convertU4toF4(uint32_t x, uint32_t y) {
     return out;
 }
 
+//==============================================================================
+// Float4 to Float4
+//==============================================================================
 float4 __attribute__((kernel)) convertFtoF4(uint32_t x, uint32_t y){
     float4 out = rsGetElementAt_float(inAlloc, x, y);
     out.a = 1;
