@@ -4,6 +4,10 @@
 rs_allocation inAllocation;
 const float alpha = 0.2f;
 
+// ============================================================================================
+//                                      Exposure
+// ============================================================================================
+
 float __attribute__((kernel))expose(uint32_t x, uint32_t y){
 
     // Get the current pixel

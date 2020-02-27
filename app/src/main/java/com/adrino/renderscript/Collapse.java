@@ -11,7 +11,7 @@ import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.adrino.hdr.corehdr.Constant;
+import com.adrino.hdr.corehdr.Constants;
 import com.adrino.hdr.corehdr.CreateHDR;
 
 import java.io.File;
@@ -44,7 +44,7 @@ public class Collapse extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                if (!Constant.MEM_BOOST) {
+                if (!Constants.MEM_BOOST) {
                     final List<Bitmap> resultant = new CreateHDR(context).perform(bmpImages, CreateHDR.Actions.RESULTANT);
 
                     runOnUiThread(new Runnable() {

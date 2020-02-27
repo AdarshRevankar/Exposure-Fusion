@@ -8,25 +8,53 @@ import androidx.renderscript.Allocation;
 
 import java.util.List;
 
-public class CreateHDR implements HDRManager.Presenter {
+public class CreateHDR implements HDRManager.HDRClient {
+    /**
+     *  CreateHDR is the class implements {@link HDRManager.HDRClient}, which provides the methods to perform HDR. it also allows developers
+     *  to inspect at intermediate stages of their result. CreateHDR performs the High-Dynamic-Range
+     *  (HDR) over the <b>Multiple Exposed</b> images using <b>Exposure Fusion</b> technique.
+     *
+     *  Method perform(List<Bitmap>, Actions) does take the request and returns the List of Bitmap
+     *  according to the {@link CreateHDR.Actions} Actions enumeration.
+     *
+     *  Way to obtain HDR Image from input of List<Bitmap> containing 3 Bitmap is :
+     *  Eg:
+     *
+     *      CreateHDR createHdr = new CreateHDR(getApplicationContext());
+     *
+     *      List<Bitmap> outBmpList = createHdr.perform( bmpInputList, CreateHDR.Actions.HDR );
+     *
+     *      Bitmap hdrOutput = outBmpList.get(0);
+     *
+     *  NOTE: Here each of the methods return variable number of output. Please make sure that index
+     *  is not out of Bound of List. ( Better way would be iterate using {@see Iterator} class.
+     *
+     * @see HDRFilter is the class where all the Methods are implemented.
+     */
 
     private static final String TAG = "CreateHDR";
     private HDRFilter hdrFilter = null;
     private List<Allocation> inAllocList = null;
 
     /**
-     * Actions
+     * @see Actions
      * Enumeration used to specify what kind of computation has to be performed
      * Defination of each of fields:
      * <p>
-     * HDR          - Get HDR image of given Image list of different EV's [ NOTE : List size has to be INPUT_IMAGE_SIZE ]
-     * CONTRAST     - Get Contrast of List of Image(s) [ NOTE : Internally converted to Gray scale ]
-     * EXPOSED      - Get Exposure of List of Image(s)
-     * SATURATION   - Get Saturation of List of Image(s)
-     * NORMAL       - Get Normal Weight of List of Image(s)
-     * GAUSSIAN     - Get Gaussian Pyramid of List of Image(s) [ NOTE : SELECT_INDEX has to be specified ]
-     * LAPLACIAN    - Get Laplacian Pyramid of List of Image(s) [ NOTE : SELECT_INDEX has to be specified ]
-     * RESULTANT    - Get Resultant of List of Images [ NOTE : List size has to be INPUT_IMAGE_SIZE ]
+     * +--------------------------------------------------------------------------------------------------------------------------------------------+
+     * |   Action       No of Bitmaps Output    Description                                                                                         |
+     * +--------------------------------------------------------------------------------------------------------------------------------------------+
+     * |    HDR          1                       Get HDR image of given Image list of different EV's [ NOTE : List size has to be INPUT_IMAGE_SIZE ]|
+     * |    CONTRAST     N                       Get Contrast of List of Image(s) [ NOTE : Internally converted to Gray scale ]                     |
+     * |    EXPOSED      N                       Get Exposure of List of Image(s)                                                                   |
+     * |    SATURATION   N                       Get Saturation of List of Image(s)                                                                 |
+     * |    NORMAL       N                       Get Normal Weight of List of Image(s)                                                              |
+     * |    GAUSSIAN     L                       Get Gaussian Pyramid of List of Image(s) [ NOTE : SELECT_INDEX has to be specified ]               |
+     * |    LAPLACIAN    L                       Get Laplacian Pyramid of List of Image(s) [ NOTE : SELECT_INDEX has to be specified ]              |
+     * |    RESULTANT    L                       Get Resultant of List of Images [ NOTE : List size has to be INPUT_IMAGE_SIZE ]                    |
+     * +--------------------------------------------------------------------------------------------------------------------------------------------+
+     * NOTE: Here, N - Length of bmpImagesList inputed
+     *             L - Pyramid Length computed dynamically (Depends on resolution)
      */
     public enum Actions {
         HDR,
@@ -41,8 +69,7 @@ public class CreateHDR implements HDRManager.Presenter {
 
     /**
      *  Constructor
-     *
-     * @param context   : Application Context
+     *  @param context: Application Context
      */
     public CreateHDR(Context context){
         if (hdrFilter == null) {
@@ -89,11 +116,11 @@ public class CreateHDR implements HDRManager.Presenter {
                 break;
             case GAUSSIAN:
                 isPyramid = true;
-                inAllocList = hdrFilter.generateGaussianPyramid(hdrFilter.computeNormalWeighted(bmpResizedImageList), HDRFilter.DATA_TYPE.FLOAT32).get(Constant.getSelectedIndex());
+                inAllocList = hdrFilter.generateGaussianPyramid(hdrFilter.computeNormalWeighted(bmpResizedImageList), HDRFilter.DATA_TYPE.FLOAT32).get(Constants.getSelectedIndex());
                 break;
             case LAPLACIAN:
                 isPyramid = true;
-                inAllocList = hdrFilter.generateLaplacianPyramids(bmpResizedImageList).get(Constant.getSelectedIndex());
+                inAllocList = hdrFilter.generateLaplacianPyramids(bmpResizedImageList).get(Constants.getSelectedIndex());
                 break;
             case RESULTANT:
                 isPyramid = true;
@@ -115,9 +142,9 @@ public class CreateHDR implements HDRManager.Presenter {
      */
     @Override
     public List<Bitmap> perform(List<Bitmap> bmpImagesList, Actions action, int selectedIndex) {
-        Constant.setSelectedIndex(selectedIndex);
+        Constants.setSelectedIndex(selectedIndex);
 
-        // Notify User
+        // Notify User about Not Preferred method call
         if (!(action == Actions.GAUSSIAN || action == Actions.LAPLACIAN)) {
             Log.e(TAG, "perform: RECOMMEND TO USE `perform(List<Bitmap>, Actions)` FOR Action." + action);
         }

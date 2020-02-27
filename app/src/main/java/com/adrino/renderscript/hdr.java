@@ -9,7 +9,7 @@ import android.widget.ImageView;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.adrino.hdr.corehdr.*;
+import com.adrino.hdr.corehdr.CreateHDR;
 
 public class hdr extends AppCompatActivity {
 
@@ -35,5 +35,11 @@ public class hdr extends AppCompatActivity {
         if(hdrOutputList != null && hdrOutputList.get(0) != null){
             ((ImageView)findViewById(R.id.outHDR)).setImageBitmap(hdrOutputList.get(0));
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        createHDR.destroy();
     }
 }

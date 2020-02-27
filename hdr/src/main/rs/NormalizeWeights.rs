@@ -16,6 +16,9 @@ rs_allocation C3;
 rs_allocation S3;
 rs_allocation E3;
 
+// ============================================================================================
+//                                      NORMALISE
+// ============================================================================================
 float __attribute__((kernel)) normalizeWeights(int32_t x, int32_t y){
 
     // Get C, S, E from all 3 images; Hence 3 x 3 = 9 variables

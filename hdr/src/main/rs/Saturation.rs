@@ -3,6 +3,10 @@
 
 rs_allocation inAlloc;
 
+// ============================================================================================
+//                                      SATURATE
+// ============================================================================================
+
 float __attribute__((kernel)) saturate (uint32_t x, uint32_t y){
     float4 in = convert_float4(rsGetElementAt_uchar4(inAlloc, x, y)) / 255;
     float mu = (in.r + in.g + in.b ) / 3;

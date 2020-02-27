@@ -40,19 +40,14 @@ import com.adrino.hdr.ScriptC_utils;
  */
 
 
-class HDRFilter implements HDRManager.Performer {
+class HDRFilter implements HDRManager.HDRProcessor {
 
     private final static String TAG = "HDRFilter";
     private int PYRAMID_LEVELS;
     private RenderScript renderScript;
-
-    // Data Meta
-    enum DATA_TYPE {FLOAT32}
-
+    enum DATA_TYPE {FLOAT32, FLOAT32_4}
     private Element elementFloat4, elementFloat;
     private static List<Level> levelsMeta;
-
-    // Image Meta
     private static Bitmap.Config config;
     private static int width, height;
 
@@ -62,9 +57,13 @@ class HDRFilter implements HDRManager.Performer {
         elementFloat = Element.F32(renderScript);
     }
 
+    /**
+     *  Setting Meta Data
+     *  Which is essential to maintain the consistency in between the Methods
+     */
     @Override
     public void setMeta(int imWidth, int imHeight, Bitmap.Config imConfig) {
-        Constant.MEM_BOOST = false;
+        Constants.MEM_BOOST = false;
 
         // Set image Dim
         width = imWidth;
@@ -72,25 +71,47 @@ class HDRFilter implements HDRManager.Performer {
         config = imConfig;
 
         // Calculate Pyramid Levels
+        // PyrLevels = log(min(w,h))/log(2)
         PYRAMID_LEVELS = (int) (Math.log(Math.min(imWidth, imHeight)) / Math.log(2));
         RsUtils.ErrorViewer(this, "IMAGE DIMENTIONS", " W :" + width + " H :" + height);
         RsUtils.ErrorViewer(this, "NUMBER OF LEVELS", "" + PYRAMID_LEVELS);
     }
 
+
+    /**
+     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     *   |                           CONTRAST                           |
+     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     * @refer  Image Kernels - http://setosa.io/ev/image-kernels/
+     * @refer  Handling Edge cases - https://en.wikipedia.org/wiki/Kernel_(image_processing)
+     *
+     * Here the Edge(s) of the given Image is(are) identified.
+     * Kernel is a Matrix which Convolve (defined below) over the image to get the specific feature.
+     * Kernel used here is :
+     *      Edge kernel - Identifies the Edge
+     *      [ 0  1  0
+     *        1 -4  1
+     *        0  1  0 ]
+     * Convolution : is the process of Scanning the image horizontally vertical to compute the dot
+     * product and store the resultant in the corresponding pixel in the resultant image.
+     *
+     * Image Edges are extracted from the Input Image, i.e having Contrast information.
+     *
+     * TODO: Be Careful when destroying Allocation
+     *
+     * @param bmpImages     Input Image(s) list
+     * @return              List of Allocation of float ( 1 Dim ) containing Contrast Information
+     *                      Allocation will have FLOAT32 elements color in the range of 0...1.
+     */
     @Override
     public List<Allocation> applyConvolution3x3Filter(List<Bitmap> bmpImages) {
-        //   +- - - - - - - - - - - - - - - - - - - - - - - - -+
-        //   |                   CONTRAST                      |
-        //   +- - - - - - - - - - - - - - - - - - - - - - - - -+
-        //
-        //   Return: List of Allocation of float ( 1 Dim ) Convolved List
 
         float[] filter = {0, 1, 0, 1, -4, 1, 0, 1, 0};
         ScriptIntrinsicConvolve3x3 scriptConvolve = ScriptIntrinsicConvolve3x3.create(renderScript, elementFloat);
         ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
 
         Allocation inAlloc, grayAlloc, outAlloc;
-        List<Allocation> outAllocList = new ArrayList<>(Constant.INPUT_IMAGE_SIZE);
+        List<Allocation> outAllocList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
 
         for (Bitmap inImage : bmpImages) {
             inAlloc = Allocation.createFromBitmap(renderScript, inImage);
@@ -101,7 +122,7 @@ class HDRFilter implements HDRManager.Performer {
             scriptUtils.set_inGrayAlloc(inAlloc);
             scriptUtils.forEach_convertRGBAToGray(grayAlloc);
 
-            // RGB -> Convoluted
+            // GrayScale Image -> Convoluted
             scriptConvolve.setInput(grayAlloc);
             scriptConvolve.setCoefficients(filter);
             scriptConvolve.forEach(outAlloc);
@@ -118,18 +139,30 @@ class HDRFilter implements HDRManager.Performer {
         return outAllocList;
     }
 
+    /**
+     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     *   |                           SATURATION                         |
+     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     * Here the variation in the RGB parameters is highlighted.
+     * if RGB = 255 125 0, Having high variation between R G B Components, So it will be given more
+     * value in the range of 0 ... 1.
+     * But RGB = 255 255 255, Having 0 Deviation hence it will be given value 0;
+     *
+     * Calculation is done by:
+     *      mean = ( R + G + B ) / 3
+     *      S = sqrt( (R - mean)^2 + (G - mean)^2 + (B - mean)^2 ) / 3 )
+     *
+     * TODO: Be Careful when destroying Allocation
+     *
+     * @param bmpImages     Input Image(s) list
+     * @return              List of Allocation of float ( 1 Dim ) containing Saturation Information
+     */
     @Override
     public List<Allocation> applySaturationFilter(List<Bitmap> bmpImages) {
-        //   +- - - - - - - - - - - - - - - - - - - - - - - - -+
-        //   |                   SATURATION                    |
-        //   +- - - - - - - - - - - - - - - - - - - - - - - - -+
-        //
-        //   Return: List of Allocation of float ( 1 Dim ) Saturation List
-
         ScriptC_Saturation scriptSaturation = new ScriptC_Saturation(renderScript);
 
         Allocation inAllocation, outAllocation;
-        List<Allocation> outAllocList = new ArrayList<>(Constant.INPUT_IMAGE_SIZE);
+        List<Allocation> outAllocList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
 
         for (Bitmap inImage : bmpImages) {
 
@@ -151,17 +184,28 @@ class HDRFilter implements HDRManager.Performer {
         return outAllocList;
     }
 
+    /**
+     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     *   |                         WELL EXPOSURE                        |
+     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     * Here the exposure variation is observed and given value accordingly in the range of 0...1.
+     *
+     * Calculation is Done by: Gaussian function
+     *      E = e^( ( R - 0.5 )^2 + ( G - 0.5 )^2 + ( B - 0.5 )^2 ) / ( - 2 * alpha^2 )
+     *      Here alpha is taken to be : 0.2
+     *
+     * TODO: Be Careful when destroying Allocation
+     *
+     * @param bmpImages     Input Image(s) list
+     * @return              List of Allocation of float ( 1 Dim ) containing Exposure Information
+     */
     @Override
     public List<Allocation> applyExposureFilter(List<Bitmap> bmpImages) {
-        //   +- - - - - - - - - - - - - - - - - - - - - - - - -+
-        //   |                WELL EXPOSURE                    |
-        //   +- - - - - - - - - - - - - - - - - - - - - - - - -+
-        //
-        //   Return: List of Allocation of float ( 1 Dim ) Exposure List
+
         ScriptC_Exposure scriptExposure = new ScriptC_Exposure(renderScript);
 
         Allocation inAllocation, outAllocation;
-        List<Allocation> outAllocList = new ArrayList<>(Constant.INPUT_IMAGE_SIZE);
+        List<Allocation> outAllocList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
 
         for (Bitmap inImage : bmpImages) {
 
@@ -184,19 +228,37 @@ class HDRFilter implements HDRManager.Performer {
         return outAllocList;
     }
 
-    List<Allocation> computeNormalWeighted(List<Bitmap> bitmapList) {
-        return computeNormalWeighted(applyConvolution3x3Filter(bitmapList), applySaturationFilter(bitmapList), applyExposureFilter(bitmapList));
-    }
-
-
+    /**
+     *  TODO: Normalization - Dyanmically for all the images
+     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     *   |                         NORMALISATION                        |
+     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     * Normalization allows to identify the pixels which has the best information to take from.
+     * From Each exposed Image identifying segments that contribute most to the information of HDR.
+     *
+     * Normal Weighted Image is obtained by:
+     *
+     *      for each pixel (x,y):
+     *          Wi(x,y) = Ci(x,y) * Si(x,y) * Ei(x,y)
+     *          ~Wi(x,y) = Wi(x,y) / Summation_i(Wi(x,y))
+     *
+     * Where,
+     *      Where, Ci, Si, Ei - Contrast, Saturation, Exposure of ith image (pixels)
+     *      Wi - Weighted Pixel value
+     *      ~Wi - Nomralised Weighted Pixel value
+     *
+     * TODO: Be Careful when destroying Allocation
+     *
+     * @param contrast          List of Allocation which has contrast computed
+     * @param saturation        List of Allocation which has saturation computed
+     * @param wellExposeness    List of Allocation which has exposure computed
+     * @return                  List of Allocation of float ( 1 Dim ) Normally Weighted Information
+     */
     @Override
     public List<Allocation> computeNormalWeighted(List<Allocation> contrast,
                                                   List<Allocation> saturation,
                                                   List<Allocation> wellExposeness) {
 
-        //   +- - - - - - - - - - - - - - - - - - - - - - - - -+
-        //   |                NORMALISATION                    |
-        //   +- - - - - - - - - - - - - - - - - - - - - - - - -+
         ScriptC_NormalizeWeights scriptNorm = new ScriptC_NormalizeWeights(renderScript);
 
         // - - - - - Allocate - - - - - - - -
@@ -223,13 +285,13 @@ class HDRFilter implements HDRManager.Performer {
         scriptNorm.forEach_normalizeWeights(outAlloc1);
 
         // - - - - - Store - - - - - - - -
-        List<Allocation> outAllocList = new ArrayList<>(Constant.INPUT_IMAGE_SIZE);
+        List<Allocation> outAllocList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
         outAllocList.add(outAlloc1);
         outAllocList.add(outAlloc2);
         outAllocList.add(outAlloc3);
 
         // MemBoost Clear the Allocations used & not required
-        if (Constant.MEM_BOOST) {
+        if (Constants.MEM_BOOST) {
             for (int i = 0; i < contrast.size(); i++) {
                 contrast.get(i).destroy();
                 saturation.get(i).destroy();
@@ -242,6 +304,48 @@ class HDRFilter implements HDRManager.Performer {
         return outAllocList;
     }
 
+    // Overridden Method
+    List<Allocation> computeNormalWeighted(List<Bitmap> bitmapList) {
+        return computeNormalWeighted(applyConvolution3x3Filter(bitmapList), applySaturationFilter(bitmapList), applyExposureFilter(bitmapList));
+    }
+
+    /**
+     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     *   |                      GAUSSIAN PYRAMID                        |
+     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     *   Gaussian Pyramid is Collection of same image but of different resolution.
+     *   It can have at max {PYRAMID_LEVELS} pyramid levels.
+     *
+     *   The Configuration is:
+     *      G0 - Lowest Level
+     *      Gl - Highest Level,     where l - Max number of level
+     *
+     *  +------------------------------------------------------------------------------------------------+
+     *  | Gaussian Level        Pyramid Visualization       Resolution   Scaled to Original Apherance    |
+     *  |------------------------------------------------------------------------------------------------|
+     *  |    G4                        _                       50x50     Most Blur                       |
+     *  |    G3                       ____                   100x100     More Blur                       |
+     *  |    G2                     ________                 200x200     Little Blur                     |
+     *  |    G1                  ________________            400x400     Approximately Original          |
+     *  |    G0          ________________________________    800x800     Original                        |
+     *  |                                                                                                |
+     *  +------------------------------------------------------------------------------------------------+
+     *
+     *  Pyramids have to converted to Half of its current resolution.
+     *
+     *  Logic:
+     *          currPyr = Original
+     *          G[0] = Original
+     *          for l: maxPyramidLevel - 1
+     *          |--- currPyr = REDUCE(currPyr, 2)
+     *          |--- G[l] = currPyr
+     *
+     *  This is how Gaussian Pyramid will be generated from 1 Image.
+     *  Since current method takes N images as input, Hence it produces N Pyramids of L Layers.
+     *
+     * @param bmpImageList  Input Image(s) (bitmap) of difference exposure(s)
+     * @return              List of N Pyramids, where each pyramid have L Levels of Allocation (F4)
+     */
     @Override
     public List<List<Allocation>> generateGaussianPyramid(List<Bitmap> bmpImageList) {
         //   +- - - - - - - - - - - - - - - - - - - - - - - - - - -+
@@ -332,6 +436,10 @@ class HDRFilter implements HDRManager.Performer {
         return outGaussianAllocationList;
     }
 
+    /**
+     * Overloaded method for Gaussian Pyramid where,
+     * Allocation can be given as input & that input is sent to the original Gaussian Pyramid function
+     */
     @Override
     public List<List<Allocation>> generateGaussianPyramid(List<Allocation> floatAlloc, DATA_TYPE data_type) {
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -341,6 +449,38 @@ class HDRFilter implements HDRManager.Performer {
     }
 
 
+    /**
+     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -+
+     *   |                      LAPLACIAN PYRAMID ( Color Info )         |
+     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -+
+     *   Laplacian Pyramid is Collection of images similar to the Gaussian Pyramid, but
+     *   laplacian pyramids are have layers which have different information.
+     *   It can have at max {PYRAMID_LEVELS} pyramid levels.
+     *
+     *   Laplacian pyramid are constructed from difference between two adjacent Gaussian Pyramid levels.
+     *   Which means it stores the Change in information from on layer to other layer. And hence it boosts color
+     *
+     *   The Configuration is:
+     *      L0 - Lowest Level
+     *      Ll - Highest Level,     where l - Max number of level
+     *
+     *  +---------------------------------------------------------------------------------------+
+     *  | LaplacianLevel        Pyramid Visualization       Resolution   Computation            |
+     *  |---------------------------------------------------------------------------------------|
+     *  |    L4                        _                       50x50     L4 = G4                |
+     *  |    L3                       ____                   100x100     L3 = G3 - EXPAND(G4)   |
+     *  |    L2                     ________                 200x200     L2 = G2 - EXPAND(G3)   |
+     *  |    L1                  ________________            400x400     L1 = G1 - EXPAND(G2)   |
+     *  |    L0          ________________________________    800x800     L0 = G0 - EXPAND(G1)   |
+     *  |                                                                                       |
+     *  +---------------------------------------------------------------------------------------+
+     *
+     *  This is how Laplacian Pyramid will be generated from 1 Image.
+     *  Since current method takes N images as input, Hence it produces N Pyramids of L Layers.
+     *
+     * @param bmpInMultiExposures  Input Image(s) (bitmap) of difference exposure(s)
+     * @return                     List of N Pyramids, where each pyramid have L Levels of Allocation (F4)
+     */
     @Override
     public List<List<Allocation>> generateLaplacianPyramids(List<Bitmap> bmpInMultiExposures) {
         // + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
@@ -404,6 +544,16 @@ class HDRFilter implements HDRManager.Performer {
         return laplacianPyramidList;
     }
 
+    /**
+     *  Resultant Pyramid Generation
+     *
+     *  Logic:
+     *      R[0] = Summation_i(Gi[0] * Li[0])
+     *      R[1] = Summation_i(Gi[1] * Li[1])
+     *      R[2] = Summation_i(Gi[2] * Li[2])
+     *      ...
+     *      R[L] = Summation_i(Gi[L] * Li[L])
+     */
     @Override
     public List<Allocation> generateResultant(List<List<Allocation>> gaussianPyramids, List<List<Allocation>> laplacianPyramids) {
 
@@ -423,7 +573,6 @@ class HDRFilter implements HDRManager.Performer {
         for (int level = 0; level < PYRAMID_LEVELS; level++) {
             Allocation outAlloc = RsUtils.create2d(renderScript, levelsMeta.get(level).width, levelsMeta.get(level).height, elementFloat4);
 
-            Log.e(TAG, "generateResultant: W : " + levelsMeta.get(level).width + " H : " + levelsMeta.get(level).height);
             // - - - - Script - - - - -
             scriptCollapse.set_GP1(gaussianPyramids.get(0).get(level));
             scriptCollapse.set_GP2(gaussianPyramids.get(1).get(level));
@@ -436,7 +585,7 @@ class HDRFilter implements HDRManager.Performer {
             resultantPyramid.add(outAlloc);
         }
 
-        if (Constant.MEM_BOOST) {
+        if (Constants.MEM_BOOST) {
             for (int i = 0; i < gaussianPyramids.size(); i++) {
                 for (int j = 0; j < PYRAMID_LEVELS; j++) {
                     gaussianPyramids.get(i).get(j).destroy();
@@ -449,6 +598,12 @@ class HDRFilter implements HDRManager.Performer {
         return resultantPyramid;
     }
 
+    /**
+     * Collapse Resultant Pyramid
+     *
+     * Logic: Add All the pixels by Scaling to previous level
+     *      HDR = R0 + EXPAND( R1 + EXPAND( R2 + ... EXPAND( Rl ) ... ))
+     */
     @Override
     public List<Allocation> collapseResultant(List<Allocation> resultant) {
         int lowestLevel = PYRAMID_LEVELS - 1;
@@ -505,7 +660,7 @@ class HDRFilter implements HDRManager.Performer {
             }
         }
 
-        if (Constant.MEM_BOOST) {
+        if (Constants.MEM_BOOST) {
             for (int i = 0; i < resultant.size(); i++) {
                 resultant.get(i).destroy();
             }

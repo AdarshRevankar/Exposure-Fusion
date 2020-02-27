@@ -16,7 +16,7 @@ import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
 
-import com.adrino.hdr.corehdr.Constant;
+import com.adrino.hdr.corehdr.Constants;
 import com.adrino.hdr.corehdr.CreateHDR;
 import com.adrino.renderscript.visual.ViewDialog;
 
@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
         Objects.requireNonNull(getSupportActionBar()).setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
         getSupportActionBar().setCustomView(R.layout.action_bar);
 
-        Constant.MEM_BOOST = false;
+        Constants.MEM_BOOST = false;
 
         // toggle listener
         (findViewById(R.id.memToggle)).setOnTouchListener(new View.OnTouchListener() {
@@ -108,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isTouched) {
                     isTouched = false;
-                    Constant.MEM_BOOST = isChecked;
+                    Constants.MEM_BOOST = isChecked;
                     if(isChecked){
                         (findViewById(R.id.Contrast)).setVisibility(View.GONE);
                         (findViewById(R.id.Saturation)).setVisibility(View.GONE);
@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if(Constant.MEM_BOOST)
+        if(Constants.MEM_BOOST)
             expFusion.destroy();
     }
 
