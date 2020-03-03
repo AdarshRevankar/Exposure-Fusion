@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.CompoundButton;
@@ -18,8 +19,10 @@ import android.widget.TextView;
 
 import com.adrino.hdr.corehdr.Constants;
 import com.adrino.hdr.corehdr.CreateHDR;
+import com.adrino.hdr.corehdr.RsUtils;
 import com.adrino.renderscript.visual.ViewDialog;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -71,13 +74,23 @@ public class MainActivity extends AppCompatActivity {
         SOURCE2 = R.drawable.sarvesh_iphone2;
         SOURCE3 = R.drawable.sarvesh_iphone3;
 
-        /*---------------------- Load Images ----------------------*/
-        bmpImgList = new ArrayList<>(3);
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE1));
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE2));
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE3));
+        Intent intent = getIntent();
+        bmpImgList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
+        String path = intent.getStringExtra("location");
+        Log.e(TAG, "onCreate: "+path);
+        if(path != null){
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+1+".jpg").getAbsolutePath()));
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+2+".jpg").getAbsolutePath()));
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+3+".jpg").getAbsolutePath()));
+        } else {
+            /*---------------------- Load Images ----------------------*/
+            bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE1));
+            bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE2));
+            bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE3));
+        }
 
         /*---------------------- Scale Images ----------------------*/
+        bmpImgList = RsUtils.resizeBmp(bmpImgList);
 
         /*---------------------- Set Images ----------------------*/
         ((ImageView) findViewById(R.id.pic1)).setImageBitmap(bmpImgList.get(0));
@@ -148,6 +161,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void doCollapse(View view) {
         Intent i = new Intent(MainActivity.this, Collapse.class);
+        i.putExtra("location", this.getExternalFilesDir(null).toString());
         startActivity(i);
     }
 
@@ -269,6 +283,6 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 viewDialog.hideDialog();
             }
-        }, 500);
+        }, 300);
     }
 }

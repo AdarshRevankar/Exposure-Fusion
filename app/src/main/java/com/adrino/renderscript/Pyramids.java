@@ -2,15 +2,20 @@ package com.adrino.renderscript;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.adrino.hdr.corehdr.Constants;
 import com.adrino.hdr.corehdr.CreateHDR;
+import com.adrino.hdr.corehdr.RsUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,11 +35,20 @@ public class Pyramids extends AppCompatActivity {
 
         createHDR = new CreateHDR(this);
 
-        bmpImgList = new ArrayList<>();
+        Intent intent = getIntent();
+        bmpImgList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
+        String path = intent.getStringExtra("location");
+        if(path != null){
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+1+".jpg").getAbsolutePath()));
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+2+".jpg").getAbsolutePath()));
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+3+".jpg").getAbsolutePath()));
+        } else {
+            bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphon1));
+            bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone2));
+            bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone3));
+        }
 
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphon1));
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone2));
-        bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone3));
+        bmpImgList = RsUtils.resizeBmp(bmpImgList);
     }
 
     public void createLaplacian(View view) {

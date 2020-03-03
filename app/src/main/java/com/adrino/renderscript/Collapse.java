@@ -1,6 +1,7 @@
 package com.adrino.renderscript;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -13,20 +14,23 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.adrino.hdr.corehdr.Constants;
 import com.adrino.hdr.corehdr.CreateHDR;
+import com.adrino.hdr.corehdr.RsUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Collapse extends AppCompatActivity {
     CreateHDR createHDR;
-    List<Bitmap> bmpImages;
+    List<Bitmap> bmpImgList;
     private static final String TAG = "Collapse";
     private List<Bitmap> hdrOutput;
     private boolean set = false;
     private Context context;
+    String path;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -35,17 +39,28 @@ public class Collapse extends AppCompatActivity {
         createHDR = new CreateHDR(this);
         context = this;
 
-        bmpImages = new ArrayList<>();
+        Intent intent = getIntent();
+        bmpImgList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
+        path = intent.getStringExtra("location");
+        Log.e(TAG, "onCreate: "+path);
+        if(path != null){
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+1+".jpg").getAbsolutePath()));
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+2+".jpg").getAbsolutePath()));
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+3+".jpg").getAbsolutePath()));
+        } else {
+            bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphon1));
+            bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone2));
+            bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone3));
+        }
 
-        bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphon1));
-        bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone2));
-        bmpImages.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone3));
+        // Resize
+        bmpImgList = RsUtils.resizeBmp(bmpImgList);
 
         new Thread(new Runnable() {
             @Override
             public void run() {
                 if (!Constants.MEM_BOOST) {
-                    final List<Bitmap> resultant = new CreateHDR(context).perform(bmpImages, CreateHDR.Actions.RESULTANT);
+                    final List<Bitmap> resultant = new CreateHDR(context).perform(bmpImgList, CreateHDR.Actions.RESULTANT);
 
                     runOnUiThread(new Runnable() {
                         @Override
@@ -58,14 +73,23 @@ public class Collapse extends AppCompatActivity {
                     });
                 }
                 long start = System.currentTimeMillis();
-                hdrOutput = createHDR.perform(bmpImages, CreateHDR.Actions.HDR);
+                hdrOutput = createHDR.perform(bmpImgList, CreateHDR.Actions.HDR);
                 long end = System.currentTimeMillis();
+
+                try {
+                    FileOutputStream  file = new FileOutputStream(new File(path, "HDR.jpg"));
+                    Bitmap out = hdrOutput.get(0);
+                    out.compress(Bitmap.CompressFormat.JPEG, 100, file);
+                    file.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
                 Log.e(TAG, "run: Total time : " + (float) (end - start) / 1000 + " s");
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        ((ImageView) findViewById(R.id.original)).setImageBitmap(bmpImages.get(2));
+                        ((ImageView) findViewById(R.id.original)).setImageBitmap(bmpImgList.get(0));
                         ((ImageView) findViewById(R.id.hdr)).setImageBitmap(hdrOutput.get(0));
                     }
                 });

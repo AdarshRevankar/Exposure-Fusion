@@ -1,2 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.adrino.hdr" />
+    package="com.adrino.hdr" >
+
+    <uses-permission android:name="android.permission.CAMERA" />
+</manifest>
