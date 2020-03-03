@@ -8,14 +8,14 @@ public class Constants {
      * This specified the <b>Rescale Dimension</b> which makes the HDR process uniform.
      * TODO : Make sure, SCALE_THRESHOLD is not more than 2000 (Otherwise causes performance hit)
      */
-    static int SCALE_THRESHOLD = 1200;
+    static int SCALE_THRESHOLD = 2048;
 
     /**
      * INPUT_IMAGE_SIZE - Exact Number of images required for HDR
      * TODO : Current Version, Supports only {@value INPUT_IMAGE_SIZE} 3
      * Please do not Modify
      */
-    static final int INPUT_IMAGE_SIZE = 3;
+    public static final int INPUT_IMAGE_SIZE = 3;
 
     /**
      * MEMORY BOOST - Toggle
@@ -30,7 +30,8 @@ public class Constants {
      */
     private static int SELECTED_INDEX = 0;
 
-    /**- - - - - - - - - - - - - - - -
+    /**
+     * - - - - - - - - - - - - - - - -
      *          SETTERS
      * - - - - - - - - - - - - - - - -
      */

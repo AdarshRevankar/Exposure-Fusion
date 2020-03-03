@@ -15,16 +15,16 @@ import java.util.List;
  * RsUtils class is created for the purpose of utilities required for RenderScript processing
  * Contains methods which are frequently used.
  */
-class RsUtils {
+public class RsUtils {
 
     /**
      * create2d - static method
      * 2 Dimensional allocation along X and Y axis of type {@param ElementType} is done.
-     *        +-------+
+     *        +---+---+
      *        | E | E |
-     * height |---+---|
+     * height +---+---+
      *        | E | E |
-     *        +-------+
+     *        +---+---+
      *         width
      * NOTE: Where E - ElementType ( Eg: if ElementType = Element.UCHAR32_4, then it can have ARGB content
      * TODO: PLEASE DO NOT GIVE 'X' AXIS ALLOCATION <=1.
@@ -53,7 +53,7 @@ class RsUtils {
      * @param inBmpImageList    Input List of different dimension(s)
      * @return                  Scaled Down Image(s), of having max dim as SCALED_THRESHOLD
      */
-    static List<Bitmap> resizeBmp(List<Bitmap> inBmpImageList){
+    public static List<Bitmap> resizeBmp(List<Bitmap> inBmpImageList){
         List<Bitmap> outBmpImageList = new ArrayList<>(inBmpImageList.size());
         for (Bitmap inBmpImage: inBmpImageList) {
             outBmpImageList.add(
