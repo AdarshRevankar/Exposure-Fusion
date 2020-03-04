@@ -25,11 +25,16 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -42,9 +47,11 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Range;
 import android.util.Size;
@@ -57,10 +64,13 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
+
+import com.asksira.bsimagepicker.BSImagePicker;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -74,8 +84,11 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import static android.content.Context.SENSOR_SERVICE;
+
 public class CameraCapture extends Fragment
-        implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback {
+        implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback,
+        BSImagePicker.OnMultiImageSelectedListener, SensorEventListener {
 
     /**
      * Conversion from screen rotation to JPEG orientation.
@@ -83,6 +96,9 @@ public class CameraCapture extends Fragment
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     private static final int REQUEST_CAMERA_PERMISSION = 1;
     private static final String FRAGMENT_DIALOG = "dialog";
+    private static final String FRAGMENT_WOBBLE = "wobbleCheck";
+    private static final String FRAGMENT_SUCCESS = "SUCCESS";
+    private static final int IMAGE_REQUEST = 100;
 
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
@@ -467,7 +483,10 @@ public class CameraCapture extends Fragment
     public void onViewCreated(final View view, Bundle savedInstanceState) {
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.process).setOnClickListener(this);
+        view.findViewById(R.id.imgPicker).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
+        writtenCount = 0;
+        initSensor();
     }
 
     @Override
@@ -490,14 +509,21 @@ public class CameraCapture extends Fragment
         } else {
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
         }
+
+        // Register Wobble Check Sensor Listener
+        registerListener();
     }
 
     @Override
     public void onPause() {
         closeCamera();
         stopBackgroundThread();
+        // Register Wobble Check Sensor Listener
+        unRegisterListener();
         super.onPause();
     }
+
+
 
     private void requestCameraPermission() {
         if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
@@ -808,6 +834,7 @@ public class CameraCapture extends Fragment
      */
     private void takePicture() {
         lockFocus();
+        setImageCaptureStart(true);
     }
 
     /**
@@ -856,14 +883,14 @@ public class CameraCapture extends Fragment
                 return;
             }
 
-            EXPOSURE[0] = range.getLower();
-            EXPOSURE[1] = range.getUpper();
+            EXPOSURE[0] = -10;
+            EXPOSURE[1] = 10;
             EXPOSURE[2] = 0;
 
 
-            Log.e(TAG, "captureStillPicture: "+EXPOSURE[0] );
-            Log.e(TAG, "captureStillPicture: "+EXPOSURE[1] );
-            Log.e(TAG, "captureStillPicture: "+EXPOSURE[2] );
+            Log.e(TAG, "captureStillPicture: " + EXPOSURE[0]);
+            Log.e(TAG, "captureStillPicture: " + EXPOSURE[1]);
+            Log.e(TAG, "captureStillPicture: " + EXPOSURE[2]);
 
             for (int i = 0; i < 3; i++) {
                 mImageReader.setOnImageAvailableListener(
@@ -888,6 +915,7 @@ public class CameraCapture extends Fragment
                 mCaptureSession.abortCaptures();
                 mCaptureSession.capture(captureBuilder.build(), null, null);
             }
+            setImageCaptureEnd(true);
             unlockFocus();
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -927,6 +955,16 @@ public class CameraCapture extends Fragment
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
+        // Try to check if the image is correct or not
+        wobbleCheck();
+    }
+
+    void openImageChooser() {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        startActivityForResult(Intent.createChooser(intent, "Select Picture"), IMAGE_REQUEST);
     }
 
     @Override
@@ -936,20 +974,43 @@ public class CameraCapture extends Fragment
                 takePicture();
                 break;
             }
-            case R.id.info: {
-                Activity activity = getActivity();
-                if (null != activity) {
-                    new AlertDialog.Builder(activity)
-                            .setMessage(R.string.intro_message)
-                            .setPositiveButton(android.R.string.ok, null)
-                            .show();
-                }
-                break;
-            }
             case R.id.process:
                 Intent i = new Intent(getActivity(), MainActivity.class);
                 i.putExtra("location", getActivity().getExternalFilesDir(null).toString());
                 startActivity(i);
+                break;
+
+            case R.id.imgPicker:
+                openImageChooser();
+                break;
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Intent i = new Intent(getActivity(), MainActivity.class);
+        i.putExtra("pickerLocation1", getPathFormUri(data.getData()));
+        startActivity(i);
+    }
+
+    private String getPathFormUri(Uri uri) {
+        String res = null;
+        String[] proj = {MediaStore.Images.Media.DATA};
+        Cursor cursor = getActivity().getContentResolver().query(uri, proj, null, null, null);
+        assert cursor != null;
+        if (cursor.moveToFirst()) {
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            res = cursor.getString(column_index);
+        }
+        cursor.close();
+        return res;
+    }
+
+    @Override
+    public void onMultiImageSelected(List<Uri> uriList, String tag) {
+        for (Uri uri : uriList) {
+            Log.e(TAG, "onMultiImageSelected: " + uri.toString());
         }
     }
 
@@ -1079,6 +1140,164 @@ public class CameraCapture extends Fragment
                                 }
                             })
                     .create();
+        }
+    }
+
+
+    /**
+     * Wobble Check
+     */
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private float mAccel;
+    private double mAccelCurrent;
+    private double mAccelLast;
+    private boolean isImageCaptureStart = false;
+    private boolean isImageCaptureEnd = false;
+    private boolean isMobilePositionChanged = false;
+    private static final float MAX_ACCELERATION_ALLOWED = 0.3f;
+
+
+    private synchronized boolean isImageCaptureStart() {
+        return isImageCaptureStart;
+    }
+
+    private synchronized void setImageCaptureStart(boolean imageCaptureStart) {
+        isImageCaptureStart = imageCaptureStart;
+    }
+
+    private synchronized boolean isImageCaptureEnd() {
+        return isImageCaptureEnd;
+    }
+
+    private synchronized void setImageCaptureEnd(boolean imageCaptureEnd) {
+        isImageCaptureEnd = imageCaptureEnd;
+    }
+
+    private synchronized boolean isMobilePositionChanged() {
+        return isMobilePositionChanged;
+    }
+
+    private synchronized void setMobilePositionChanged(boolean mobilePositionChanged) {
+        isMobilePositionChanged = mobilePositionChanged;
+    }
+
+
+
+    private void initSensor() {
+        sensorManager = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mAccel = 0.00f;
+        mAccelCurrent = SensorManager.GRAVITY_EARTH;
+        mAccelLast = SensorManager.GRAVITY_EARTH;
+        setImageCaptureStart(false);
+        setImageCaptureEnd(false);
+        setMobilePositionChanged(false);
+    }
+
+    private void wobbleCheck() {
+        if (isMobilePositionChanged()) {
+            new WobbleDialog().show(getChildFragmentManager(), FRAGMENT_WOBBLE);
+            WobbleDialog.newInstance("Please dont move your device")
+                    .show(getChildFragmentManager(), FRAGMENT_WOBBLE);
+        } else {
+            SuccessDialog.newInstance("Image Captured successfully")
+                    .show(getChildFragmentManager(), FRAGMENT_SUCCESS);
+        }
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            // Shake detection
+            float[] mGravity = event.values.clone();
+            float x = mGravity[0];
+            float y = mGravity[1];
+            float z = mGravity[2];
+            mAccelLast = mAccelCurrent;
+            mAccelCurrent = Math.sqrt(x * x + y * y + z * z);
+            double delta = mAccelCurrent - mAccelLast;
+            mAccel = (float) (mAccel * 0.9f + delta);
+            if (mAccel > MAX_ACCELERATION_ALLOWED) {
+                setMobilePositionChanged(isImageCaptureStart() && !isImageCaptureEnd());
+                Log.e("Mobile Position ", "Mobile Accerated");
+            }
+
+        }
+
+
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+    public static class WobbleDialog extends DialogFragment {
+
+        private static final String ARG_MESSAGE = "message";
+
+        public static WobbleDialog newInstance(String message) {
+            WobbleDialog dialog = new WobbleDialog();
+            Bundle args = new Bundle();
+            args.putString(ARG_MESSAGE, message);
+            dialog.setArguments(args);
+            return dialog;
+        }
+
+        @NonNull
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            final Activity activity = getActivity();
+            return new AlertDialog.Builder(activity)
+                    .setMessage("Kindly hold the device steady while capturing image")
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            CameraCapture.WobbleDialog.this.dismiss();
+                        }
+                    })
+                    .create();
+        }
+    }
+
+    public static class SuccessDialog extends DialogFragment {
+
+        private static final String ARG_MESSAGE = "message";
+
+        public static SuccessDialog newInstance(String message) {
+            SuccessDialog dialog = new SuccessDialog();
+            Bundle args = new Bundle();
+            args.putString(ARG_MESSAGE, message);
+            dialog.setArguments(args);
+            return dialog;
+        }
+
+        @NonNull
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            final Activity activity = getActivity();
+            return new AlertDialog.Builder(activity)
+                    .setMessage("Congrats !!! You have successfully captured all 3 images with different exposures")
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            CameraCapture.SuccessDialog.this.dismiss();
+                        }
+                    })
+                    .create();
+        }
+    }
+
+    private void registerListener() {
+        if (sensorManager != null && accelerometer != null) {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        }
+    }
+
+    private void unRegisterListener() {
+        if (sensorManager != null) {
+            sensorManager.unregisterListener(this);
         }
     }
 

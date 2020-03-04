@@ -290,13 +290,11 @@ class HDRFilter implements HDRManager.HDRProcessor {
         outAllocList.add(outAlloc2);
         outAllocList.add(outAlloc3);
 
-        // MemBoost Clear the Allocations used & not required
-        if (Constants.MEM_BOOST) {
-            for (int i = 0; i < contrast.size(); i++) {
-                contrast.get(i).destroy();
-                saturation.get(i).destroy();
-                wellExposeness.get(i).destroy();
-            }
+        // Clear the Allocations used & not required
+        for (int i = 0; i < contrast.size(); i++) {
+            contrast.get(i).destroy();
+            saturation.get(i).destroy();
+            wellExposeness.get(i).destroy();
         }
 
         scriptNorm.destroy();
@@ -539,6 +537,12 @@ class HDRFilter implements HDRManager.HDRProcessor {
         }
         scriptLaplacian.destroy();
 
+//        for (int i = 0; i < gaussPyramidList.size(); i++) {
+//            for (int j = 0; j < PYRAMID_LEVELS - 1; j++) {
+//                gaussPyramidList.get(i).get(j).destroy();
+//            }
+//        }
+
         RsUtils.ErrorViewer(this, "LAPLACIAN PYRAMID", "FINISHED");
 
         return laplacianPyramidList;
@@ -585,14 +589,12 @@ class HDRFilter implements HDRManager.HDRProcessor {
             resultantPyramid.add(outAlloc);
         }
 
-        if (Constants.MEM_BOOST) {
-            for (int i = 0; i < gaussianPyramids.size(); i++) {
-                for (int j = 0; j < PYRAMID_LEVELS; j++) {
-                    gaussianPyramids.get(i).get(j).destroy();
-                    laplacianPyramids.get(i).get(j).destroy();
-                }
-            }
-        }
+//        for (int i = 0; i < Constants.INPUT_IMAGE_SIZE; i++) {
+//            for (int j = 0; j < PYRAMID_LEVELS; j++) {
+//                gaussianPyramids.get(i).get(j).destroy();
+//                laplacianPyramids.get(i).get(j).destroy();
+//            }
+//        }
 
         RsUtils.ErrorViewer(this, "RESULTANT PYRAMID", "FINISHED  - Length : " + resultantPyramid.size());
         return resultantPyramid;
@@ -660,10 +662,9 @@ class HDRFilter implements HDRManager.HDRProcessor {
             }
         }
 
-        if (Constants.MEM_BOOST) {
-            for (int i = 0; i < resultant.size(); i++) {
-                resultant.get(i).destroy();
-            }
+        // Destroy Memory
+        for (int i = 0; i < resultant.size(); i++) {
+            resultant.get(i).destroy();
         }
 
         collapsedList.add(collapseAlloc);
@@ -690,6 +691,7 @@ class HDRFilter implements HDRManager.HDRProcessor {
             } else {
                 scriptUtils.forEach_convertF4toU4(outAlloc);
             }
+            inAllocList.get(i).destroy();
 
             outAlloc.copyTo(outBmp);
             outBmpList.add(outBmp);
@@ -719,6 +721,7 @@ class HDRFilter implements HDRManager.HDRProcessor {
             // Perform
             scriptUtils.set_inAlloc(inLstAllocation.get(i));
             scriptUtils.forEach_convertF4toU4(outAlloc);
+            inLstAllocation.get(i).destroy();
 
             outAlloc.copyTo(outBmp);
             outBmpList.add(outBmp);

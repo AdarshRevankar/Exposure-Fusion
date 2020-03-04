@@ -26,7 +26,7 @@
                     android:id="@+id/pic1"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-
+                    android:rotation="90"
                     android:layout_weight="1"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <TextView
@@ -47,7 +47,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-
+                    android:rotation="90"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <TextView
                     android:layout_width="match_parent"
@@ -66,7 +66,7 @@
                     android:id="@+id/pic3"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-
+                    android:rotation="90"
                     android:layout_weight="1"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <TextView
@@ -95,6 +95,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
+                    android:rotation="90"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <TextView
                     android:id="@+id/out1Text"
@@ -115,6 +116,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
+                    android:rotation="90"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <TextView
                     android:id="@+id/out2Text"
@@ -135,6 +137,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
+                    android:rotation="90"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <TextView
                     android:id="@+id/out3Text"
