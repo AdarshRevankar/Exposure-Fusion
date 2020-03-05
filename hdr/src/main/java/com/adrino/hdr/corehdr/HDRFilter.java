@@ -47,7 +47,9 @@ class HDRFilter implements HDRManager.HDRProcessor {
     private final static String TAG = "HDRFilter";
     private int PYRAMID_LEVELS;
     private RenderScript renderScript;
+
     enum DATA_TYPE {FLOAT32, FLOAT32_4}
+
     private Element elementFloat4, elementFloat;
     private static List<Level> levelsMeta;
     private static Bitmap.Config config;
@@ -60,8 +62,8 @@ class HDRFilter implements HDRManager.HDRProcessor {
     }
 
     /**
-     *  Setting Meta Data
-     *  Which is essential to maintain the consistency in between the Methods
+     * Setting Meta Data
+     * Which is essential to maintain the consistency in between the Methods
      */
     @Override
     public void setMeta(int imWidth, int imHeight, Bitmap.Config imConfig) {
@@ -81,29 +83,29 @@ class HDRFilter implements HDRManager.HDRProcessor {
 
 
     /**
-     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
-     *   |                           CONTRAST                           |
-     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
-     * @refer  Image Kernels - http://setosa.io/ev/image-kernels/
-     * @refer  Handling Edge cases - https://en.wikipedia.org/wiki/Kernel_(image_processing)
+     * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     * |                           CONTRAST                           |
+     * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
      *
+     * @param bmpImages Input Image(s) list
+     * @return List of Allocation of float ( 1 Dim ) containing Contrast Information
+     * Allocation will have FLOAT32 elements color in the range of 0...1.
+     * @refer Image Kernels - http://setosa.io/ev/image-kernels/
+     * @refer Handling Edge cases - https://en.wikipedia.org/wiki/Kernel_(image_processing)
+     * <p>
      * Here the Edge(s) of the given Image is(are) identified.
      * Kernel is a Matrix which Convolve (defined below) over the image to get the specific feature.
      * Kernel used here is :
-     *      Edge kernel - Identifies the Edge
-     *      [ 0  1  0
-     *        1 -4  1
-     *        0  1  0 ]
+     * Edge kernel - Identifies the Edge
+     * [ 0  1  0
+     * 1 -4  1
+     * 0  1  0 ]
      * Convolution : is the process of Scanning the image horizontally vertical to compute the dot
      * product and store the resultant in the corresponding pixel in the resultant image.
-     *
+     * <p>
      * Image Edges are extracted from the Input Image, i.e having Contrast information.
-     *
+     * <p>
      * TODO: Be Careful when destroying Allocation
-     *
-     * @param bmpImages     Input Image(s) list
-     * @return              List of Allocation of float ( 1 Dim ) containing Contrast Information
-     *                      Allocation will have FLOAT32 elements color in the range of 0...1.
      */
     @Override
     public List<Allocation> applyConvolution3x3Filter(List<Bitmap> bmpImages) {
@@ -142,22 +144,22 @@ class HDRFilter implements HDRManager.HDRProcessor {
     }
 
     /**
-     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
-     *   |                           SATURATION                         |
-     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     * |                           SATURATION                         |
+     * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
      * Here the variation in the RGB parameters is highlighted.
      * if RGB = 255 125 0, Having high variation between R G B Components, So it will be given more
      * value in the range of 0 ... 1.
      * But RGB = 255 255 255, Having 0 Deviation hence it will be given value 0;
-     *
+     * <p>
      * Calculation is done by:
-     *      mean = ( R + G + B ) / 3
-     *      S = sqrt( (R - mean)^2 + (G - mean)^2 + (B - mean)^2 ) / 3 )
-     *
+     * mean = ( R + G + B ) / 3
+     * S = sqrt( (R - mean)^2 + (G - mean)^2 + (B - mean)^2 ) / 3 )
+     * <p>
      * TODO: Be Careful when destroying Allocation
      *
-     * @param bmpImages     Input Image(s) list
-     * @return              List of Allocation of float ( 1 Dim ) containing Saturation Information
+     * @param bmpImages Input Image(s) list
+     * @return List of Allocation of float ( 1 Dim ) containing Saturation Information
      */
     @Override
     public List<Allocation> applySaturationFilter(List<Bitmap> bmpImages) {
@@ -187,19 +189,19 @@ class HDRFilter implements HDRManager.HDRProcessor {
     }
 
     /**
-     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
-     *   |                         WELL EXPOSURE                        |
-     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     * |                         WELL EXPOSURE                        |
+     * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
      * Here the exposure variation is observed and given value accordingly in the range of 0...1.
-     *
+     * <p>
      * Calculation is Done by: Gaussian function
-     *      E = e^( ( R - 0.5 )^2 + ( G - 0.5 )^2 + ( B - 0.5 )^2 ) / ( - 2 * alpha^2 )
-     *      Here alpha is taken to be : 0.2
-     *
+     * E = e^( ( R - 0.5 )^2 + ( G - 0.5 )^2 + ( B - 0.5 )^2 ) / ( - 2 * alpha^2 )
+     * Here alpha is taken to be : 0.2
+     * <p>
      * TODO: Be Careful when destroying Allocation
      *
-     * @param bmpImages     Input Image(s) list
-     * @return              List of Allocation of float ( 1 Dim ) containing Exposure Information
+     * @param bmpImages Input Image(s) list
+     * @return List of Allocation of float ( 1 Dim ) containing Exposure Information
      */
     @Override
     public List<Allocation> applyExposureFilter(List<Bitmap> bmpImages) {
@@ -231,30 +233,30 @@ class HDRFilter implements HDRManager.HDRProcessor {
     }
 
     /**
-     *  TODO: Normalization - Dyanmically for all the images
-     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
-     *   |                         NORMALISATION                        |
-     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     * TODO: Normalization - Dyanmically for all the images
+     * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     * |                         NORMALISATION                        |
+     * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
      * Normalization allows to identify the pixels which has the best information to take from.
      * From Each exposed Image identifying segments that contribute most to the information of HDR.
-     *
+     * <p>
      * Normal Weighted Image is obtained by:
-     *
-     *      for each pixel (x,y):
-     *          Wi(x,y) = Ci(x,y) * Si(x,y) * Ei(x,y)
-     *          ~Wi(x,y) = Wi(x,y) / Summation_i(Wi(x,y))
-     *
+     * <p>
+     * for each pixel (x,y):
+     * Wi(x,y) = Ci(x,y) * Si(x,y) * Ei(x,y)
+     * ~Wi(x,y) = Wi(x,y) / Summation_i(Wi(x,y))
+     * <p>
      * Where,
-     *      Where, Ci, Si, Ei - Contrast, Saturation, Exposure of ith image (pixels)
-     *      Wi - Weighted Pixel value
-     *      ~Wi - Nomralised Weighted Pixel value
-     *
+     * Where, Ci, Si, Ei - Contrast, Saturation, Exposure of ith image (pixels)
+     * Wi - Weighted Pixel value
+     * ~Wi - Nomralised Weighted Pixel value
+     * <p>
      * TODO: Be Careful when destroying Allocation
      *
-     * @param contrast          List of Allocation which has contrast computed
-     * @param saturation        List of Allocation which has saturation computed
-     * @param wellExposeness    List of Allocation which has exposure computed
-     * @return                  List of Allocation of float ( 1 Dim ) Normally Weighted Information
+     * @param contrast       List of Allocation which has contrast computed
+     * @param saturation     List of Allocation which has saturation computed
+     * @param wellExposeness List of Allocation which has exposure computed
+     * @return List of Allocation of float ( 1 Dim ) Normally Weighted Information
      */
     @Override
     public List<Allocation> computeNormalWeighted(List<Allocation> contrast,
@@ -310,41 +312,41 @@ class HDRFilter implements HDRManager.HDRProcessor {
     }
 
     /**
-     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
-     *   |                      GAUSSIAN PYRAMID                        |
-     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
-     *   Gaussian Pyramid is Collection of same image but of different resolution.
-     *   It can have at max {PYRAMID_LEVELS} pyramid levels.
+     * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     * |                      GAUSSIAN PYRAMID                        |
+     * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     * Gaussian Pyramid is Collection of same image but of different resolution.
+     * It can have at max {PYRAMID_LEVELS} pyramid levels.
+     * <p>
+     * The Configuration is:
+     * G0 - Lowest Level
+     * Gl - Highest Level,     where l - Max number of level
+     * <p>
+     * +------------------------------------------------------------------------------------------------+
+     * | Gaussian Level        Pyramid Visualization       Resolution   Scaled to Original Apherance    |
+     * |------------------------------------------------------------------------------------------------|
+     * |    G4                        _                       50x50     Most Blur                       |
+     * |    G3                       ____                   100x100     More Blur                       |
+     * |    G2                     ________                 200x200     Little Blur                     |
+     * |    G1                  ________________            400x400     Approximately Original          |
+     * |    G0          ________________________________    800x800     Original                        |
+     * |                                                                                                |
+     * +------------------------------------------------------------------------------------------------+
+     * <p>
+     * Pyramids have to converted to Half of its current resolution.
+     * <p>
+     * Logic:
+     * currPyr = Original
+     * G[0] = Original
+     * for l: maxPyramidLevel - 1
+     * |--- currPyr = REDUCE(currPyr, 2)
+     * |--- G[l] = currPyr
+     * <p>
+     * This is how Gaussian Pyramid will be generated from 1 Image.
+     * Since current method takes N images as input, Hence it produces N Pyramids of L Layers.
      *
-     *   The Configuration is:
-     *      G0 - Lowest Level
-     *      Gl - Highest Level,     where l - Max number of level
-     *
-     *  +------------------------------------------------------------------------------------------------+
-     *  | Gaussian Level        Pyramid Visualization       Resolution   Scaled to Original Apherance    |
-     *  |------------------------------------------------------------------------------------------------|
-     *  |    G4                        _                       50x50     Most Blur                       |
-     *  |    G3                       ____                   100x100     More Blur                       |
-     *  |    G2                     ________                 200x200     Little Blur                     |
-     *  |    G1                  ________________            400x400     Approximately Original          |
-     *  |    G0          ________________________________    800x800     Original                        |
-     *  |                                                                                                |
-     *  +------------------------------------------------------------------------------------------------+
-     *
-     *  Pyramids have to converted to Half of its current resolution.
-     *
-     *  Logic:
-     *          currPyr = Original
-     *          G[0] = Original
-     *          for l: maxPyramidLevel - 1
-     *          |--- currPyr = REDUCE(currPyr, 2)
-     *          |--- G[l] = currPyr
-     *
-     *  This is how Gaussian Pyramid will be generated from 1 Image.
-     *  Since current method takes N images as input, Hence it produces N Pyramids of L Layers.
-     *
-     * @param bmpImageList  Input Image(s) (bitmap) of difference exposure(s)
-     * @return              List of N Pyramids, where each pyramid have L Levels of Allocation (F4)
+     * @param bmpImageList Input Image(s) (bitmap) of difference exposure(s)
+     * @return List of N Pyramids, where each pyramid have L Levels of Allocation (F4)
      */
     @Override
     public List<List<Allocation>> generateGaussianPyramid(List<Bitmap> bmpImageList) {
@@ -402,7 +404,7 @@ class HDRFilter implements HDRManager.HDRProcessor {
 
                     // => G[i] = G[i+1] / 2 - Half as the size of the previous stage
                     levelWidth = (int) Math.floor(levelWidth / 2.0f);
-                    levelHeight =(int) Math.floor(levelHeight / 2.0f);
+                    levelHeight = (int) Math.floor(levelHeight / 2.0f);
                     levelsMeta.add(new Level(levelWidth, levelHeight));
 
                 } else {
@@ -440,8 +442,8 @@ class HDRFilter implements HDRManager.HDRProcessor {
             outGaussianAllocationList.add(outGaussLevelList);
         }
 
-        for (Level level: levelsMeta) {
-            Log.e(TAG, "generateGaussianPyramid: Dim : W - "+level.width+" H - "+level.height );
+        for (Level level : levelsMeta) {
+            Log.e(TAG, "generateGaussianPyramid: Dim : W - " + level.width + " H - " + level.height);
         }
 
         // 3. - - - Destroy & Return - - - -
@@ -463,167 +465,140 @@ class HDRFilter implements HDRManager.HDRProcessor {
 
 
     /**
-     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -+
-     *   |                      LAPLACIAN PYRAMID ( Color Info )         |
-     *   +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -+
-     *   Laplacian Pyramid is Collection of images similar to the Gaussian Pyramid, but
-     *   laplacian pyramids are have layers which have different information.
-     *   It can have at max {PYRAMID_LEVELS} pyramid levels.
+     * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -+
+     * |                      LAPLACIAN PYRAMID ( Color Info )         |
+     * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -+
+     * Laplacian Pyramid is Collection of images similar to the Gaussian Pyramid, but
+     * laplacian pyramids are have layers which have different information.
+     * It can have at max {PYRAMID_LEVELS} pyramid levels.
+     * <p>
+     * Laplacian pyramid are constructed from difference between two adjacent Gaussian Pyramid levels.
+     * Which means it stores the Change in information from on layer to other layer. And hence it boosts color
+     * <p>
+     * The Configuration is:
+     * L0 - Lowest Level
+     * Ll - Highest Level,     where l - Max number of level
+     * <p>
+     * +---------------------------------------------------------------------------------------+
+     * | LaplacianLevel        Pyramid Visualization       Resolution   Computation            |
+     * |---------------------------------------------------------------------------------------|
+     * |    L4                        _                       50x50     L4 = G4                |
+     * |    L3                       ____                   100x100     L3 = G3 - EXPAND(G4)   |
+     * |    L2                     ________                 200x200     L2 = G2 - EXPAND(G3)   |
+     * |    L1                  ________________            400x400     L1 = G1 - EXPAND(G2)   |
+     * |    L0          ________________________________    800x800     L0 = G0 - EXPAND(G1)   |
+     * |                                                                                       |
+     * +---------------------------------------------------------------------------------------+
+     * <p>
+     * This is how Laplacian Pyramid will be generated from 1 Image.
+     * Since current method takes N images as input, Hence it produces N Pyramids of L Layers.
      *
-     *   Laplacian pyramid are constructed from difference between two adjacent Gaussian Pyramid levels.
-     *   Which means it stores the Change in information from on layer to other layer. And hence it boosts color
-     *
-     *   The Configuration is:
-     *      L0 - Lowest Level
-     *      Ll - Highest Level,     where l - Max number of level
-     *
-     *  +---------------------------------------------------------------------------------------+
-     *  | LaplacianLevel        Pyramid Visualization       Resolution   Computation            |
-     *  |---------------------------------------------------------------------------------------|
-     *  |    L4                        _                       50x50     L4 = G4                |
-     *  |    L3                       ____                   100x100     L3 = G3 - EXPAND(G4)   |
-     *  |    L2                     ________                 200x200     L2 = G2 - EXPAND(G3)   |
-     *  |    L1                  ________________            400x400     L1 = G1 - EXPAND(G2)   |
-     *  |    L0          ________________________________    800x800     L0 = G0 - EXPAND(G1)   |
-     *  |                                                                                       |
-     *  +---------------------------------------------------------------------------------------+
-     *
-     *  This is how Laplacian Pyramid will be generated from 1 Image.
-     *  Since current method takes N images as input, Hence it produces N Pyramids of L Layers.
-     *
-     * @param bmpInMultiExposures  Input Image(s) (bitmap) of difference exposure(s)
-     * @return                     List of N Pyramids, where each pyramid have L Levels of Allocation (F4)
+     * @param bmpInMultiExposures Input Image(s) (bitmap) of difference exposure(s)
+     * @return List of N Pyramids, where each pyramid have L Levels of Allocation (F4)
      */
     @Override
     public List<List<Allocation>> generateLaplacianPyramids(List<Bitmap> bmpInMultiExposures) {
-        Script.LaunchOptions opt = new Script.LaunchOptions();
-        //opt.setX(3,3);
-        //opt.setY(3, 3);
-
         // + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
         // |    Laplacian Pyramid - laplacian.rs ( Diff b/n Gaussian Pyr.)   |
         // + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
-        //ScriptC_Gaussian scriptGaussian = new ScriptC_Gaussian(renderScript);
-        ScriptC_Laplacian scriptLaplacian = new ScriptC_Laplacian(renderScript);
-        ScriptIntrinsicResize scriptIntrinsicResize = ScriptIntrinsicResize.create(renderScript);
-        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
 
-        // - - - - Generate Gaussian Pyramid - - - - - -
-        //List<List<Allocation>> gaussPyramidList = generateGaussianPyramid(bmpInMultiExposures);
+        // For Laplacian Transform
+        ScriptC_Laplacian scriptLaplacian = new ScriptC_Laplacian(renderScript);
+
+        // For Rescaling
+        ScriptIntrinsicResize scriptIntrinsicResize = ScriptIntrinsicResize.create(renderScript);
+
+        // For Setting Rescale Options
+        Script.LaunchOptions opt = new Script.LaunchOptions();
+
+        // For Allocation of F4 items
+        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
 
         // - - - - Output Images - - - - - - - - - - - -
         List<List<Allocation>> laplacianPyramidList = new ArrayList<>(bmpInMultiExposures.size());
 
-        // - - - - Script - - - - - - - - - - - - - - - -
+        // ========================== EXECUTION ==============================
         for (int i = 0; i < bmpInMultiExposures.size(); i++) {
 
             List<Allocation> outLap = new ArrayList<>(PYRAMID_LEVELS);
 
-            // - - - - Buffer Allocation - - - - - -
-
-            Allocation ucharJ = Allocation.createFromBitmap(renderScript, bmpInMultiExposures.get(i));
-            Allocation J = RsUtils.create2d(renderScript, levelsMeta.get(0).width, levelsMeta.get(0).height, elementFloat4);
-            scriptUtils.set_inAlloc(ucharJ);
-            scriptUtils.forEach_convertU4toF4(J);
-            ucharJ.destroy();
+            // 1. Get Image Allocation & Convert to F4
+            Allocation inAlloc = convertBitmapToAllocation(bmpInMultiExposures.get(i), scriptUtils);
 
             for (int lapLevel = 0; lapLevel < PYRAMID_LEVELS - 1; lapLevel++) {
 
-                // DOWN SAMPLE
-                Allocation downOut = RsUtils.create2d(renderScript, levelsMeta.get(lapLevel + 1).width, levelsMeta.get(lapLevel + 1).height, elementFloat4);
-                scriptIntrinsicResize.setInput(J);
-                scriptIntrinsicResize.forEach_bicubic(downOut);
+                // Dimensions
+                Level currDim = levelsMeta.get(lapLevel);
+                Level smallDim = levelsMeta.get(lapLevel + 1);
 
-                int oddX = 2 * levelsMeta.get(lapLevel + 1).width - levelsMeta.get(lapLevel).width;
-                int oddY = 2 * levelsMeta.get(lapLevel + 1).height - levelsMeta.get(lapLevel).height;
+                // 1.1 DOWN SCALE TO NEXT LEVEL I = downscale(J)
+                Allocation downScaleOutAlloc = downScale(scriptIntrinsicResize, inAlloc, smallDim, null, false);
 
-                // UPSAMPLE
-                int r = 2 * levelsMeta.get(lapLevel + 1).width;
-                int c = 2 * levelsMeta.get(lapLevel + 1).height;
+                // 1.2 UP SCALE TO CURRENT LEVEL
+                Allocation upScaleOutAlloc = upScale(scriptIntrinsicResize, downScaleOutAlloc, currDim, null, false);
 
-                Allocation upOut = RsUtils.create2d(renderScript, levelsMeta.get(lapLevel).width, levelsMeta.get(lapLevel).height, elementFloat4);
-                Log.e(TAG, "generateLaplacianPyramids: start :"+ 3+" end :"+(r-2-oddX) );
-                opt.setX(0, r - oddX);
-                opt.setY(0, c - oddY);
+                // 1.3 SUBTRACT : J - upscale(I)
+                Allocation lapOutputLevel = subtractAminusB(scriptLaplacian, inAlloc, upScaleOutAlloc, currDim, false, true);
 
-                scriptIntrinsicResize.setInput(downOut);
-                scriptIntrinsicResize.forEach_bicubic(upOut, opt);
+                // 1.4 I = J
+                inAlloc = downScaleOutAlloc;
 
-                // Subtract
-                Allocation lapOutAlloc = RsUtils.create2d(renderScript, levelsMeta.get(lapLevel).width, levelsMeta.get(lapLevel).height, elementFloat4);
-                scriptLaplacian.set_laplacianLowerLevel(J);
-                scriptLaplacian.forEach_laplacian(upOut, lapOutAlloc);
-                outLap.add(lapOutAlloc);
-                J.destroy();
-
-                J = downOut;
+                outLap.add(lapOutputLevel);
             }
-            outLap.add(J);
+            // L[N] =
+            outLap.add(inAlloc);
+
             laplacianPyramidList.add(outLap);
         }
-//
-//            // - - - - - LAPLACIAN PYRAMID : L0 = G0 - G1
-//
-//            for (int lapLevel = PYRAMID_LEVELS - 2; lapLevel >= 0; lapLevel--) {
-//
-//                // SCALE
-//                int lapW = levelsMeta.get(lapLevel).width;
-//                int lapH = levelsMeta.get(lapLevel).height;
-//
-//                Allocation expandedAlloc = RsUtils.create2d(renderScript, lapW, lapH, elementFloat4);
-//                Allocation lapAlloc = RsUtils.create2d(renderScript, lapW, lapH, elementFloat4);
-//
-//                scriptIntrinsicResize.setInput(inGauss.get(lapLevel+1));
-//                scriptIntrinsicResize.forEach_bicubic(expandedAlloc, opt);
-
-//                int lapW = levelsMeta.get(lapLevel).width;
-//                int lapH = levelsMeta.get(lapLevel).height;
-//                int prevW = levelsMeta.get(lapLevel + 1).width;
-//
-//                Allocation outAlloc = RsUtils.create2d(renderScript, prevW, lapH, elementFloat4);
-//                Allocation expandedAlloc = RsUtils.create2d(renderScript, lapW, lapH, elementFloat4);
-//
-//                scriptGaussian.set_expandTargetWidth(lapW);
-//                scriptGaussian.set_expandTargetHeight(lapH);
-//
-//                scriptGaussian.set_expandSource(inGauss.get(lapLevel + 1));
-//                scriptGaussian.forEach_expandFloat4Step1(outAlloc);
-//                scriptGaussian.set_expandSource(outAlloc);
-//                scriptGaussian.forEach_expandFloat4Step2(expandedAlloc);
-//                outAlloc.destroy();
-//
-//                Allocation lapAlloc = RsUtils.create2d(renderScript, lapW, lapH, elementFloat4);
-//
-//                scriptLaplacian.set_laplacianLowerLevel(inGauss.get(lapLevel));
-//                scriptLaplacian.forEach_laplacian(expandedAlloc, lapAlloc);
-//
-//                expandedAlloc.destroy();
-//
-//                outLap.add(lapAlloc);
-//            }
-//            outLap.add(0, inGauss.get(PYRAMID_LEVELS - 1));
-//            Collections.reverse(outLap);
-//
-//            // Attach to List
-//            laplacianPyramidList.add(outLap);
-//        }
-//        scriptLaplacian.destroy();
-
         scriptLaplacian.destroy();
-        RsUtils.ErrorViewer(this, "LAPLACIAN PYRAMID", "FINISHED");
+        scriptUtils.destroy();
+        scriptIntrinsicResize.destroy();
 
+        RsUtils.ErrorViewer(this, "LAPLACIAN PYRAMID", "FINISHED");
         return laplacianPyramidList;
     }
 
+    private Allocation downScale(ScriptIntrinsicResize scriptResize, Allocation inAlloc, Level smallDimention, Script.LaunchOptions options, boolean destroy) {
+        Allocation outAlloc = RsUtils.create2d(renderScript, smallDimention.width, smallDimention.height, inAlloc.getElement());
+
+        scriptResize.setInput(inAlloc);
+        if (options == null)
+            scriptResize.forEach_bicubic(outAlloc);
+        else
+            scriptResize.forEach_bicubic(outAlloc, options);
+
+        if (destroy) inAlloc.destroy();
+
+        return outAlloc;
+    }
+
+    private Allocation upScale(ScriptIntrinsicResize scriptResize, Allocation inAlloc, Level smallDimention, Script.LaunchOptions options, boolean destroy) {
+        return downScale(scriptResize, inAlloc, smallDimention, options, destroy);
+    }
+
+    private Allocation subtractAminusB(ScriptC_Laplacian scriptLaplacian, Allocation A, Allocation B, Level currDim, boolean destroyA, boolean destroyB) {
+        Allocation lapOutAlloc = RsUtils.create2d(renderScript, currDim.width, currDim.height, elementFloat4);
+        scriptLaplacian.set_laplacianLowerLevel(A);
+        scriptLaplacian.forEach_laplacian(B, lapOutAlloc);
+        if (destroyA) A.destroy();
+        if (destroyB) B.destroy();
+        return lapOutAlloc;
+    }
+
+    private Allocation subtractAminusB(ScriptC_Laplacian scriptLaplacian, Allocation A, Allocation B, Level currDim) {
+        return subtractAminusB(scriptLaplacian, A, B, currDim, false, false);
+    }
+
+
     /**
-     *  Resultant Pyramid Generation
-     *
-     *  Logic:
-     *      R[0] = Summation_i(Gi[0] * Li[0])
-     *      R[1] = Summation_i(Gi[1] * Li[1])
-     *      R[2] = Summation_i(Gi[2] * Li[2])
-     *      ...
-     *      R[L] = Summation_i(Gi[L] * Li[L])
+     * Resultant Pyramid Generation
+     * <p>
+     * Logic:
+     * R[0] = Summation_i(Gi[0] * Li[0])
+     * R[1] = Summation_i(Gi[1] * Li[1])
+     * R[2] = Summation_i(Gi[2] * Li[2])
+     * ...
+     * R[L] = Summation_i(Gi[L] * Li[L])
      */
     @Override
     public List<Allocation> generateResultant(List<List<Allocation>> gaussianPyramids, List<List<Allocation>> laplacianPyramids) {
@@ -669,15 +644,15 @@ class HDRFilter implements HDRManager.HDRProcessor {
 
     /**
      * Collapse Resultant Pyramid
-     *
+     * <p>
      * Logic: Add All the pixels by Scaling to previous level
-     *      HDR = R0 + EXPAND( R1 + EXPAND( R2 + ... EXPAND( Rl ) ... ))
+     * HDR = R0 + EXPAND( R1 + EXPAND( R2 + ... EXPAND( Rl ) ... ))
      */
     @Override
     public List<Allocation> collapseResultant(List<Allocation> resultant) {
         Script.LaunchOptions opt = new Script.LaunchOptions();
-       // opt.setX(3,3);
-       // opt.setY(3, 3);
+        // opt.setX(3,3);
+        // opt.setY(3, 3);
         int lowestLevel = PYRAMID_LEVELS - 1;
         ScriptC_Collapse scriptCollapse = new ScriptC_Collapse(renderScript);
         ScriptC_Gaussian scriptGaussian = new ScriptC_Gaussian(renderScript);
@@ -709,7 +684,7 @@ class HDRFilter implements HDRManager.HDRProcessor {
 //            Allocation outAlloc = RsUtils.create2d(renderScript, prevW, lapH, elementFloat4);
             Allocation expandedAlloc = RsUtils.create2d(renderScript, lapW, lapH, elementFloat4);
 
-            scriptIntrinsicResize.setInput(resultant.get(level+1));
+            scriptIntrinsicResize.setInput(resultant.get(level + 1));
             scriptIntrinsicResize.forEach_bicubic(expandedAlloc, opt);
 
 //            scriptGaussian.set_expandTargetWidth(lapW);
@@ -827,5 +802,10 @@ class HDRFilter implements HDRManager.HDRProcessor {
         return outBmpList;
     }
 
-
+    private Allocation convertBitmapToAllocation(Bitmap bitmap, ScriptC_utils utils) {
+        Allocation allocation = RsUtils.create2d(renderScript, bitmap.getWidth(), bitmap.getHeight(), elementFloat4);
+        utils.set_inAlloc(Allocation.createFromBitmap(renderScript, bitmap));
+        utils.forEach_convertU4toF4(allocation);
+        return allocation;
+    }
 }

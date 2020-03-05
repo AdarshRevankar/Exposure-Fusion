@@ -6,7 +6,7 @@ public class Constants {
     /**
      * SCALE_THRESHOLD - Length of Maximum dimension of the image which is going to be Processed.
      * This specified the <b>Rescale Dimension</b> which makes the HDR process uniform.
-     * TODO : Make sure, SCALE_THRESHOLD is not more than 2000 (Otherwise causes performance hit)
+     * TODO : Make sure, SCALE_THRESHOLD is not more than 4000 (Otherwise causes performance hit)
      */
     static int SCALE_THRESHOLD = 2000;
 
@@ -36,8 +36,8 @@ public class Constants {
      * - - - - - - - - - - - - - - - -
      */
     static void setScaleThreshold(int scaleThreshold) throws WrongValueError {
-        SCALE_THRESHOLD = scaleThreshold > 2000 ? 2000 : scaleThreshold;
-        if (scaleThreshold > 2000){
+        SCALE_THRESHOLD = scaleThreshold > 4000 ? 4000 : scaleThreshold;
+        if (scaleThreshold > 4000){
             throw new WrongValueError("Threshold value should be between 0 to 2000");
         }
     }
