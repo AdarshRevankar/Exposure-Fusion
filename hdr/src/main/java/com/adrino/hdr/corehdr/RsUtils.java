@@ -81,7 +81,7 @@ public class RsUtils {
 
         int scaledWidth = imgHeight > imgWidth ? (imgWidth * Constants.SCALE_THRESHOLD) / imgHeight : Constants.SCALE_THRESHOLD;
         int scaledHeight = imgHeight > imgWidth ? Constants.SCALE_THRESHOLD : (imgHeight * Constants.SCALE_THRESHOLD) / imgWidth;
-        return Bitmap.createScaledBitmap(inBmpImage, scaledWidth, scaledHeight, false);
+        return Bitmap.createScaledBitmap(inBmpImage, scaledWidth, scaledHeight, true);
     }
 
     /**

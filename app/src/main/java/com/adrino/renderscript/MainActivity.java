@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         bmpImgList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
         String path = intent.getStringExtra("location");
 
+
         if(path != null && new File(path, "pic1.jpg").exists()) {
             bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 1 + ".jpg").getAbsolutePath()));
             bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 2 + ".jpg").getAbsolutePath()));
