@@ -33,6 +33,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_gravity="center"
+                    android:rotation="90"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <ImageView
                     android:id="@+id/res2"
@@ -40,6 +41,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_gravity="center"
+                    android:rotation="90"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <ImageView
                     android:id="@+id/res3"
@@ -47,6 +49,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_gravity="center"
+                    android:rotation="90"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <ImageView
                     android:id="@+id/res4"
@@ -54,6 +57,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_gravity="center"
+                    android:rotation="90"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
             </LinearLayout>
         </LinearLayout>
@@ -78,6 +82,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_gravity="center"
+                    android:rotation="90"
                     android:layout_weight="1"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
                 <ImageView
@@ -85,6 +90,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_gravity="center"
+                    android:rotation="90"
                     android:layout_weight="1"
                     android:src="@drawable/ic_broken_image_black_24dp"/>
 

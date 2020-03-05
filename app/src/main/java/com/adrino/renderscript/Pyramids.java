@@ -21,6 +21,7 @@ import java.util.List;
 
 public class Pyramids extends AppCompatActivity {
 
+    private static final String TAG = "Pyramids";
     CreateHDR createHDR;
     private static int SELECTED_INDEX = 0;
     private static boolean isGauss = true;
@@ -32,12 +33,11 @@ public class Pyramids extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pyramids);
-
         createHDR = new CreateHDR(this);
-
         Intent intent = getIntent();
         bmpImgList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
         String path = intent.getStringExtra("location");
+        Log.e(TAG, "onCreate: Path present"+path );
         if(path != null){
             bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+1+".jpg").getAbsolutePath()));
             bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+2+".jpg").getAbsolutePath()));

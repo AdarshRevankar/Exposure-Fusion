@@ -1,21 +1,17 @@
 package com.adrino.renderscript;
 
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.app.ActivityManager;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
-import android.widget.CompoundButton;
 import android.widget.ImageView;
-import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.adrino.hdr.corehdr.Constants;
 import com.adrino.hdr.corehdr.CreateHDR;
@@ -25,7 +21,6 @@ import com.adrino.renderscript.visual.ViewDialog;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -33,41 +28,14 @@ public class MainActivity extends AppCompatActivity {
     CreateHDR expFusion;
     List<Bitmap> bmpImgList, saturation, contrast, exposed, norm;
     static int SOURCE1, SOURCE2, SOURCE3;
-    final static int SCALE_THRUSHOLD = 1000;
-
-    // For memory diagnosis purpose
-    final Handler handler = new Handler();
-    static ActivityManager.MemoryInfo mi;
-    ActivityManager activityManager;
-    private Runnable periodicUpdate = new Runnable() {
-        @Override
-        public void run() {
-
-            Runtime rTime = Runtime.getRuntime();
-            double consumedMem = rTime.totalMemory() / 10000.0;
-
-            ((TextView) findViewById(R.id.memoryStatus)).setText(" Used : " + consumedMem + " MB");
-
-            handler.postDelayed(periodicUpdate, 10);
-        }
-    };
-
-    // Memory boost
-    static Boolean isTouched = false;
     private ViewDialog viewDialog;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         expFusion = new CreateHDR(this);
-        activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-        mi = new ActivityManager.MemoryInfo();
-        assert activityManager != null;
-        activityManager.getMemoryInfo(mi);
-        viewDialog = new ViewDialog(this);
-
         setContentView(R.layout.activity_main);
+        viewDialog = new ViewDialog(this);
 
         /* - - - - - - - - Get images - - - - - - - */
         SOURCE1 = R.drawable.sarvesh_iphon1;
@@ -77,85 +45,29 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = getIntent();
         bmpImgList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
         String path = intent.getStringExtra("location");
-        Log.e(TAG, "onCreate: "+path);
-        if(path != null){
-            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+1+".jpg").getAbsolutePath()));
-            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+2+".jpg").getAbsolutePath()));
-            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+3+".jpg").getAbsolutePath()));
+
+
+        if(path != null && new File(path, "pic1.jpg").exists()) {
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 1 + ".jpg").getAbsolutePath()));
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 2 + ".jpg").getAbsolutePath()));
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 3 + ".jpg").getAbsolutePath()));
+
+            /*---------------------- Scale Images ----------------------*/
+            bmpImgList = RsUtils.resizeBmp(bmpImgList);
+
+            /*---------------------- Set Images ----------------------*/
+            ((ImageView) findViewById(R.id.pic1)).setImageBitmap(bmpImgList.get(0));
+            ((ImageView) findViewById(R.id.pic2)).setImageBitmap(bmpImgList.get(1));
+            ((ImageView) findViewById(R.id.pic3)).setImageBitmap(bmpImgList.get(2));
         } else {
-            /*---------------------- Load Images ----------------------*/
-            bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE1));
-            bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE2));
-            bmpImgList.add(BitmapFactory.decodeResource(getResources(), SOURCE3));
+            Toast.makeText(this, "Please Capture image and Try to process . . .", Toast.LENGTH_LONG).show();
+            this.finish();
         }
-
-        /*---------------------- Scale Images ----------------------*/
-        bmpImgList = RsUtils.resizeBmp(bmpImgList);
-
-        /*---------------------- Set Images ----------------------*/
-        ((ImageView) findViewById(R.id.pic1)).setImageBitmap(bmpImgList.get(0));
-        ((ImageView) findViewById(R.id.pic2)).setImageBitmap(bmpImgList.get(1));
-        ((ImageView) findViewById(R.id.pic3)).setImageBitmap(bmpImgList.get(2));
-
-
-        // - - - - - - - - - - -+
-        // Other UI Stuff       |
-        // - - - - - - - - - - -+
-
-        // For action bar
-        Objects.requireNonNull(getSupportActionBar()).setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
-        getSupportActionBar().setCustomView(R.layout.action_bar);
-
-        Constants.MEM_BOOST = false;
-
-        // toggle listener
-        (findViewById(R.id.memToggle)).setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                isTouched = true;
-                return false;
-            }
-        });
-        ((Switch) findViewById(R.id.memToggle)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isTouched) {
-                    isTouched = false;
-                    Constants.MEM_BOOST = isChecked;
-                    if(isChecked){
-                        (findViewById(R.id.Contrast)).setVisibility(View.GONE);
-                        (findViewById(R.id.Saturation)).setVisibility(View.GONE);
-                        (findViewById(R.id.Exposure)).setVisibility(View.GONE);
-                        (findViewById(R.id.normal)).setVisibility(View.GONE);
-                        (findViewById(R.id.pyramidTest)).setVisibility(View.GONE);
-                    }else{
-                        (findViewById(R.id.Contrast)).setVisibility(View.VISIBLE);
-                        (findViewById(R.id.Saturation)).setVisibility(View.VISIBLE);
-                        (findViewById(R.id.Exposure)).setVisibility(View.VISIBLE);
-                        (findViewById(R.id.normal)).setVisibility(View.VISIBLE);
-                        (findViewById(R.id.pyramidTest)).setVisibility(View.VISIBLE);
-                    }
-                }
-            }
-        });
-
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if(Constants.MEM_BOOST)
-            expFusion.destroy();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        new Thread(periodicUpdate).start();
     }
 
     public void doGaussianLaplacian(View view) {
         Intent i = new Intent(MainActivity.this, Pyramids.class);
+        i.putExtra("location", this.getExternalFilesDir(null).toString());
         startActivity(i);
     }
 
@@ -273,6 +185,9 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
+    /**
+     * Loader - For Matching the UI for holding processing
+     */
     public void showCustomLoadingDialog(View view) {
 
         viewDialog.showDialog();
