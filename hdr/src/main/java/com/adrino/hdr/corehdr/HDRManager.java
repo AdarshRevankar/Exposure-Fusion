@@ -27,7 +27,7 @@ public interface HDRManager {
                                                List<Allocation> well_exposedness);
         // Pyramids
         List<List<Allocation>> generateGaussianPyramid(List<Bitmap> bmpImageList);
-        List<List<Allocation>> generateGaussianPyramid(List<Allocation> floatAlloc, HDRFilter.DATA_TYPE data_type);
+        public List<List<Allocation>> generateGaussianPyramid(List<Allocation> floatAlloc, HDRFilter.DATA_TYPE data_type);
         List<List<Allocation>> generateLaplacianPyramids(List<Bitmap> bmpImages);
 
         List<Allocation> generateResultant(List<List<Allocation>> gaussianPyramids, List<List<Allocation>> laplacianPyramids);

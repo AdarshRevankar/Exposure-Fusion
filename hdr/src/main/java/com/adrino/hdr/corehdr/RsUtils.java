@@ -117,9 +117,13 @@ public class RsUtils {
 
     static void destroy2DAllocation(List<List<Allocation>> inAlloc) {
         for (List<Allocation> eachAllocList : inAlloc) {
-            for (Allocation alloc : eachAllocList) {
-                alloc.destroy();
-            }
+            destroy1DAllocation(eachAllocList);
+        }
+    }
+
+    static void destroy1DAllocation(List<Allocation> inAlloc) {
+        for (Allocation alloc : inAlloc) {
+            alloc.destroy();
         }
     }
 }

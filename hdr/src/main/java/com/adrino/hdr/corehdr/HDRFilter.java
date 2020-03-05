@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.Log;
@@ -77,8 +79,20 @@ class HDRFilter implements HDRManager.HDRProcessor {
         // Calculate Pyramid Levels
         // PyrLevels = log(min(w,h))/log(2)
         PYRAMID_LEVELS = (int) (Math.log(Math.min(imWidth, imHeight)) / Math.log(2));
+        levelsMeta = createLevelMetaData(PYRAMID_LEVELS);
         RsUtils.ErrorViewer(this, "IMAGE DIMENTIONS", " W :" + width + " H :" + height);
         RsUtils.ErrorViewer(this, "NUMBER OF LEVELS", "" + PYRAMID_LEVELS);
+    }
+
+    private List<Level> createLevelMetaData(int maxPyrLevels) {
+        List<Level> levels = new ArrayList<>();
+        Level curr = new Level(width, height);
+        levels.add(curr);
+        for (int i = 1; i < PYRAMID_LEVELS; i++) {
+            curr = new Level(curr.width / 2, curr.height / 2);
+            levels.add(curr);
+        }
+        return levels;
     }
 
 
@@ -353,100 +367,51 @@ class HDRFilter implements HDRManager.HDRProcessor {
         //   +- - - - - - - - - - - - - - - - - - - - - - - - - - -+
         //   |                GAUSSIAN PYRAMID                     |
         //   +- - - - - - - - - - - - - - - - - - - - - - - - - - -+
-        ScriptC_Gaussian scriptGaussian = new ScriptC_Gaussian(renderScript);
-        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
+
+        // Intrinsic Rescale Class
         ScriptIntrinsicResize scriptIntrinsicResize = ScriptIntrinsicResize.create(renderScript);
-        Script.LaunchOptions opt = new Script.LaunchOptions();
 
+        // Convert Bitmaps to Allocation
+        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
 
+        // List to hold Allocation output
         List<List<Allocation>> outGaussianAllocationList = new ArrayList<>(bmpImageList.size());
 
+        // ========================== EXECUTION ==============================
         for (int i = 0; i < bmpImageList.size(); i++) {
+
             List<Allocation> outGaussLevelList = new ArrayList<>(PYRAMID_LEVELS);
 
             // - - - - - - Allocation - - - - - - -
 
-            // Convert U4 to F4
-            Allocation startAlloc = Allocation.createFromBitmap(renderScript, bmpImageList.get(i));
-            Allocation convertAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
-            Allocation inAlloc = RsUtils.create2d(renderScript, width, height, Element.F32_4(renderScript));
-
-            scriptUtils.set_inAlloc(startAlloc);
-            scriptUtils.forEach_convertU4toF4(convertAlloc);
-            startAlloc.destroy();
-
-            // - - - - - - Computation - - - - - -
-
             // G0 = Original Image
-            inAlloc.copyFrom(convertAlloc);
-            outGaussLevelList.add(convertAlloc);
+            Allocation G0 = convertBitmapToAllocation(bmpImageList.get(i), scriptUtils);
 
-            int levelWidth, levelHeight;
+            Allocation inAlloc = RsUtils.create2d(renderScript, width, height, elementFloat4);
+            inAlloc.copyFrom(G0);
 
-            // Initialise Level Meta
-            if (levelsMeta == null) {
-                // For first Image only, Construct the list
-                levelsMeta = new ArrayList<>(PYRAMID_LEVELS);
-                levelsMeta.add(new Level(width, height));
-            }
-
-            levelWidth = width;
-            levelHeight = height;
+            outGaussLevelList.add(G0);
 
             for (int level = 1; level < PYRAMID_LEVELS; level++) {
 
-                // G1 = REDUCE(G0)
-                int prevW = levelWidth;
-                int prevH = levelHeight;
+                // 1. Get current level dimension
+                Level curr = levelsMeta.get(level);
 
-                // - - - - - - Get Dimension - - - -
-                if (levelsMeta.size() != PYRAMID_LEVELS) {
+                // 2. Down Sample : G1 = DOWNSCALE(G0)
+                Allocation Gout = downScale(scriptIntrinsicResize, inAlloc, curr, null, true);
 
-                    // => G[i] = G[i+1] / 2 - Half as the size of the previous stage
-                    levelWidth = (int) Math.floor(levelWidth / 2.0f);
-                    levelHeight = (int) Math.floor(levelHeight / 2.0f);
-                    levelsMeta.add(new Level(levelWidth, levelHeight));
+                // 3. Copy Input for recursive usage
+                inAlloc = RsUtils.create2d(renderScript, curr.width, curr.height, Element.F32_4(renderScript));
+                inAlloc.copyFrom(Gout);
 
-                } else {
-
-                    // Next time get the same dimension as earlier
-                    levelWidth = levelsMeta.get(level).width;
-                    levelHeight = levelsMeta.get(level).height;
-                }
-
-
-                Allocation midAlloc = RsUtils.create2d(renderScript, levelWidth, levelHeight, Element.F32_4(renderScript));
-                Allocation outAlloc = RsUtils.create2d(renderScript, levelWidth, levelHeight, Element.F32_4(renderScript));
-
-                // - - - -  - - - - - - REDUCE( G[ - - - - - - - - - -
-                scriptIntrinsicResize.setInput(inAlloc);
-                scriptIntrinsicResize.forEach_bicubic(midAlloc, opt);
-                inAlloc.destroy();
-
-//                scriptGaussian.set_compressTargetWidth(levelWidth);
-//                scriptGaussian.set_compressTargetHeight(levelHeight);
-//                scriptGaussian.set_compressSource(inAlloc);
-//                scriptGaussian.forEach_compressFloat4Step1(midAlloc);
-
-//                inAlloc = RsUtils.create2d(renderScript, levelWidth, levelHeight, Element.F32_4(renderScript));
-//
-//                scriptGaussian.set_compressSource(midAlloc);
-//                scriptGaussian.forEach_compressFloat4Step2(inAlloc);
-
-                outAlloc.copyFrom(midAlloc);
-                inAlloc = midAlloc;
-
-                // Store Result
-                outGaussLevelList.add(outAlloc);
+                // 4. Store G1
+                outGaussLevelList.add(Gout);
             }
             outGaussianAllocationList.add(outGaussLevelList);
         }
 
-        for (Level level : levelsMeta) {
-            Log.e(TAG, "generateGaussianPyramid: Dim : W - " + level.width + " H - " + level.height);
-        }
-
-        // 3. - - - Destroy & Return - - - -
+        scriptUtils.destroy();
+        scriptIntrinsicResize.destroy();
         RsUtils.ErrorViewer(this, "GAUSSIAN PYRAMID", "FINISHED");
         return outGaussianAllocationList;
     }
@@ -508,9 +473,6 @@ class HDRFilter implements HDRManager.HDRProcessor {
         // For Rescaling
         ScriptIntrinsicResize scriptIntrinsicResize = ScriptIntrinsicResize.create(renderScript);
 
-        // For Setting Rescale Options
-        Script.LaunchOptions opt = new Script.LaunchOptions();
-
         // For Allocation of F4 items
         ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
 
@@ -545,7 +507,7 @@ class HDRFilter implements HDRManager.HDRProcessor {
 
                 outLap.add(lapOutputLevel);
             }
-            // L[N] =
+            // L[N] = G[N] ie. Reduced Image
             outLap.add(inAlloc);
 
             laplacianPyramidList.add(outLap);
@@ -606,20 +568,24 @@ class HDRFilter implements HDRManager.HDRProcessor {
         // Check, |Gi| == |Li|
         if (gaussianPyramids.size() != laplacianPyramids.size()) {
             Log.e(TAG, "generateResultant: Parameter Length not equal | PARAM_LENGTH_ERROR ");
+            System.exit(401);
         }
 
-        // - - - - - - - - - - - - - - - - - - -
-        //          RESULTANT GENERATOR
-        // - - - - - - - - - - - - - - - - - - -
+        // + - - - - - - - - - - - - - - - - - - - - - - - - - - - -+
+        // |                  Resultant Pyramid                     |
+        // + - - - - - - - - - - - - - - - - - - - - - - - - - - - -+
+
         ScriptC_Collapse scriptCollapse = new ScriptC_Collapse(renderScript);
 
         List<Allocation> resultantPyramid = new ArrayList<>(PYRAMID_LEVELS);
 
-        // - - - - For Each level - - - - -
+        // FOR EACH LAYER PERFORM
         for (int level = 0; level < PYRAMID_LEVELS; level++) {
-            Allocation outAlloc = RsUtils.create2d(renderScript, levelsMeta.get(level).width, levelsMeta.get(level).height, elementFloat4);
 
-            // - - - - Script - - - - -
+            // Get Dimension Info
+            Level levelInfo = levelsMeta.get(level);
+            Allocation outAlloc = RsUtils.create2d(renderScript, levelInfo.width, levelInfo.height, elementFloat4);
+
             scriptCollapse.set_GP1(gaussianPyramids.get(0).get(level));
             scriptCollapse.set_GP2(gaussianPyramids.get(1).get(level));
             scriptCollapse.set_GP3(gaussianPyramids.get(2).get(level));
@@ -631,13 +597,8 @@ class HDRFilter implements HDRManager.HDRProcessor {
             resultantPyramid.add(outAlloc);
         }
 
-//        for (int i = 0; i < Constants.INPUT_IMAGE_SIZE; i++) {
-//            for (int j = 0; j < PYRAMID_LEVELS; j++) {
-//                gaussianPyramids.get(i).get(j).destroy();
-//                laplacianPyramids.get(i).get(j).destroy();
-//            }
-//        }
-
+        RsUtils.destroy2DAllocation(gaussianPyramids);
+        RsUtils.destroy2DAllocation(laplacianPyramids);
         RsUtils.ErrorViewer(this, "RESULTANT PYRAMID", "FINISHED  - Length : " + resultantPyramid.size());
         return resultantPyramid;
     }
@@ -650,89 +611,61 @@ class HDRFilter implements HDRManager.HDRProcessor {
      */
     @Override
     public List<Allocation> collapseResultant(List<Allocation> resultant) {
-        Script.LaunchOptions opt = new Script.LaunchOptions();
-        // opt.setX(3,3);
-        // opt.setY(3, 3);
+
+        // + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+        // |                  Collapse Resultant Pyramid                     |
+        // + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+
         int lowestLevel = PYRAMID_LEVELS - 1;
+
+        // Utilities
+        ScriptC_utils utils = new ScriptC_utils(renderScript);
+
+        // Collapsing RenderScript
         ScriptC_Collapse scriptCollapse = new ScriptC_Collapse(renderScript);
-        ScriptC_Gaussian scriptGaussian = new ScriptC_Gaussian(renderScript);
+
+        // Intrinsic Resize Script
         ScriptIntrinsicResize scriptIntrinsicResize = ScriptIntrinsicResize.create(renderScript);
 
-        List<Allocation> collapsedList = new ArrayList<>(PYRAMID_LEVELS);
+        // HDR Output
+        List<Allocation> collapsedList = new ArrayList<>(1);
 
+        // Traversing the intermediate State
         Allocation collapseAlloc = RsUtils.create2d(renderScript,
-                levelsMeta.get(PYRAMID_LEVELS - 2).width,
-                levelsMeta.get(PYRAMID_LEVELS - 2).height,
+                levelsMeta.get(lowestLevel - 1).width,
+                levelsMeta.get(lowestLevel - 1).height,
                 elementFloat4);
 
+        // Set Allocation Values to Zero
+        utils.forEach_setPixelToZero(collapseAlloc);
+
+        // ========================== EXECUTION ==============================
         for (int level = lowestLevel - 1; level >= 0; level--) {
-            int lapW = levelsMeta.get(level).width;
-            int lapH = levelsMeta.get(level).height;
-            int prevW = levelsMeta.get(level + 1).width;
-            int prevH = levelsMeta.get(level + 1).height;
+            Level curr = levelsMeta.get(level);
 
-            int oddX = 2 * prevW - lapW;
-            int oddY = 2 * prevH - lapH;
+            // 1. UP SCALE 'PREV' IMAGE TO 'CURR' IMAGE
+            Allocation expandedAlloc = upScale(scriptIntrinsicResize, resultant.get(level + 1), curr, null, false);
 
-            // UPSAMPLE
-            int r = 2 * prevW;
-            int c = 2 * prevH;
-
-            opt.setX(0, r - oddX);
-            opt.setY(0, c - oddY);
-
-//            Allocation outAlloc = RsUtils.create2d(renderScript, prevW, lapH, elementFloat4);
-            Allocation expandedAlloc = RsUtils.create2d(renderScript, lapW, lapH, elementFloat4);
-
-            scriptIntrinsicResize.setInput(resultant.get(level + 1));
-            scriptIntrinsicResize.forEach_bicubic(expandedAlloc, opt);
-
-//            scriptGaussian.set_expandTargetWidth(lapW);
-//            scriptGaussian.set_expandTargetHeight(lapH);
-//
-//            scriptGaussian.set_expandSource(resultant.get(level + 1));
-//            scriptGaussian.forEach_expandFloat4Step1(outAlloc);
-//            scriptGaussian.set_expandSource(outAlloc);
-//            scriptGaussian.forEach_expandFloat4Step2(expandedAlloc);
-
-//            outAlloc.destroy();
-
+            // 2. ADD THAT TO 'collapseAlloc'
             scriptCollapse.set_collapseLevel(expandedAlloc);
             scriptCollapse.forEach_collapse(collapseAlloc, collapseAlloc);
-
             expandedAlloc.destroy();
 
-
+            // 3. Expect R0 All other
             if (level > 0) {
-                int nextW = levelsMeta.get(level - 1).width;
-                int nextH = levelsMeta.get(level - 1).height;
+                // 3.1 Get Info
+                Level next = levelsMeta.get(level - 1);
 
-                oddX = 2 * nextW - lapW;
-                oddY = 2 * nextH - lapH;
+                // 3.2 UPSCALE
+                Allocation collExpandAlloc = upScale(scriptIntrinsicResize, collapseAlloc, next, null, true);
 
-                // UPSAMPLE
-                r = 2 * nextW;
-                c = 2 * nextH;
-
-                opt.setX(0, r - 2 - oddX);
-                opt.setY(0, c - 2 - oddY);
-
-                Allocation collExpandAlloc = RsUtils.create2d(renderScript, nextW, nextH, elementFloat4);
-
-                scriptIntrinsicResize.setInput(collapseAlloc);
-                scriptIntrinsicResize.forEach_bicubic(collExpandAlloc);
-                collapseAlloc.destroy();
-                collapseAlloc = RsUtils.create2d(renderScript, nextW, nextH, elementFloat4);
-                collapseAlloc.copyFrom(collExpandAlloc);
+                // 3.3 Copy Content
+                collapseAlloc = createCopy(collExpandAlloc, next);
             }
         }
 
-        // Destroy Memory
-        for (int i = 0; i < resultant.size(); i++) {
-            resultant.get(i).destroy();
-        }
-
         collapsedList.add(collapseAlloc);
+        RsUtils.destroy1DAllocation(resultant);
         return collapsedList;
     }
 
@@ -807,5 +740,11 @@ class HDRFilter implements HDRManager.HDRProcessor {
         utils.set_inAlloc(Allocation.createFromBitmap(renderScript, bitmap));
         utils.forEach_convertU4toF4(allocation);
         return allocation;
+    }
+
+    private Allocation createCopy(Allocation allocation, Level curr) {
+        Allocation outAlloc = RsUtils.create2d(renderScript, curr.width, curr.height, allocation.getElement());
+        outAlloc.copyFrom(allocation);
+        return outAlloc;
     }
 }

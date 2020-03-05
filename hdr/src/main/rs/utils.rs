@@ -13,6 +13,7 @@ float __attribute__((kernel)) convertRGBAToGray(uint32_t x, uint32_t y) {
     return pixelOut;
 }
 
+
 //==============================================================================
 // Convert float intensity (0.0 - 1.0) to uchar RBG
 //==============================================================================
@@ -65,5 +66,14 @@ float4 __attribute__((kernel)) convertU4toF4(uint32_t x, uint32_t y) {
 float4 __attribute__((kernel)) convertFtoF4(uint32_t x, uint32_t y){
     float4 out = rsGetElementAt_float(inAlloc, x, y);
     out.a = 1;
+    return out;
+}
+
+//==============================================================================
+// Initialise to zero
+//==============================================================================
+float4 __attribute__((kernel)) setPixelToZero(uint32_t x, uint32_t y){
+    float4 out;
+    out = 0;
     return out;
 }
