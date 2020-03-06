@@ -1,17 +1,16 @@
 package com.adrino.renderscript;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.adrino.hdr.corehdr.Constants;
 import com.adrino.hdr.corehdr.CreateHDR;
@@ -199,5 +198,12 @@ public class MainActivity extends AppCompatActivity {
                 viewDialog.hideDialog();
             }
         }, 300);
+    }
+
+    @Override
+    protected void onDestroy() {
+        this.expFusion.destroy();
+        expFusion = null;
+        super.onDestroy();
     }
 }

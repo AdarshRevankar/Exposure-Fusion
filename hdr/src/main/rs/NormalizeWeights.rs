@@ -35,9 +35,9 @@ float __attribute__((kernel)) normalizeWeights(int32_t x, int32_t y){
     float e3 = rsGetElementAt_float(E3, x, y);
 
     // Compute Weight
-    float W1 = fabs(c1) * s1 * e1;
-    float W2 = fabs(c2) * s2 * e2;
-    float W3 = fabs(c3) * s3 * e3;
+    float W1 = fabs(fabs(c1) * s1 * e1) + 0.000000000001f;
+    float W2 = fabs(fabs(c2) * s2 * e2) + 0.000000000001f;
+    float W3 = fabs(fabs(c3) * s3 * e3) + 0.000000000001f;
 
     // Normalize
     float weight1 = W1 / (W1 + W2 + W3);

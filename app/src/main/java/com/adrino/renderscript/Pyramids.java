@@ -1,7 +1,5 @@
 package com.adrino.renderscript;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -10,6 +8,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.adrino.hdr.corehdr.Constants;
 import com.adrino.hdr.corehdr.CreateHDR;
@@ -130,5 +130,12 @@ public class Pyramids extends AppCompatActivity {
         } else {
             createLaplacian(view);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        this.createHDR.destroy();
+        this.createHDR = null;
+        super.onDestroy();
     }
 }

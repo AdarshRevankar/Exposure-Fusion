@@ -3,6 +3,7 @@ package com.adrino.hdr.corehdr;
 import android.graphics.Bitmap;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.renderscript.Allocation;
 import androidx.renderscript.Element;
 import androidx.renderscript.RenderScript;
@@ -20,12 +21,12 @@ public class RsUtils {
     /**
      * create2d - static method
      * 2 Dimensional allocation along X and Y axis of type {@param ElementType} is done.
-     * +---+---+
-     * | E | E |
-     * height +---+---+
-     * | E | E |
-     * +---+---+
-     * width
+     *          +---+---+
+     *          | E | E |
+     * height   +---+---+
+     *          | E | E |
+     *          +---+---+
+     *            width
      * NOTE: Where E - ElementType ( Eg: if ElementType = Element.UCHAR32_4, then it can have ARGB content
      * TODO: PLEASE DO NOT GIVE 'X' AXIS ALLOCATION <=1.
      * TODO: 1 < width and 1 <= height is valid
@@ -117,10 +118,24 @@ public class RsUtils {
 
     static void destroy2DAllocation(List<List<Allocation>> inAlloc) {
         for (List<Allocation> eachAllocList : inAlloc) {
-            for (Allocation alloc : eachAllocList) {
-                alloc.destroy();
-            }
+            destroy1DAllocation(eachAllocList);
         }
+    }
+
+    static void destroy1DAllocation(List<Allocation> inAlloc) {
+        for (Allocation alloc : inAlloc) {
+            alloc.destroy();
+        }
+    }
+
+    /**
+     * =================================== C L O N E R =============================================
+     */
+    static Allocation copy(@NonNull RenderScript rs, @NonNull Allocation inAlloc, Level curr, boolean destroy) {
+        Allocation outAlloc = RsUtils.create2d(rs, curr.width, curr.height, inAlloc.getElement());
+        outAlloc.copyFrom(inAlloc);
+        if (destroy) inAlloc.destroy();
+        return outAlloc;
     }
 }
 

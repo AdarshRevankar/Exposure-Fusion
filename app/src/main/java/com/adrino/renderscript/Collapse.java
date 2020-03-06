@@ -59,19 +59,19 @@ public class Collapse extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-//                if (!Constants.MEM_BOOST) {
-//                    final List<Bitmap> resultant = new CreateHDR(context).perform(bmpImgList, CreateHDR.Actions.RESULTANT);
-//
-//                    runOnUiThread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            ((ImageView) findViewById(R.id.res1)).setImageBitmap(resultant.get(0));
-//                            ((ImageView) findViewById(R.id.res2)).setImageBitmap(resultant.get(1));
-//                            ((ImageView) findViewById(R.id.res3)).setImageBitmap(resultant.get(2));
-//                            ((ImageView) findViewById(R.id.res4)).setImageBitmap(resultant.get(3));
-//                        }
-//                    });
-//                }
+                if (!Constants.MEM_BOOST) {
+                    final List<Bitmap> resultant = new CreateHDR(context).perform(bmpImgList, CreateHDR.Actions.RESULTANT);
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((ImageView) findViewById(R.id.res1)).setImageBitmap(resultant.get(0));
+                            ((ImageView) findViewById(R.id.res2)).setImageBitmap(resultant.get(1));
+                            ((ImageView) findViewById(R.id.res3)).setImageBitmap(resultant.get(2));
+                            ((ImageView) findViewById(R.id.res4)).setImageBitmap(resultant.get(3));
+                        }
+                    });
+                }
                 long start = System.currentTimeMillis();
                 hdrOutput = createHDR.perform(bmpImgList, CreateHDR.Actions.HDR);
                 long end = System.currentTimeMillis();
@@ -139,6 +139,13 @@ public class Collapse extends AppCompatActivity {
                 Log.e("Directory Error", "Directory cannot be created");
             }
         }
+    }
 
+    @Override
+    protected void onDestroy() {
+        this.createHDR.destroy();
+        this.createHDR = null;
+        bmpImgList = null;
+        super.onDestroy();
     }
 }
