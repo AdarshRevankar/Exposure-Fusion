@@ -1,15 +1,10 @@
 package com.adrino.hdr.corehdr;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.renderscript.Allocation;
 import androidx.renderscript.Element;
 import androidx.renderscript.RenderScript;
@@ -19,11 +14,13 @@ import androidx.renderscript.ScriptIntrinsicResize;
 
 import com.adrino.hdr.ScriptC_Collapse;
 import com.adrino.hdr.ScriptC_Exposure;
-import com.adrino.hdr.ScriptC_Gaussian;
 import com.adrino.hdr.ScriptC_Laplacian;
 import com.adrino.hdr.ScriptC_NormalizeWeights;
 import com.adrino.hdr.ScriptC_Saturation;
 import com.adrino.hdr.ScriptC_utils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -49,16 +46,13 @@ class HDRFilter implements HDRManager.HDRProcessor {
     private final static String TAG = "HDRFilter";
     private int PYRAMID_LEVELS;
     private RenderScript renderScript;
-
-    enum DATA_TYPE {FLOAT32, FLOAT32_4}
-
     private Element elementFloat4, elementFloat;
     private static List<Level> levelsMeta;
     private static Bitmap.Config config;
     private static int width, height;
 
     HDRFilter(Context context) {
-        renderScript = RenderScript.create(context);    // Do not destroy
+        renderScript = RenderScript.create(context);   // Do not destroy
         elementFloat4 = Element.F32_4(renderScript);
         elementFloat = Element.F32(renderScript);
     }
@@ -88,7 +82,7 @@ class HDRFilter implements HDRManager.HDRProcessor {
         List<Level> levels = new ArrayList<>();
         Level curr = new Level(width, height);
         levels.add(curr);
-        for (int i = 1; i < PYRAMID_LEVELS; i++) {
+        for (int i = 1; i < maxPyrLevels; i++) {
             curr = new Level(curr.width / 2, curr.height / 2);
             levels.add(curr);
         }
@@ -119,7 +113,6 @@ class HDRFilter implements HDRManager.HDRProcessor {
      * <p>
      * Image Edges are extracted from the Input Image, i.e having Contrast information.
      * <p>
-     * TODO: Be Careful when destroying Allocation
      */
     @Override
     public List<Allocation> applyConvolution3x3Filter(List<Bitmap> bmpImages) {
@@ -153,7 +146,7 @@ class HDRFilter implements HDRManager.HDRProcessor {
             grayAlloc.destroy();
         }
         scriptConvolve.destroy();
-
+        scriptUtils.destroy();
         return outAllocList;
     }
 
@@ -170,7 +163,6 @@ class HDRFilter implements HDRManager.HDRProcessor {
      * mean = ( R + G + B ) / 3
      * S = sqrt( (R - mean)^2 + (G - mean)^2 + (B - mean)^2 ) / 3 )
      * <p>
-     * TODO: Be Careful when destroying Allocation
      *
      * @param bmpImages Input Image(s) list
      * @return List of Allocation of float ( 1 Dim ) containing Saturation Information
@@ -212,7 +204,6 @@ class HDRFilter implements HDRManager.HDRProcessor {
      * E = e^( ( R - 0.5 )^2 + ( G - 0.5 )^2 + ( B - 0.5 )^2 ) / ( - 2 * alpha^2 )
      * Here alpha is taken to be : 0.2
      * <p>
-     * TODO: Be Careful when destroying Allocation
      *
      * @param bmpImages Input Image(s) list
      * @return List of Allocation of float ( 1 Dim ) containing Exposure Information
@@ -247,7 +238,6 @@ class HDRFilter implements HDRManager.HDRProcessor {
     }
 
     /**
-     * TODO: Normalization - Dyanmically for all the images
      * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
      * |                         NORMALISATION                        |
      * +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
@@ -265,7 +255,6 @@ class HDRFilter implements HDRManager.HDRProcessor {
      * Wi - Weighted Pixel value
      * ~Wi - Nomralised Weighted Pixel value
      * <p>
-     * TODO: Be Careful when destroying Allocation
      *
      * @param contrast       List of Allocation which has contrast computed
      * @param saturation     List of Allocation which has saturation computed
@@ -309,12 +298,9 @@ class HDRFilter implements HDRManager.HDRProcessor {
         outAllocList.add(outAlloc3);
 
         // Clear the Allocations used & not required
-        for (int i = 0; i < contrast.size(); i++) {
-            contrast.get(i).destroy();
-            saturation.get(i).destroy();
-            wellExposeness.get(i).destroy();
-        }
-
+        RsUtils.destroy1DAllocation(contrast);
+        RsUtils.destroy1DAllocation(saturation);
+        RsUtils.destroy1DAllocation(wellExposeness);
         scriptNorm.destroy();
 
         return outAllocList;
@@ -368,11 +354,11 @@ class HDRFilter implements HDRManager.HDRProcessor {
         //   |                GAUSSIAN PYRAMID                     |
         //   +- - - - - - - - - - - - - - - - - - - - - - - - - - -+
 
+        // Utilities
+        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
+
         // Intrinsic Rescale Class
         ScriptIntrinsicResize scriptIntrinsicResize = ScriptIntrinsicResize.create(renderScript);
-
-        // Convert Bitmaps to Allocation
-        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
 
         // List to hold Allocation output
         List<List<Allocation>> outGaussianAllocationList = new ArrayList<>(bmpImageList.size());
@@ -409,10 +395,9 @@ class HDRFilter implements HDRManager.HDRProcessor {
             }
             outGaussianAllocationList.add(outGaussLevelList);
         }
-
-        scriptUtils.destroy();
         scriptIntrinsicResize.destroy();
-        RsUtils.ErrorViewer(this, "GAUSSIAN PYRAMID", "FINISHED");
+        scriptUtils.destroy();
+//        RsUtils.ErrorViewer(this, "GAUSSIAN PYRAMID", "FINISHED");
         return outGaussianAllocationList;
     }
 
@@ -421,11 +406,11 @@ class HDRFilter implements HDRManager.HDRProcessor {
      * Allocation can be given as input & that input is sent to the original Gaussian Pyramid function
      */
     @Override
-    public List<List<Allocation>> generateGaussianPyramid(List<Allocation> floatAlloc, DATA_TYPE data_type) {
+    public List<List<Allocation>> generateGaussianPyramid(List<Allocation> floatAlloc, Constants.DataType dataType) {
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         // RenderScript - Gaussian.rs ( Convolve ) Float Allocation
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        return generateGaussianPyramid(convertAllocationFxToBMP(floatAlloc, DATA_TYPE.FLOAT32));
+        return generateGaussianPyramid(convertAllocationListToBitmapList(floatAlloc, false, true));
     }
 
 
@@ -467,14 +452,14 @@ class HDRFilter implements HDRManager.HDRProcessor {
         // |    Laplacian Pyramid - laplacian.rs ( Diff b/n Gaussian Pyr.)   |
         // + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
 
+        // Utilities
+        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
+
         // For Laplacian Transform
         ScriptC_Laplacian scriptLaplacian = new ScriptC_Laplacian(renderScript);
 
         // For Rescaling
         ScriptIntrinsicResize scriptIntrinsicResize = ScriptIntrinsicResize.create(renderScript);
-
-        // For Allocation of F4 items
-        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
 
         // - - - - Output Images - - - - - - - - - - - -
         List<List<Allocation>> laplacianPyramidList = new ArrayList<>(bmpInMultiExposures.size());
@@ -500,7 +485,7 @@ class HDRFilter implements HDRManager.HDRProcessor {
                 Allocation upScaleOutAlloc = upScale(scriptIntrinsicResize, downScaleOutAlloc, currDim, null, false);
 
                 // 1.3 SUBTRACT : J - upscale(I)
-                Allocation lapOutputLevel = subtractAminusB(scriptLaplacian, inAlloc, upScaleOutAlloc, currDim, false, true);
+                Allocation lapOutputLevel = subtract(scriptLaplacian, inAlloc, upScaleOutAlloc, currDim, false, true);
 
                 // 1.4 I = J
                 inAlloc = downScaleOutAlloc;
@@ -513,42 +498,9 @@ class HDRFilter implements HDRManager.HDRProcessor {
             laplacianPyramidList.add(outLap);
         }
         scriptLaplacian.destroy();
-        scriptUtils.destroy();
         scriptIntrinsicResize.destroy();
-
-        RsUtils.ErrorViewer(this, "LAPLACIAN PYRAMID", "FINISHED");
+        scriptUtils.destroy();
         return laplacianPyramidList;
-    }
-
-    private Allocation downScale(ScriptIntrinsicResize scriptResize, Allocation inAlloc, Level smallDimention, Script.LaunchOptions options, boolean destroy) {
-        Allocation outAlloc = RsUtils.create2d(renderScript, smallDimention.width, smallDimention.height, inAlloc.getElement());
-
-        scriptResize.setInput(inAlloc);
-        if (options == null)
-            scriptResize.forEach_bicubic(outAlloc);
-        else
-            scriptResize.forEach_bicubic(outAlloc, options);
-
-        if (destroy) inAlloc.destroy();
-
-        return outAlloc;
-    }
-
-    private Allocation upScale(ScriptIntrinsicResize scriptResize, Allocation inAlloc, Level smallDimention, Script.LaunchOptions options, boolean destroy) {
-        return downScale(scriptResize, inAlloc, smallDimention, options, destroy);
-    }
-
-    private Allocation subtractAminusB(ScriptC_Laplacian scriptLaplacian, Allocation A, Allocation B, Level currDim, boolean destroyA, boolean destroyB) {
-        Allocation lapOutAlloc = RsUtils.create2d(renderScript, currDim.width, currDim.height, elementFloat4);
-        scriptLaplacian.set_laplacianLowerLevel(A);
-        scriptLaplacian.forEach_laplacian(B, lapOutAlloc);
-        if (destroyA) A.destroy();
-        if (destroyB) B.destroy();
-        return lapOutAlloc;
-    }
-
-    private Allocation subtractAminusB(ScriptC_Laplacian scriptLaplacian, Allocation A, Allocation B, Level currDim) {
-        return subtractAminusB(scriptLaplacian, A, B, currDim, false, false);
     }
 
 
@@ -599,7 +551,7 @@ class HDRFilter implements HDRManager.HDRProcessor {
 
         RsUtils.destroy2DAllocation(gaussianPyramids);
         RsUtils.destroy2DAllocation(laplacianPyramids);
-        RsUtils.ErrorViewer(this, "RESULTANT PYRAMID", "FINISHED  - Length : " + resultantPyramid.size());
+//        RsUtils.ErrorViewer(this, "RESULTANT PYRAMID", "FINISHED  - Length : " + resultantPyramid.size());
         return resultantPyramid;
     }
 
@@ -619,7 +571,7 @@ class HDRFilter implements HDRManager.HDRProcessor {
         int lowestLevel = PYRAMID_LEVELS - 1;
 
         // Utilities
-        ScriptC_utils utils = new ScriptC_utils(renderScript);
+        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
 
         // Collapsing RenderScript
         ScriptC_Collapse scriptCollapse = new ScriptC_Collapse(renderScript);
@@ -637,7 +589,7 @@ class HDRFilter implements HDRManager.HDRProcessor {
                 elementFloat4);
 
         // Set Allocation Values to Zero
-        utils.forEach_setPixelToZero(collapseAlloc);
+        scriptUtils.forEach_setPixelToZero(collapseAlloc);
 
         // ========================== EXECUTION ==============================
         for (int level = lowestLevel - 1; level >= 0; level--) {
@@ -660,81 +612,108 @@ class HDRFilter implements HDRManager.HDRProcessor {
                 Allocation collExpandAlloc = upScale(scriptIntrinsicResize, collapseAlloc, next, null, true);
 
                 // 3.3 Copy Content
-                collapseAlloc = createCopy(collExpandAlloc, next);
+                collapseAlloc = RsUtils.copy(renderScript, collExpandAlloc, next, true);
             }
         }
-
         collapsedList.add(collapseAlloc);
         RsUtils.destroy1DAllocation(resultant);
+        scriptUtils.destroy();
         return collapsedList;
     }
 
+    /**
+     * ================================ BASIC FUNCTIONS ========================================
+     */
+    private Allocation downScale(ScriptIntrinsicResize scriptResize, @NonNull Allocation inAlloc, Level smallDimention, Script.LaunchOptions options, boolean destroy) {
+        Allocation outAlloc = RsUtils.create2d(renderScript, smallDimention.width, smallDimention.height, inAlloc.getElement());
 
-    List<Bitmap> convertAllocationFxToBMP(List<Allocation> inAllocList, DATA_TYPE data_type) {
-        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
+        scriptResize.setInput(inAlloc);
+        if (options == null)
+            scriptResize.forEach_bicubic(outAlloc);
+        else
+            scriptResize.forEach_bicubic(outAlloc, options);
 
-        Allocation outAlloc;
-        Bitmap outBmp;
-        List<Bitmap> outBmpList = new ArrayList<>(inAllocList.size());
+        if (destroy) inAlloc.destroy();
 
-        for (int i = 0; i < inAllocList.size(); i++) {
-            // Allocate
-            outBmp = Bitmap.createBitmap(width, height, config);
-            outAlloc = Allocation.createFromBitmap(renderScript, outBmp);
+        return outAlloc;
+    }
 
-            scriptUtils.set_inAlloc(inAllocList.get(i));
+    private Allocation upScale(ScriptIntrinsicResize scriptResize, @NonNull Allocation inAlloc, Level smallDimention, Script.LaunchOptions options, boolean destroy) {
+        return downScale(scriptResize, inAlloc, smallDimention, options, destroy);
+    }
 
-            if (data_type == DATA_TYPE.FLOAT32) {
-                scriptUtils.forEach_convertFtoU4(outAlloc);
-            } else {
-                scriptUtils.forEach_convertF4toU4(outAlloc);
-            }
-            inAllocList.get(i).destroy();
+    private Allocation subtract(ScriptC_Laplacian scriptLaplacian, @NonNull Allocation A, @NonNull Allocation B, Level currDim, boolean destroyA, boolean destroyB) {
+        // Subtract
+        // return A - B pixel to pixel subtraction is done
+        Allocation lapOutAlloc = RsUtils.create2d(renderScript, currDim.width, currDim.height, elementFloat4);
+        scriptLaplacian.set_laplacianLowerLevel(A);
+        scriptLaplacian.forEach_laplacian(B, lapOutAlloc);
+        if (destroyA) A.destroy();
+        if (destroyB) B.destroy();
+        return lapOutAlloc;
+    }
 
-            outAlloc.copyTo(outBmp);
-            outBmpList.add(outBmp);
-
-            outAlloc.destroy();
-        }
-        scriptUtils.destroy();
-        return outBmpList;
+    private Allocation subtract(ScriptC_Laplacian scriptLaplacian, @NonNull Allocation A, @NonNull Allocation B, Level currDim) {
+        /* Intern Calls subtract() with other parameters */
+        return subtract(scriptLaplacian, A, B, currDim, false, false);
     }
 
     /**
-     * Covert List of Allocation {@param inListAllocation} which are FLOAT32_4 (RGBA) to List of Bitmap images.
+     * ================================ C O N V E R T O R S ========================================
      */
-    List<Bitmap> convertAllocationBMPDynamic(List<Allocation> inLstAllocation) {
-        Allocation outAlloc;
-        Bitmap outBmp;
+
+    // 1. List of Allocation --> List of Bitmap
+    List<Bitmap> convertAllocationListToBitmapList(@NonNull List<Allocation> inLstAllocation, boolean isPyramid, boolean destroy) {
+
+        // Container List for Bitmaps
         List<Bitmap> outBmpList = new ArrayList<>(inLstAllocation.size());
-        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
 
-        int levelWidth = levelsMeta.get(0).width, levelHeight = levelsMeta.get(0).height;
+        for (int index = 0; index < inLstAllocation.size(); index++) {
 
-        for (int i = 0; i < inLstAllocation.size(); i++) {
+            // Get output Dim
+            // +--> if its a pyramid : Then Get Changing with, else get Original width information
+            Level levelDim = isPyramid ? levelsMeta.get(index) : levelsMeta.get(0);
 
-            outBmp = Bitmap.createBitmap(levelWidth, levelHeight, config);
-            outAlloc = Allocation.createFromBitmap(renderScript, outBmp);
-
-            // Perform
-            scriptUtils.set_inAlloc(inLstAllocation.get(i));
-            scriptUtils.forEach_convertF4toU4(outAlloc);
-            inLstAllocation.get(i).destroy();
-
-            outAlloc.copyTo(outBmp);
-            outBmpList.add(outBmp);
-
-            outAlloc.destroy();
-
-            if (i < inLstAllocation.size() - 1) {
-                levelHeight = levelsMeta.get(i + 1).height;
-                levelWidth = levelsMeta.get(i + 1).width;
-            }
+            // Convert to Bitmap and add
+            outBmpList.add(convertAllocationToBitmap(inLstAllocation.get(index), levelDim, destroy));
         }
-        scriptUtils.destroy();
         return outBmpList;
     }
 
+    // 2. Allocation ---> Bitmap
+    private Bitmap convertAllocationToBitmap(@NonNull Allocation inAlloc, Level bmpInfo, boolean destroy) {
+        ScriptC_utils scriptUtils = new ScriptC_utils(renderScript);
+        Bitmap outBmp = Bitmap.createBitmap(bmpInfo.width, bmpInfo.height, config);
+        Allocation outAlloc = Allocation.createFromBitmap(renderScript, outBmp);
+        scriptUtils.set_inAlloc(inAlloc);
+
+        if (inAlloc.getElement() == Element.F32(renderScript) ||
+                inAlloc.getElement() == Element.F64(renderScript)) {
+            scriptUtils.forEach_convertFtoU4(outAlloc);
+        } else if (inAlloc.getElement() == Element.F32_4(renderScript) ||
+                inAlloc.getElement() == Element.F64_4(renderScript)) {
+            scriptUtils.forEach_convertF4toU4(outAlloc);
+        } else if (inAlloc.getElement() == Element.U8_4(renderScript) ||
+                inAlloc.getElement() == Element.U16_4(renderScript) ||
+                inAlloc.getElement() == Element.U32_4(renderScript) ||
+                inAlloc.getElement() == Element.U32_4(renderScript)) {
+            inAlloc.copyTo(outBmp);
+            if (destroy) inAlloc.destroy();
+            outAlloc.destroy();
+            return outBmp;
+        } else
+            throw new UnsupportedOperationException(
+                    "Please check the supported Allocation data type, Supports only F32, F32_4"
+            );
+
+        if (destroy) inAlloc.destroy();
+        outAlloc.copyTo(outBmp);
+        scriptUtils.destroy();
+        outAlloc.destroy();
+        return outBmp;
+    }
+
+    // 3. Bitmap --> Allocation
     private Allocation convertBitmapToAllocation(Bitmap bitmap, ScriptC_utils utils) {
         Allocation allocation = RsUtils.create2d(renderScript, bitmap.getWidth(), bitmap.getHeight(), elementFloat4);
         utils.set_inAlloc(Allocation.createFromBitmap(renderScript, bitmap));
@@ -742,9 +721,16 @@ class HDRFilter implements HDRManager.HDRProcessor {
         return allocation;
     }
 
-    private Allocation createCopy(Allocation allocation, Level curr) {
-        Allocation outAlloc = RsUtils.create2d(renderScript, curr.width, curr.height, allocation.getElement());
-        outAlloc.copyFrom(allocation);
-        return outAlloc;
+    /**
+     * DESTROY
+     * TODO: CALL THIS METHOD
+     */
+    @Override
+    public void destroy() {
+        // Destroy RenderScript
+        this.renderScript.destroy();
+
+        // Initialise Meta to NULL
+        levelsMeta = null;
     }
 }

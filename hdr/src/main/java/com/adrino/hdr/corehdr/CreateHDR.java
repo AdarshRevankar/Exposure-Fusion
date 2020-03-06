@@ -2,7 +2,6 @@ package com.adrino.hdr.corehdr;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import androidx.renderscript.Allocation;
@@ -11,31 +10,30 @@ import java.util.List;
 
 public class CreateHDR implements HDRManager.HDRClient {
     /**
-     *  CreateHDR is the class implements {@link HDRManager.HDRClient}, which provides the methods to perform HDR. it also allows developers
-     *  to inspect at intermediate stages of their result. CreateHDR performs the High-Dynamic-Range
-     *  (HDR) over the <b>Multiple Exposed</b> images using <b>Exposure Fusion</b> technique.
-     *
-     *  Method perform(List<Bitmap>, Actions) does take the request and returns the List of Bitmap
-     *  according to the {@link CreateHDR.Actions} Actions enumeration.
-     *
-     *  Way to obtain HDR Image from input of List<Bitmap> containing 3 Bitmap is :
-     *  Eg:
-     *
-     *      CreateHDR createHdr = new CreateHDR(getApplicationContext());
-     *
-     *      List<Bitmap> outBmpList = createHdr.perform( bmpInputList, CreateHDR.Actions.HDR );
-     *
-     *      Bitmap hdrOutput = outBmpList.get(0);
-     *
-     *  NOTE: Here each of the methods return variable number of output. Please make sure that index
-     *  is not out of Bound of List. ( Better way would be iterate using {@see Iterator} class.
+     * CreateHDR is the class implements {@link HDRManager.HDRClient}, which provides the methods to perform HDR. it also allows developers
+     * to inspect at intermediate stages of their result. CreateHDR performs the High-Dynamic-Range
+     * (HDR) over the <b>Multiple Exposed</b> images using <b>Exposure Fusion</b> technique.
+     * <p>
+     * Method perform(List<Bitmap>, Actions) does take the request and returns the List of Bitmap
+     * according to the {@link CreateHDR.Actions} Actions enumeration.
+     * <p>
+     * Way to obtain HDR Image from input of List<Bitmap> containing 3 Bitmap is :
+     * Eg:
+     * <p>
+     * CreateHDR createHdr = new CreateHDR(getApplicationContext());
+     * <p>
+     * List<Bitmap> outBmpList = createHdr.perform( bmpInputList, CreateHDR.Actions.HDR );
+     * <p>
+     * Bitmap hdrOutput = outBmpList.get(0);
+     * <p>
+     * NOTE: Here each of the methods return variable number of output. Please make sure that index
+     * is not out of Bound of List. ( Better way would be iterate using {@see Iterator} class.
      *
      * @see HDRFilter is the class where all the Methods are implemented.
      */
 
     private static final String TAG = "CreateHDR";
     private HDRFilter hdrFilter = null;
-    private List<Allocation> inAllocList = null;
 
     /**
      * @see Actions
@@ -55,7 +53,7 @@ public class CreateHDR implements HDRManager.HDRClient {
      * |    RESULTANT    L                       Get Resultant of List of Images [ NOTE : List size has to be INPUT_IMAGE_SIZE ]                    |
      * +--------------------------------------------------------------------------------------------------------------------------------------------+
      * NOTE: Here, N - Length of bmpImagesList inputed
-     *             L - Pyramid Length computed dynamically (Depends on resolution)
+     * L - Pyramid Length computed dynamically (Depends on resolution)
      */
     public enum Actions {
         HDR,
@@ -69,10 +67,11 @@ public class CreateHDR implements HDRManager.HDRClient {
     }
 
     /**
-     *  Constructor
-     *  @param context: Application Context
+     * Constructor
+     *
+     * @param context: Application Context
      */
-    public CreateHDR(Context context){
+    public CreateHDR(Context context) {
         if (hdrFilter == null) {
             hdrFilter = new HDRFilter(context);
         }
@@ -85,10 +84,11 @@ public class CreateHDR implements HDRManager.HDRClient {
      *
      * @param bmpImagesList Input List containing Bitmap of Different EV's
      * @param action        Process which has to be performed over the {@param bmpImageList}
-     * @return              List of Bitmap, after processing
+     * @return List of Bitmap, after processing
      */
     @Override
     public List<Bitmap> perform(List<Bitmap> bmpImagesList, Actions action) {
+        List<Allocation> inAllocList = null;
 
         // Resize the input bitmap
         List<Bitmap> bmpResizedImageList = RsUtils.resizeBmp(bmpImagesList);
@@ -117,7 +117,7 @@ public class CreateHDR implements HDRManager.HDRClient {
                 break;
             case GAUSSIAN:
                 isPyramid = true;
-                inAllocList = hdrFilter.generateGaussianPyramid(hdrFilter.computeNormalWeighted(bmpResizedImageList), HDRFilter.DATA_TYPE.FLOAT32).get(Constants.getSelectedIndex());
+                inAllocList = hdrFilter.generateGaussianPyramid(hdrFilter.computeNormalWeighted(bmpResizedImageList), Constants.DataType.FLOAT32).get(Constants.getSelectedIndex());
                 break;
             case LAPLACIAN:
                 isPyramid = true;
@@ -125,14 +125,14 @@ public class CreateHDR implements HDRManager.HDRClient {
                 break;
             case RESULTANT:
                 isPyramid = true;
-                inAllocList = hdrFilter.generateResultant(hdrFilter.generateGaussianPyramid(hdrFilter.computeNormalWeighted(bmpResizedImageList), HDRFilter.DATA_TYPE.FLOAT32), hdrFilter.generateLaplacianPyramids(bmpResizedImageList));
+                inAllocList = hdrFilter.generateResultant(hdrFilter.generateGaussianPyramid(hdrFilter.computeNormalWeighted(bmpResizedImageList), Constants.DataType.FLOAT32), hdrFilter.generateLaplacianPyramids(bmpResizedImageList));
                 break;
             case HDR:
                 isPyramid = true;
-                inAllocList = hdrFilter.collapseResultant(hdrFilter.generateResultant(hdrFilter.generateGaussianPyramid(hdrFilter.computeNormalWeighted(bmpResizedImageList), HDRFilter.DATA_TYPE.FLOAT32), hdrFilter.generateLaplacianPyramids(bmpResizedImageList)));
+                inAllocList = hdrFilter.collapseResultant(hdrFilter.generateResultant(hdrFilter.generateGaussianPyramid(hdrFilter.computeNormalWeighted(bmpResizedImageList), Constants.DataType.FLOAT32), hdrFilter.generateLaplacianPyramids(bmpResizedImageList)));
                 break;
         }
-        return isPyramid ? hdrFilter.convertAllocationBMPDynamic(inAllocList) : hdrFilter.convertAllocationFxToBMP(inAllocList, HDRFilter.DATA_TYPE.FLOAT32);
+        return hdrFilter.convertAllocationListToBitmapList(inAllocList, isPyramid, true);
     }
 
     /**
@@ -156,13 +156,9 @@ public class CreateHDR implements HDRManager.HDRClient {
      * Destroy the temporary allocation list
      * IMPORTANT : Call this in onDestroy()
      */
+    @Override
     public void destroy() {
-        if (inAllocList != null) {
-            for (Allocation alloc :
-                    inAllocList) {
-                alloc.destroy();
-            }
-            inAllocList = null;
-        }
+        // Destroy HDRFilter Contents
+        hdrFilter.destroy();
     }
 }

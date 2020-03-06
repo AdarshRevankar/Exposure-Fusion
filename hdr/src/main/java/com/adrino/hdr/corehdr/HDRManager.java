@@ -11,6 +11,7 @@ public interface HDRManager {
     interface HDRClient {
         List<Bitmap> perform(List<Bitmap> bmpImagesList, CreateHDR.Actions action);
         List<Bitmap> perform(List<Bitmap> bmpImagesList, CreateHDR.Actions action, int selected);
+        void destroy();
     }
 
     interface HDRProcessor {
@@ -27,10 +28,11 @@ public interface HDRManager {
                                                List<Allocation> well_exposedness);
         // Pyramids
         List<List<Allocation>> generateGaussianPyramid(List<Bitmap> bmpImageList);
-        public List<List<Allocation>> generateGaussianPyramid(List<Allocation> floatAlloc, HDRFilter.DATA_TYPE data_type);
+        List<List<Allocation>> generateGaussianPyramid(List<Allocation> floatAlloc, Constants.DataType dataType);
         List<List<Allocation>> generateLaplacianPyramids(List<Bitmap> bmpImages);
 
         List<Allocation> generateResultant(List<List<Allocation>> gaussianPyramids, List<List<Allocation>> laplacianPyramids);
         List<Allocation> collapseResultant(List<Allocation> resultant);
+        void destroy();
     }
 }
