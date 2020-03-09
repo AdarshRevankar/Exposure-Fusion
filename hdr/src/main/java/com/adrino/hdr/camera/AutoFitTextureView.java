@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.adrino.renderscript;
+package com.adrino.hdr.camera;
 
 import android.content.Context;
 import android.util.AttributeSet;

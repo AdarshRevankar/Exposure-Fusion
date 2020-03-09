@@ -1,11 +1,10 @@
 package com.adrino.renderscript;
 
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 
-import java.util.Objects;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.adrino.hdr.camera.CameraCapture;
 
 public class CameraActivity extends AppCompatActivity {
 
@@ -16,7 +15,7 @@ public class CameraActivity extends AppCompatActivity {
         setContentView(R.layout.activity_camera);
         if (null == savedInstanceState) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.container, CameraCapture.newInstance())
+                    .replace(R.id.container, CameraCapture.newInstance(MainActivity.class))
                     .commit();
         }
     }
