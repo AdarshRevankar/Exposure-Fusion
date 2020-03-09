@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.adrino.renderscript;
+package com.adrino.hdr.camera;
 
 import android.Manifest;
 import android.app.Activity;
@@ -53,7 +53,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.util.Range;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
@@ -70,7 +69,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 
-import com.asksira.bsimagepicker.BSImagePicker;
+import com.adrino.hdr.R;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -85,11 +84,10 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static android.content.Context.SENSOR_SERVICE;
+import static com.adrino.hdr.camera.Constants.EXPOSURE_BRACKET;
 
 public class CameraCapture extends Fragment
-        implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback,
-        BSImagePicker.OnMultiImageSelectedListener, SensorEventListener {
-
+        implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback, SensorEventListener {
     /**
      * Conversion from screen rotation to JPEG orientation.
      */
@@ -99,6 +97,7 @@ public class CameraCapture extends Fragment
     private static final String FRAGMENT_WOBBLE = "wobbleCheck";
     private static final String FRAGMENT_SUCCESS = "SUCCESS";
     private static final int IMAGE_REQUEST = 100;
+    private static Class intentClass = null;
 
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
@@ -263,9 +262,12 @@ public class CameraCapture extends Fragment
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            Log.e(TAG, "onImageAvailable: WRONG LISTENER");
-//            if (imageCount <= 3 && imageCount >= 1)
-//                mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), new File(getActivity().getExternalFilesDir(null), "pic" + imageCount + ".jpg")));
+            ++writtenCount;
+            Log.e(TAG, "onImageAvailable: Listener " + writtenCount);
+            mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), new File(getActivity().getExternalFilesDir(null), "pic" + writtenCount + ".jpg")));
+            if (writtenCount >= 3) {
+                writtenCount = 0;
+            }
         }
 
     };
@@ -371,37 +373,6 @@ public class CameraCapture extends Fragment
     };
 
     private int writtenCount = 0;
-    private int[] EXPOSURE = {20, 0, -20};
-    private ImageReader.OnImageAvailableListener[] listener =
-            {
-                    new ImageReader.OnImageAvailableListener() {
-                        @Override
-                        public void onImageAvailable(ImageReader imageReader) {
-                            Log.e(TAG, "onImageAvailable: Listener 1");
-                        }
-                    },
-
-                    new ImageReader.OnImageAvailableListener() {
-                        @Override
-                        public void onImageAvailable(ImageReader imageReader) {
-                            Log.e(TAG, "onImageAvailable: Listener 2");
-                        }
-                    },
-
-                    new ImageReader.OnImageAvailableListener() {
-                        @Override
-                        public void onImageAvailable(ImageReader imageReader) {
-                            ++writtenCount;
-                            Log.e(TAG, "onImageAvailable: Listener 3 " + writtenCount);
-                            mBackgroundHandler.post(new ImageSaver(imageReader.acquireNextImage(), new File(getActivity().getExternalFilesDir(null), "pic" + writtenCount + ".jpg")));
-                            if (writtenCount >= 3) {
-                                writtenCount = 0;
-                            }
-                        }
-                    }
-
-            };
-    private Range<Integer> range;
 
     /**
      * Shows a {@link Toast} on the UI thread.
@@ -469,14 +440,15 @@ public class CameraCapture extends Fragment
         }
     }
 
-    public static CameraCapture newInstance() {
+    public static CameraCapture newInstance(Class targetClass) {
+        intentClass = targetClass;
         return new CameraCapture();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_camera2_basic, container, false);
+        return inflater.inflate(com.adrino.hdr.R.layout.fragment_camera2_basic, container, false);
     }
 
     @Override
@@ -524,7 +496,6 @@ public class CameraCapture extends Fragment
     }
 
 
-
     private void requestCameraPermission() {
         if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
             new ConfirmationDialog().show(getChildFragmentManager(), FRAGMENT_DIALOG);
@@ -560,8 +531,6 @@ public class CameraCapture extends Fragment
             for (String cameraId : manager.getCameraIdList()) {
                 CameraCharacteristics characteristics
                         = manager.getCameraCharacteristics(cameraId);
-
-                range = characteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
 
                 // We don't use a front facing camera in this sample.
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
@@ -832,7 +801,7 @@ public class CameraCapture extends Fragment
     /**
      * Initiate a still image capture.
      */
-    private void takePicture() {
+    void takePicture() {
         lockFocus();
         setImageCaptureStart(true);
     }
@@ -883,18 +852,7 @@ public class CameraCapture extends Fragment
                 return;
             }
 
-            EXPOSURE[0] = -10;
-            EXPOSURE[1] = 10;
-            EXPOSURE[2] = 0;
-
-
-            Log.e(TAG, "captureStillPicture: " + EXPOSURE[0]);
-            Log.e(TAG, "captureStillPicture: " + EXPOSURE[1]);
-            Log.e(TAG, "captureStillPicture: " + EXPOSURE[2]);
-
             for (int i = 0; i < 3; i++) {
-                mImageReader.setOnImageAvailableListener(
-                        listener[i], mBackgroundHandler);
                 // This is the CaptureRequest.Builder that we use to take a picture.
                 final CaptureRequest.Builder captureBuilder =
                         mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
@@ -902,14 +860,13 @@ public class CameraCapture extends Fragment
 
                 // Use the same AE and AF modes as the preview.
                 captureBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
-                captureBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, EXPOSURE[i]);
+                captureBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, EXPOSURE_BRACKET[i]);
 
                 setAutoFlash(captureBuilder);
 
                 // Orientation
                 int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
                 captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, getOrientation(rotation));
-
 
                 mCaptureSession.stopRepeating();
                 mCaptureSession.abortCaptures();
@@ -969,27 +926,24 @@ public class CameraCapture extends Fragment
 
     @Override
     public void onClick(View view) {
-        switch (view.getId()) {
-            case R.id.picture: {
-                takePicture();
-                break;
-            }
-            case R.id.process:
-                Intent i = new Intent(getActivity(), MainActivity.class);
-                i.putExtra("location", getActivity().getExternalFilesDir(null).toString());
-                startActivity(i);
-                break;
+        if (view.getId() == R.id.picture) {
+            takePicture();
+        }
+        if (view.getId() == R.id.process) {
+            Intent i = new Intent(getActivity(), intentClass);
+            i.putExtra("location", getActivity().getExternalFilesDir(null).toString());
+            startActivity(i);
+        }
 
-            case R.id.imgPicker:
-                openImageChooser();
-                break;
+        if (view.getId() == R.id.imgPicker) {
+            openImageChooser();
         }
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Intent i = new Intent(getActivity(), MainActivity.class);
+        Intent i = new Intent(getActivity(), intentClass);
         i.putExtra("pickerLocation1", getPathFormUri(data.getData()));
         startActivity(i);
     }
@@ -1005,13 +959,6 @@ public class CameraCapture extends Fragment
         }
         cursor.close();
         return res;
-    }
-
-    @Override
-    public void onMultiImageSelected(List<Uri> uriList, String tag) {
-        for (Uri uri : uriList) {
-            Log.e(TAG, "onMultiImageSelected: " + uri.toString());
-        }
     }
 
     private void setAutoFlash(CaptureRequest.Builder requestBuilder) {
@@ -1181,7 +1128,6 @@ public class CameraCapture extends Fragment
     private synchronized void setMobilePositionChanged(boolean mobilePositionChanged) {
         isMobilePositionChanged = mobilePositionChanged;
     }
-
 
 
     private void initSensor() {

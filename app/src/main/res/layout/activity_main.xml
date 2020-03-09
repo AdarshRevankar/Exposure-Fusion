@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".MainActivity">
 
     <LinearLayout
@@ -172,7 +171,8 @@
                 android:onClick="setContrast"
                 android:scaleType="fitCenter"
                 android:background="#000000"
-                android:src="@drawable/icon_c"/>
+                android:src="@drawable/icon_c"
+                style="@android:style/Widget.Material.Light.Button.Borderless"/>
 
             <ImageButton
                 android:id="@+id/Saturation"
@@ -183,7 +183,8 @@
                 android:onClick="setSaturation"
                 android:scaleType="fitCenter"
                 android:background="#000000"
-                android:src="@drawable/icon_s" />
+                android:src="@drawable/icon_s"
+                style="@android:style/Widget.Material.Light.Button.Borderless"/>
 
             <ImageButton
                 android:layout_weight="1"
@@ -194,8 +195,8 @@
                 android:background="#000000"
                 android:onClick="setExposure"
                 android:scaleType="fitCenter"
-
-                android:src="@drawable/icon_e"/>
+                android:src="@drawable/icon_e"
+                style="@android:style/Widget.Material.Light.Button.Borderless"/>
 
             <ImageButton
                 android:layout_weight="1"
@@ -206,7 +207,8 @@
                 android:onClick="setNormal"
                 android:src="@drawable/icon_n"
                 android:scaleType="fitCenter"
-                android:background="#000000"/>
+                android:background="#000000"
+                style="@android:style/Widget.Material.Light.Button.Borderless"/>
 
             <ImageButton
                 android:layout_weight="1"
@@ -217,7 +219,8 @@
                 android:background="#000000"
                 android:scaleType="fitCenter"
                 android:src="@drawable/icon_pyramid"
-                android:onClick="doGaussianLaplacian"/>
+                android:onClick="doGaussianLaplacian"
+                style="@android:style/Widget.Material.Light.Button.Borderless"/>
             <ImageButton
                 android:layout_weight="1"
                 android:padding="5dp"
@@ -227,7 +230,8 @@
                 android:scaleType="fitCenter"
                 android:background="#000000"
                 android:src="@drawable/icon_combine"
-                android:onClick="doCollapse"/>
+                android:onClick="doCollapse"
+                style="@android:style/Widget.Material.Light.Button.Borderless"/>
         </LinearLayout>
 
         <LinearLayout
