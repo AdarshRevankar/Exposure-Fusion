@@ -22,10 +22,8 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.database.Cursor;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -50,11 +48,9 @@ import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -67,7 +63,6 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
@@ -92,6 +87,10 @@ import static com.adrino.hdr.camera.Constants.EXPOSURE_BRACKET;
 
 public class CameraCapture extends Fragment
         implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback, SensorEventListener, View.OnTouchListener {
+    public enum CameraAction {
+        FRONT, BACK
+    }
+
     /**
      * Conversion from screen rotation to JPEG orientation.
      */
@@ -100,8 +99,7 @@ public class CameraCapture extends Fragment
     private static final String FRAGMENT_DIALOG = "dialog";
     private static final String FRAGMENT_WOBBLE = "wobbleCheck";
     private static final String FRAGMENT_SUCCESS = "SUCCESS";
-    private static final int IMAGE_REQUEST = 100;
-    private static Class intentClass = null;
+    private static CameraAction cameraAction = CameraAction.FRONT;
 
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
@@ -270,7 +268,7 @@ public class CameraCapture extends Fragment
 
             mBackgroundHandler.post(
                     new ImageSaver(reader.acquireNextImage(),
-                    new File(getActivity().getExternalFilesDir(null), "pic" + writtenCount + ".jpg"))
+                            new File(getActivity().getExternalFilesDir(null), "pic" + writtenCount + ".jpg"))
             );
 
             if (writtenCount >= 3) {
@@ -326,7 +324,8 @@ public class CameraCapture extends Fragment
                 }
                 case STATE_WAITING_LOCK: {
                     Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
-                    if (afState == null) {
+
+                    if (afState == null || afState == 0) {
                         captureStillPicture();
                     } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
                             CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
@@ -334,6 +333,7 @@ public class CameraCapture extends Fragment
                         Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
                         if (aeState == null ||
                                 aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                            Log.e(TAG, "process: CaptureImage");
                             mState = STATE_PICTURE_TAKEN;
                             captureStillPicture();
                         } else {
@@ -379,6 +379,7 @@ public class CameraCapture extends Fragment
         }
 
     };
+
     private boolean mManualFocusEngaged = false;
 
     /**
@@ -447,8 +448,8 @@ public class CameraCapture extends Fragment
         }
     }
 
-    public static CameraCapture newInstance(Class targetClass) {
-        intentClass = targetClass;
+    public static CameraCapture newInstance(CameraAction ca) {
+        cameraAction = ca;
         return new CameraCapture();
     }
 
@@ -462,10 +463,8 @@ public class CameraCapture extends Fragment
     @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {
         view.findViewById(R.id.picture).setOnClickListener(this);
-        view.findViewById(R.id.process).setOnClickListener(this);
-        view.findViewById(R.id.imgPicker).setOnClickListener(this);
         view.findViewById(R.id.texture).setOnTouchListener(this);
-        mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
+        mTextureView = view.findViewById(R.id.texture);
         writtenCount = 0;
         initSensor();
     }
@@ -545,7 +544,9 @@ public class CameraCapture extends Fragment
 
                 // We don't use a front facing camera in this sample.
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+
+                int skipCamera = cameraAction == CameraAction.FRONT ? CameraCharacteristics.LENS_FACING_BACK : CameraCharacteristics.LENS_FACING_FRONT;
+                if (facing != null && facing == skipCamera) {
                     continue;
                 }
 
@@ -560,7 +561,7 @@ public class CameraCapture extends Fragment
                         Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
                         new CompareSizesByArea());
                 mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
-                        ImageFormat.JPEG, /*maxImages*/3);
+                        ImageFormat.JPEG, /*maxImages*/2);
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mBackgroundHandler);
 
@@ -813,6 +814,7 @@ public class CameraCapture extends Fragment
      * Initiate a still image capture.
      */
     void takePicture() {
+        Log.e(TAG, "takePicture: Take picture");
         lockFocus();
         setImageCaptureStart(true);
     }
@@ -822,6 +824,7 @@ public class CameraCapture extends Fragment
      */
     private void lockFocus() {
         try {
+            Log.e(TAG, "lockFocus: Lock focus");
             // This is how to tell the camera to lock focus.
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
             // Tell #mCaptureCallback to wait for the lock.
@@ -867,7 +870,7 @@ public class CameraCapture extends Fragment
                 final CaptureRequest.Builder captureBuilder =
                         mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
                 captureBuilder.addTarget(mImageReader.getSurface());
-
+                Log.e(TAG, "captureStillPicture: Caputring");
                 // Use the same AE and AF modes as the preview.
                 captureBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
                 captureBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, EXPOSURE_BRACKET[i]);
@@ -926,49 +929,11 @@ public class CameraCapture extends Fragment
         wobbleCheck();
     }
 
-    void openImageChooser() {
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        startActivityForResult(Intent.createChooser(intent, "Select Picture"), IMAGE_REQUEST);
-    }
-
     @Override
     public void onClick(View view) {
         if (view.getId() == R.id.picture) {
             takePicture();
         }
-        if (view.getId() == R.id.process) {
-            Intent i = new Intent(getActivity(), intentClass);
-            i.putExtra("location", getActivity().getExternalFilesDir(null).toString());
-            startActivity(i);
-        }
-
-        if (view.getId() == R.id.imgPicker) {
-            openImageChooser();
-        }
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        Intent i = new Intent(getActivity(), intentClass);
-        i.putExtra("pickerLocation1", getPathFormUri(data.getData()));
-        startActivity(i);
-    }
-
-    private String getPathFormUri(Uri uri) {
-        String res = null;
-        String[] proj = {MediaStore.Images.Media.DATA};
-        Cursor cursor = getActivity().getContentResolver().query(uri, proj, null, null, null);
-        assert cursor != null;
-        if (cursor.moveToFirst()) {
-            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            res = cursor.getString(column_index);
-        }
-        cursor.close();
-        return res;
     }
 
     private void setAutoFlash(CaptureRequest.Builder requestBuilder) {
@@ -980,11 +945,15 @@ public class CameraCapture extends Fragment
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
-        Log.i(TAG, "onTouch: Touched");
+
         final int actionMasked = motionEvent.getActionMasked();
+
+        // Only if the Touch is released allow to change focus
         if (actionMasked != MotionEvent.ACTION_DOWN) {
             return false;
         }
+
+        // If not focusing
         if (mManualFocusEngaged) {
             Log.d(TAG, "Manual focus already engaged");
             return true;
@@ -992,14 +961,15 @@ public class CameraCapture extends Fragment
 
         final Rect sensorArraySize = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
 
-        //TODO: here I just flip x,y, but this needs to correspond with the sensor orientation (via SENSOR_ORIENTATION)
-        final int y = (int)((motionEvent.getX() / (float)view.getWidth())  * (float)sensorArraySize.height());
-        final int x = (int)((motionEvent.getY() / (float)view.getHeight()) * (float)sensorArraySize.width());
-        final int halfTouchWidth  = 150; //(int)motionEvent.getTouchMajor(); //TODO: this doesn't represent actual touch size in pixel. Values range in [3, 10]...
-        final int halfTouchHeight = 150; //(int)motionEvent.getTouchMinor();
-        MeteringRectangle focusAreaTouch = new MeteringRectangle(Math.max(x - halfTouchWidth,  0),
+        final int y = (int) ((motionEvent.getX() / (float) view.getWidth()) * (float) sensorArraySize.height());
+        final int x = (int) ((motionEvent.getY() / (float) view.getHeight()) * (float) sensorArraySize.width());
+
+        final int halfTouchWidth = 150;
+        final int halfTouchHeight = 150;
+
+        MeteringRectangle focusAreaTouch = new MeteringRectangle(Math.max(x - halfTouchWidth, 0),
                 Math.max(y - halfTouchHeight, 0),
-                halfTouchWidth  * 2,
+                halfTouchWidth * 2,
                 halfTouchHeight * 2,
                 MeteringRectangle.METERING_WEIGHT_MAX - 1);
 
