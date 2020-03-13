@@ -1,5 +1,5 @@
 # High Dynamic Range (HDR) - Android [![version](https://img.shields.io/badge/version-1.0.1-yellow.svg)](https://semver.org)
-[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/AdarshRevankar/RenderScript)
 ### Exposure Fusion Algorithm
 
 Library created for the demonstration of computation of HDR on Android Device. This library uses <b>RenderScript</b> extensively for the computation of pixels.
