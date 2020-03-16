@@ -29,6 +29,7 @@ import android.database.Cursor;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.Sensor;
@@ -41,9 +42,11 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
@@ -56,6 +59,7 @@ import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
@@ -87,7 +91,7 @@ import static android.content.Context.SENSOR_SERVICE;
 import static com.adrino.hdr.camera.Constants.EXPOSURE_BRACKET;
 
 public class CameraCapture extends Fragment
-        implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback, SensorEventListener {
+        implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback, SensorEventListener, View.OnTouchListener {
     /**
      * Conversion from screen rotation to JPEG orientation.
      */
@@ -105,6 +109,11 @@ public class CameraCapture extends Fragment
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
+
+    /**
+     * Counter for completing capturing image
+     */
+    private int writtenCount = 0;
 
     /**
      * Tag for the {@link Log}.
@@ -247,12 +256,6 @@ public class CameraCapture extends Fragment
      */
     private ImageReader mImageReader;
 
-
-    /**
-     * This is the output file for our picture.
-     */
-    private File mFile;
-
     /**
      * This a callback object for the {@link ImageReader}. "onImageAvailable" will be called when a
      * still image is ready to be saved.
@@ -264,7 +267,12 @@ public class CameraCapture extends Fragment
         public void onImageAvailable(ImageReader reader) {
             ++writtenCount;
             Log.e(TAG, "onImageAvailable: Listener " + writtenCount);
-            mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), new File(getActivity().getExternalFilesDir(null), "pic" + writtenCount + ".jpg")));
+
+            mBackgroundHandler.post(
+                    new ImageSaver(reader.acquireNextImage(),
+                    new File(getActivity().getExternalFilesDir(null), "pic" + writtenCount + ".jpg"))
+            );
+
             if (writtenCount >= 3) {
                 writtenCount = 0;
             }
@@ -371,8 +379,7 @@ public class CameraCapture extends Fragment
         }
 
     };
-
-    private int writtenCount = 0;
+    private boolean mManualFocusEngaged = false;
 
     /**
      * Shows a {@link Toast} on the UI thread.
@@ -448,6 +455,7 @@ public class CameraCapture extends Fragment
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
         return inflater.inflate(com.adrino.hdr.R.layout.fragment_camera2_basic, container, false);
     }
 
@@ -456,6 +464,7 @@ public class CameraCapture extends Fragment
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.process).setOnClickListener(this);
         view.findViewById(R.id.imgPicker).setOnClickListener(this);
+        view.findViewById(R.id.texture).setOnTouchListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         writtenCount = 0;
         initSensor();
@@ -523,14 +532,16 @@ public class CameraCapture extends Fragment
      * @param width  The width of available size for camera preview
      * @param height The height of available size for camera preview
      */
+
+    private CameraCharacteristics characteristics = null;
+
     @SuppressWarnings("SuspiciousNameCombination")
     private void setUpCameraOutputs(int width, int height) {
         Activity activity = getActivity();
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
             for (String cameraId : manager.getCameraIdList()) {
-                CameraCharacteristics characteristics
-                        = manager.getCameraCharacteristics(cameraId);
+                characteristics = manager.getCameraCharacteristics(cameraId);
 
                 // We don't use a front facing camera in this sample.
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
@@ -549,7 +560,7 @@ public class CameraCapture extends Fragment
                         Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
                         new CompareSizesByArea());
                 mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
-                        ImageFormat.JPEG, /*maxImages*/2);
+                        ImageFormat.JPEG, /*maxImages*/3);
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mBackgroundHandler);
 
@@ -812,8 +823,7 @@ public class CameraCapture extends Fragment
     private void lockFocus() {
         try {
             // This is how to tell the camera to lock focus.
-            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
-                    CameraMetadata.CONTROL_AF_TRIGGER_START);
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
             // Tell #mCaptureCallback to wait for the lock.
             mState = STATE_WAITING_LOCK;
             mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
@@ -966,6 +976,100 @@ public class CameraCapture extends Fragment
             requestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                     CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
         }
+    }
+
+    @Override
+    public boolean onTouch(View view, MotionEvent motionEvent) {
+        Log.i(TAG, "onTouch: Touched");
+        final int actionMasked = motionEvent.getActionMasked();
+        if (actionMasked != MotionEvent.ACTION_DOWN) {
+            return false;
+        }
+        if (mManualFocusEngaged) {
+            Log.d(TAG, "Manual focus already engaged");
+            return true;
+        }
+
+        final Rect sensorArraySize = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+
+        //TODO: here I just flip x,y, but this needs to correspond with the sensor orientation (via SENSOR_ORIENTATION)
+        final int y = (int)((motionEvent.getX() / (float)view.getWidth())  * (float)sensorArraySize.height());
+        final int x = (int)((motionEvent.getY() / (float)view.getHeight()) * (float)sensorArraySize.width());
+        final int halfTouchWidth  = 150; //(int)motionEvent.getTouchMajor(); //TODO: this doesn't represent actual touch size in pixel. Values range in [3, 10]...
+        final int halfTouchHeight = 150; //(int)motionEvent.getTouchMinor();
+        MeteringRectangle focusAreaTouch = new MeteringRectangle(Math.max(x - halfTouchWidth,  0),
+                Math.max(y - halfTouchHeight, 0),
+                halfTouchWidth  * 2,
+                halfTouchHeight * 2,
+                MeteringRectangle.METERING_WEIGHT_MAX - 1);
+
+        CameraCaptureSession.CaptureCallback captureCallbackHandler = new CameraCaptureSession.CaptureCallback() {
+            @Override
+            public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+                super.onCaptureCompleted(session, request, result);
+                mManualFocusEngaged = false;
+
+                if (request.getTag() == "FOCUS_TAG") {
+                    //the focus trigger is complete -
+                    //resume repeating (preview surface will get frames), clear AF trigger
+                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, null);
+                    try {
+                        mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), null, null);
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onCaptureFailed(CameraCaptureSession session, CaptureRequest request, CaptureFailure failure) {
+                super.onCaptureFailed(session, request, failure);
+                Log.e(TAG, "Manual AF failure: " + failure);
+                mManualFocusEngaged = false;
+            }
+        };
+
+        //first stop the existing repeating request
+        try {
+            mCaptureSession.stopRepeating();
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
+        //cancel any existing AF trigger (repeated touches, etc.)
+        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
+        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
+        try {
+            mCaptureSession.capture(mPreviewRequestBuilder.build(), captureCallbackHandler, mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
+        //Now add a new AF trigger with focus region
+        if (isMeteringAreaAFSupported()) {
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{focusAreaTouch});
+        }
+        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
+        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
+        mPreviewRequestBuilder.setTag("FOCUS_TAG"); //we'll capture this later for resuming the preview
+
+        //then we ask for a single request (not repeating!)
+        try {
+            mCaptureSession.capture(mPreviewRequestBuilder.build(), captureCallbackHandler, mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        mManualFocusEngaged = true;
+
+        return true;
+    }
+
+    private boolean isMeteringAreaAFSupported() {
+        if (characteristics != null)
+            return characteristics.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF) >= 1;
+        else
+            return false;
     }
 
     /**
