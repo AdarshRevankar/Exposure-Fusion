@@ -2,26 +2,24 @@ package com.adrino.renderscript;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.adrino.hdr.corehdr.Constants;
+import com.adrino.hdr.camera.CameraViewer;
 import com.adrino.hdr.corehdr.CreateHDR;
-import com.adrino.hdr.corehdr.RsUtils;
 import com.adrino.renderscript.visual.ViewDialog;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+    CameraViewer cameraViewer;
 
     private static final String TAG = "MainActivity";
     CreateHDR expFusion;
@@ -36,32 +34,47 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         viewDialog = new ViewDialog(this);
 
-        /* - - - - - - - - Get images - - - - - - - */
-        SOURCE1 = R.drawable.sarvesh_iphon1;
-        SOURCE2 = R.drawable.sarvesh_iphone2;
-        SOURCE3 = R.drawable.sarvesh_iphone3;
+//        /* - - - - - - - - Get images - - - - - - - */
+//        SOURCE1 = R.drawable.sarvesh_iphon1;
+//        SOURCE2 = R.drawable.sarvesh_iphone2;
+//        SOURCE3 = R.drawable.sarvesh_iphone3;
+//
+//        Intent intent = getIntent();
+//        bmpImgList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
+//        String path = intent.getStringExtra("location");
+//
+//
+//        if(path != null && new File(path, "pic1.jpg").exists()) {
+//            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 1 + ".jpg").getAbsolutePath()));
+//            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 2 + ".jpg").getAbsolutePath()));
+//            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 3 + ".jpg").getAbsolutePath()));
+//
+//            /*---------------------- Scale Images ----------------------*/
+//            bmpImgList = RsUtils.resizeBmp(bmpImgList);
+//
+//            /*---------------------- Set Images ----------------------*/
+//            ((ImageView) findViewById(R.id.pic1)).setImageBitmap(bmpImgList.get(0));
+//            ((ImageView) findViewById(R.id.pic2)).setImageBitmap(bmpImgList.get(1));
+//            ((ImageView) findViewById(R.id.pic3)).setImageBitmap(bmpImgList.get(2));
+//        } else {
+//            Toast.makeText(this, "Please Capture image and Try to process . . .", Toast.LENGTH_LONG).show();
+//            this.finish();
+//        }
+    }
 
-        Intent intent = getIntent();
-        bmpImgList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
-        String path = intent.getStringExtra("location");
-
-
-        if(path != null && new File(path, "pic1.jpg").exists()) {
-            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 1 + ".jpg").getAbsolutePath()));
-            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 2 + ".jpg").getAbsolutePath()));
-            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 3 + ".jpg").getAbsolutePath()));
-
-            /*---------------------- Scale Images ----------------------*/
-            bmpImgList = RsUtils.resizeBmp(bmpImgList);
-
-            /*---------------------- Set Images ----------------------*/
-            ((ImageView) findViewById(R.id.pic1)).setImageBitmap(bmpImgList.get(0));
-            ((ImageView) findViewById(R.id.pic2)).setImageBitmap(bmpImgList.get(1));
-            ((ImageView) findViewById(R.id.pic3)).setImageBitmap(bmpImgList.get(2));
-        } else {
-            Toast.makeText(this, "Please Capture image and Try to process . . .", Toast.LENGTH_LONG).show();
-            this.finish();
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if(cameraViewer == null) {
+            cameraViewer = new CameraViewer();
+            cameraViewer.startCameraActivity(this);
         }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
     }
 
     public void doGaussianLaplacian(View view) {
