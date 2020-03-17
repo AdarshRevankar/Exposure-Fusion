@@ -18,7 +18,7 @@
     android:layout_height="match_parent"
     android:orientation="horizontal">
 
-    <com.adrino.hdr.camera.AutoFitTextureView
+    <com.adrino.hdr.camera.corecamera.AutoFitTextureView
         android:id="@+id/texture"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
