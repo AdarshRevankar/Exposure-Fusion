@@ -394,34 +394,6 @@ public class CameraCapture extends Fragment
 
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        startBackgroundThread();
-
-        // When the screen is turned off and turned back on, the SurfaceTexture is already
-        // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
-        // a camera and start preview from here (otherwise, we wait until the surface is ready in
-        // the SurfaceTextureListener).
-        if (mTextureView.isAvailable()) {
-            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
-        } else {
-            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
-        }
-
-        // Register Wobble Check Sensor Listener
-        registerListener();
-    }
-
-    @Override
-    public void onPause() {
-        closeCamera();
-        stopBackgroundThread();
-        // Register Wobble Check Sensor Listener
-        unRegisterListener();
-        super.onPause();
-    }
-
 
     private void requestCameraPermission() {
         if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
@@ -1106,6 +1078,33 @@ public class CameraCapture extends Fragment
         if (sensorManager != null) {
             sensorManager.unregisterListener(this);
         }
+    }
+
+
+
+    /**
+     * +====================================================+
+     * |                Life Cycle Functions                |
+     * +====================================================+
+     */
+    @Override
+    public void onResume() {
+        super.onResume();
+        startBackgroundThread();
+        if (mTextureView.isAvailable()) {
+            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+        } else {
+            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+        }
+        registerListener();
+    }
+
+    @Override
+    public void onPause() {
+        closeCamera();
+        stopBackgroundThread();
+        unRegisterListener();
+        super.onPause();
     }
 
 }
