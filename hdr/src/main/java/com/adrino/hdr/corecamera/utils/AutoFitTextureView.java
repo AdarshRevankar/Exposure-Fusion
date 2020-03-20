@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.adrino.hdr.camera.corecamera;
+package com.adrino.hdr.corecamera.utils;
 
 import android.content.Context;
 import android.util.AttributeSet;

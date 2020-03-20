@@ -11,64 +11,30 @@ import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.adrino.hdr.camera.CameraViewer;
+import com.adrino.hdr.Manager;
 import com.adrino.hdr.corehdr.CreateHDR;
 import com.adrino.renderscript.visual.ViewDialog;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    CameraViewer cameraViewer;
-
     private static final String TAG = "MainActivity";
-    CreateHDR expFusion;
     List<Bitmap> bmpImgList, saturation, contrast, exposed, norm;
-    static int SOURCE1, SOURCE2, SOURCE3;
     private ViewDialog viewDialog;
+    private Manager hdrManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        expFusion = new CreateHDR(this);
+        hdrManager = new Manager(this);
         setContentView(R.layout.activity_main);
         viewDialog = new ViewDialog(this);
 
-//        /* - - - - - - - - Get images - - - - - - - */
-//        SOURCE1 = R.drawable.sarvesh_iphon1;
-//        SOURCE2 = R.drawable.sarvesh_iphone2;
-//        SOURCE3 = R.drawable.sarvesh_iphone3;
-//
-//        Intent intent = getIntent();
-//        bmpImgList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
-//        String path = intent.getStringExtra("location");
-//
-//
-//        if(path != null && new File(path, "pic1.jpg").exists()) {
-//            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 1 + ".jpg").getAbsolutePath()));
-//            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 2 + ".jpg").getAbsolutePath()));
-//            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 3 + ".jpg").getAbsolutePath()));
-//
-//            /*---------------------- Scale Images ----------------------*/
-//            bmpImgList = RsUtils.resizeBmp(bmpImgList);
-//
-//            /*---------------------- Set Images ----------------------*/
-//            ((ImageView) findViewById(R.id.pic1)).setImageBitmap(bmpImgList.get(0));
-//            ((ImageView) findViewById(R.id.pic2)).setImageBitmap(bmpImgList.get(1));
-//            ((ImageView) findViewById(R.id.pic3)).setImageBitmap(bmpImgList.get(2));
-//        } else {
-//            Toast.makeText(this, "Please Capture image and Try to process . . .", Toast.LENGTH_LONG).show();
-//            this.finish();
-//        }
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if(cameraViewer == null) {
-            cameraViewer = new CameraViewer();
-            cameraViewer.startCameraActivity(this);
-        }
+        hdrManager.perform(this, true);
+        bmpImgList = new ArrayList<>(hdrManager.getBmpImageList());
+        int a = 1;
     }
 
     @Override
@@ -98,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 if (contrast == null)
-                    contrast = expFusion.perform(bmpImgList, CreateHDR.Actions.CONTRAST);
+                    contrast = hdrManager.perform(bmpImgList, CreateHDR.Actions.CONTRAST);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -125,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 if (saturation == null)
-                    saturation = expFusion.perform(bmpImgList, CreateHDR.Actions.SATURATION);
+                    saturation = hdrManager.perform(bmpImgList, CreateHDR.Actions.SATURATION);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -152,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 if (exposed == null)
-                    exposed = expFusion.perform(bmpImgList, CreateHDR.Actions.EXPOSED);
+                    exposed = hdrManager.perform(bmpImgList, CreateHDR.Actions.EXPOSED);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -179,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 if (norm == null)
-                    norm = expFusion.perform(bmpImgList, CreateHDR.Actions.NORMAL);
+                    norm = hdrManager.perform(bmpImgList, CreateHDR.Actions.NORMAL);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -211,12 +177,5 @@ public class MainActivity extends AppCompatActivity {
                 viewDialog.hideDialog();
             }
         }, 300);
-    }
-
-    @Override
-    protected void onDestroy() {
-        this.expFusion.destroy();
-        expFusion = null;
-        super.onDestroy();
     }
 }

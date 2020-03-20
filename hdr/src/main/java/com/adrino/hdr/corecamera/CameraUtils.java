@@ -1,4 +1,4 @@
-package com.adrino.hdr.camera;
+package com.adrino.hdr.corecamera;
 
 import android.Manifest;
 import android.app.Activity;
@@ -215,11 +215,12 @@ public class CameraUtils {
 class BitmapSaver {
     private static List<Bitmap> multiExposureImageList = null;
 
-    BitmapSaver() {
-        multiExposureImageList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
-    }
-
     public static void add(Bitmap toAdd) {
+        // If Image List pointing to null save it.
+        if (multiExposureImageList == null)
+            multiExposureImageList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
+
+        // If totally 3 images are captured ?
         if (multiExposureImageList.size() <= Constants.INPUT_IMAGE_SIZE)
             multiExposureImageList.add(toAdd);
         else
@@ -231,7 +232,7 @@ class BitmapSaver {
         return new ArrayList<>(multiExposureImageList);
     }
 
-    void clear(){
+    void clear() {
         multiExposureImageList.clear();
         multiExposureImageList = null;
     }

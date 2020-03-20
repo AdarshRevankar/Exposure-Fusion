@@ -1,4 +1,4 @@
-package com.adrino.hdr.camera;
+package com.adrino.hdr.corecamera;
 
 import android.Manifest;
 import android.app.Activity;
@@ -55,9 +55,11 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.adrino.hdr.R;
-import com.adrino.hdr.camera.corecamera.AutoFitTextureView;
-import com.adrino.hdr.camera.corecamera.Constants;
+import com.adrino.hdr.corecamera.utils.AutoFitTextureView;
+import com.adrino.hdr.corecamera.utils.Constants;
+import com.adrino.hdr.corecamera.utils.ImageSaver;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
@@ -246,17 +248,13 @@ public class CameraCapture extends Fragment
             ++writtenCount;
             Log.e(TAG, "onImageAvailable: Listener " + writtenCount);
 
-            Image image = reader.acquireNextImage();
-            if (image != null) {
-                ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                byte[] bytes = new byte[buffer.capacity()];
-                buffer.get(bytes);
-                Bitmap bitmapImage = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, null);
-                BitmapSaver.add(bitmapImage);
-            }
+            mBackgroundHandler.post(
+                    new ImageSaver(reader.acquireNextImage(),
+                    new File(getActivity().getExternalFilesDir(null), "pic" + writtenCount + ".jpg")));
 
             if (writtenCount >= 3) {
                 writtenCount = 0;
+                getActivity().finish();
             }
         }
 

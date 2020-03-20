@@ -1,4 +1,4 @@
-package com.adrino.hdr.camera;
+package com.adrino.hdr.corecamera;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -7,13 +7,12 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.adrino.hdr.R;
-import com.adrino.hdr.camera.corecamera.Constants;
+import com.adrino.hdr.corecamera.utils.Constants;
 
 public class CameraActivity extends AppCompatActivity implements
-        CameraManager.CameraController,
         View.OnClickListener {
 
-    private static final String TAG = "CameraActivty";
+    private static final String TAG = "CameraActivity";
     private CameraCapture cameraCapture;
     private Constants.CameraLens cameraLens;
 
