@@ -145,7 +145,7 @@ public class CameraUtils {
     public static class SuccessDialog extends DialogFragment {
         private static final String ARG_MESSAGE = "message";
 
-        static SuccessDialog newInstance(String message) {
+        public static SuccessDialog newInstance(String message) {
             SuccessDialog dialog = new SuccessDialog();
             Bundle args = new Bundle();
             args.putString(ARG_MESSAGE, message);

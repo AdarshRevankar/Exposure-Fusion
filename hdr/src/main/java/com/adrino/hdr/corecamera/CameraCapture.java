@@ -58,6 +58,7 @@ import com.adrino.hdr.R;
 import com.adrino.hdr.corecamera.utils.AutoFitTextureView;
 import com.adrino.hdr.corecamera.utils.Constants;
 import com.adrino.hdr.corecamera.utils.ImageSaver;
+import com.adrino.hdr.corecamera.utils.WobbleCheck;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -72,17 +73,21 @@ import static android.content.Context.SENSOR_SERVICE;
 public class CameraCapture extends Fragment
         implements View.OnClickListener,
         ActivityCompat.OnRequestPermissionsResultCallback,
-        SensorEventListener,
         View.OnTouchListener {
+
+    /**
+     * +====================================================+
+     * |                     Wobble Check                   |
+     * +====================================================+
+     */
+    private WobbleCheck wobbleCheck;
+
     /**
      * Conversion from screen rotation to JPEG orientation.
      */
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     private static final int REQUEST_CAMERA_PERMISSION = 1;
     private static final String FRAGMENT_DIALOG = "dialog";
-    private static final String FRAGMENT_WOBBLE = "wobbleCheck";
-    private static final String FRAGMENT_SUCCESS = "SUCCESS";
-    private static final int IMAGE_REQUEST = 100;
     private static Class intentClass = null;
 
     static {
@@ -383,15 +388,8 @@ public class CameraCapture extends Fragment
         view.findViewById(R.id.texture).setOnTouchListener(this);
         mTextureView = view.findViewById(R.id.texture);
         writtenCount = 0;
-        initSensor();
+        wobbleCheck = new WobbleCheck(getActivity());
     }
-
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
-    }
-
 
     private void requestCameraPermission() {
         if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
@@ -446,7 +444,7 @@ public class CameraCapture extends Fragment
                 // For still image captures, we use the largest available size.
                 Size largest = Collections.max(
                         Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
-                        new CompareSizesByArea());
+                        new CameraUtils.CompareSizesByArea());
                 mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
                         ImageFormat.JPEG, /*maxImages*/3);
                 mImageReader.setOnImageAvailableListener(
@@ -702,7 +700,7 @@ public class CameraCapture extends Fragment
      */
     private void takePicture() {
         lockFocus();
-        setImageCaptureStart(true);
+        wobbleCheck.setImageCaptureStart(true);
     }
 
     /**
@@ -770,7 +768,7 @@ public class CameraCapture extends Fragment
                 mCaptureSession.abortCaptures();
                 mCaptureSession.capture(captureBuilder.build(), null, null);
             }
-            setImageCaptureEnd(true);
+            wobbleCheck.setImageCaptureEnd(true);
             unlockFocus();
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -811,30 +809,13 @@ public class CameraCapture extends Fragment
             e.printStackTrace();
         }
         // Try to check if the image is correct or not
-        wobbleCheck();
-    }
-
-    private void openImageChooser() {
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        startActivityForResult(Intent.createChooser(intent, "Select Picture"), IMAGE_REQUEST);
+        wobbleCheck.check(getFragmentManager());
     }
 
     @Override
     public void onClick(View view) {
         if (view.getId() == R.id.picture) {
             takePicture();
-        }
-        if (view.getId() == R.id.process) {
-            Intent i = new Intent(getActivity(), intentClass);
-            i.putExtra("location", getActivity().getExternalFilesDir(null).toString());
-            startActivity(i);
-        }
-
-        if (view.getId() == R.id.imgPicker) {
-            openImageChooser();
         }
     }
 
@@ -965,122 +946,6 @@ public class CameraCapture extends Fragment
     }
 
     /**
-     * Compares two {@code Size}s based on their areas.
-     */
-    static class CompareSizesByArea implements Comparator<Size> {
-
-        @Override
-        public int compare(Size lhs, Size rhs) {
-            // We cast here to ensure the multiplications won't overflow
-            return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
-                    (long) rhs.getWidth() * rhs.getHeight());
-        }
-
-    }
-
-    /**
-     * Wobble Check
-     */
-    private SensorManager sensorManager;
-    private Sensor accelerometer;
-    private float mAccel;
-    private double mAccelCurrent;
-    private double mAccelLast;
-    private boolean isImageCaptureStart = false;
-    private boolean isImageCaptureEnd = false;
-    private boolean isMobilePositionChanged = false;
-    private static final float MAX_ACCELERATION_ALLOWED = 0.3f;
-
-
-    private synchronized boolean isImageCaptureStart() {
-        return isImageCaptureStart;
-    }
-
-    private synchronized void setImageCaptureStart(boolean imageCaptureStart) {
-        isImageCaptureStart = imageCaptureStart;
-    }
-
-    private synchronized boolean isImageCaptureEnd() {
-        return isImageCaptureEnd;
-    }
-
-    private synchronized void setImageCaptureEnd(boolean imageCaptureEnd) {
-        isImageCaptureEnd = imageCaptureEnd;
-    }
-
-    private synchronized boolean isMobilePositionChanged() {
-        return isMobilePositionChanged;
-    }
-
-    private synchronized void setMobilePositionChanged(boolean mobilePositionChanged) {
-        isMobilePositionChanged = mobilePositionChanged;
-    }
-
-
-    private void initSensor() {
-        sensorManager = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        mAccel = 0.00f;
-        mAccelCurrent = SensorManager.GRAVITY_EARTH;
-        mAccelLast = SensorManager.GRAVITY_EARTH;
-        setImageCaptureStart(false);
-        setImageCaptureEnd(false);
-        setMobilePositionChanged(false);
-    }
-
-    private void wobbleCheck() {
-        if (isMobilePositionChanged()) {
-            new CameraUtils.WobbleDialog().show(getChildFragmentManager(), FRAGMENT_WOBBLE);
-            CameraUtils.WobbleDialog.newInstance("Please dont move your device")
-                    .show(getChildFragmentManager(), FRAGMENT_WOBBLE);
-        } else {
-            CameraUtils.SuccessDialog.newInstance("Image Captured successfully")
-                    .show(getChildFragmentManager(), FRAGMENT_SUCCESS);
-        }
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            // Shake detection
-            float[] mGravity = event.values.clone();
-            float x = mGravity[0];
-            float y = mGravity[1];
-            float z = mGravity[2];
-            mAccelLast = mAccelCurrent;
-            mAccelCurrent = Math.sqrt(x * x + y * y + z * z);
-            double delta = mAccelCurrent - mAccelLast;
-            mAccel = (float) (mAccel * 0.9f + delta);
-            if (mAccel > MAX_ACCELERATION_ALLOWED) {
-                setMobilePositionChanged(isImageCaptureStart() && !isImageCaptureEnd());
-                Log.e("Mobile Position ", "Mobile Accerated");
-            }
-
-        }
-
-
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-    }
-
-    private void registerListener() {
-        if (sensorManager != null && accelerometer != null) {
-            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        }
-    }
-
-    private void unRegisterListener() {
-        if (sensorManager != null) {
-            sensorManager.unregisterListener(this);
-        }
-    }
-
-
-
-    /**
      * +====================================================+
      * |                Life Cycle Functions                |
      * +====================================================+
@@ -1094,14 +959,14 @@ public class CameraCapture extends Fragment
         } else {
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
         }
-        registerListener();
+        wobbleCheck.registerListener();
     }
 
     @Override
     public void onPause() {
         closeCamera();
         stopBackgroundThread();
-        unRegisterListener();
+        wobbleCheck.unRegisterListener();
         super.onPause();
     }
 

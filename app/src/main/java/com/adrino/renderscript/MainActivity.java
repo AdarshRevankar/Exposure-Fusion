@@ -34,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
 
         hdrManager.perform(this, true);
         bmpImgList = new ArrayList<>(hdrManager.getBmpImageList());
-        int a = 1;
     }
 
     @Override
