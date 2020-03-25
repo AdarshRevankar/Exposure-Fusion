@@ -42,42 +42,39 @@ public class Collapse extends AppCompatActivity {
         Intent intent = getIntent();
         bmpImgList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
         path = intent.getStringExtra("location");
-        Log.e(TAG, "onCreate: "+path);
-        if(path != null){
-            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+1+".jpg").getAbsolutePath()));
-            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+2+".jpg").getAbsolutePath()));
-            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+3+".jpg").getAbsolutePath()));
-        } else {
-            bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphon1));
-            bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone2));
-            bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone3));
-        }
+        Log.e(TAG, "onCreate: " + path);
+        if (path != null) {
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 1 + ".jpg").getAbsolutePath()));
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 2 + ".jpg").getAbsolutePath()));
+            bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic" + 3 + ".jpg").getAbsolutePath()));
 
-        // Resize
-        bmpImgList = RsUtils.resizeBmp(bmpImgList);
+            // Resize
+            bmpImgList = RsUtils.resizeBmp(bmpImgList);
+
+        } else {
+            Log.e(TAG, "onCreate: Cannot load the image");
+        }
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                if (!Constants.MEM_BOOST) {
-                    final List<Bitmap> resultant = new CreateHDR(context).perform(bmpImgList, CreateHDR.Actions.RESULTANT);
+                final List<Bitmap> resultant = new CreateHDR(context).perform(bmpImgList, CreateHDR.Actions.RESULTANT);
 
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            ((ImageView) findViewById(R.id.res1)).setImageBitmap(resultant.get(0));
-                            ((ImageView) findViewById(R.id.res2)).setImageBitmap(resultant.get(1));
-                            ((ImageView) findViewById(R.id.res3)).setImageBitmap(resultant.get(2));
-                            ((ImageView) findViewById(R.id.res4)).setImageBitmap(resultant.get(3));
-                        }
-                    });
-                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ((ImageView) findViewById(R.id.res1)).setImageBitmap(resultant.get(0));
+                        ((ImageView) findViewById(R.id.res2)).setImageBitmap(resultant.get(1));
+                        ((ImageView) findViewById(R.id.res3)).setImageBitmap(resultant.get(2));
+                        ((ImageView) findViewById(R.id.res4)).setImageBitmap(resultant.get(3));
+                    }
+                });
                 long start = System.currentTimeMillis();
                 hdrOutput = createHDR.perform(bmpImgList, CreateHDR.Actions.HDR);
                 long end = System.currentTimeMillis();
 
                 try {
-                    FileOutputStream  file = new FileOutputStream(new File(path, "HDR.jpg"));
+                    FileOutputStream file = new FileOutputStream(new File(path, "HDR.jpg"));
                     Bitmap out = hdrOutput.get(0);
                     out.compress(Bitmap.CompressFormat.JPEG, 100, file);
                     file.close();

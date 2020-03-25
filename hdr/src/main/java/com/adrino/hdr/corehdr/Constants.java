@@ -18,12 +18,6 @@ public class Constants {
     public static final int INPUT_IMAGE_SIZE = 3;
 
     /**
-     * MEMORY BOOST - Toggle
-     * if turned on, then the direct HDR computation is provided (memory clearance for intermediate stages)
-     */
-    public static boolean MEM_BOOST = false;
-
-    /**
      * SELECTED_INDEX - Pointer
      * Points to the index of which Set of List<Bitmap> has to be given
      * Initially it points to the 1st List ( index = 0 )

@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -42,13 +43,11 @@ public class Pyramids extends AppCompatActivity {
             bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+1+".jpg").getAbsolutePath()));
             bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+2+".jpg").getAbsolutePath()));
             bmpImgList.add(BitmapFactory.decodeFile(new File(path, "pic"+3+".jpg").getAbsolutePath()));
+            bmpImgList = RsUtils.resizeBmp(bmpImgList);
         } else {
-            bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphon1));
-            bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone2));
-            bmpImgList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone3));
+            Log.e(TAG, "onCreate: Image not found");
+            Toast.makeText(this, "Images are not loaded : Please check", Toast.LENGTH_LONG).show();
         }
-
-        bmpImgList = RsUtils.resizeBmp(bmpImgList);
     }
 
     public void createLaplacian(View view) {

@@ -39,6 +39,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.util.Range;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
@@ -255,7 +256,7 @@ public class CameraCapture extends Fragment
 
             mBackgroundHandler.post(
                     new ImageSaver(reader.acquireNextImage(),
-                    new File(getActivity().getExternalFilesDir(null), "pic" + writtenCount + ".jpg")));
+                            new File(getActivity().getExternalFilesDir(null), "pic" + writtenCount + ".jpg")));
 
             if (writtenCount >= 3) {
                 writtenCount = 0;
@@ -286,10 +287,10 @@ public class CameraCapture extends Fragment
      */
     private Semaphore mCameraOpenCloseLock = new Semaphore(1);
 
-    /**
-     * Whether the current camera device supports Flash or not.
-     */
-    private boolean mFlashSupported;
+//    /**
+//     * Whether the current camera device supports Flash or not.
+//     */
+//    private boolean mFlashSupported;
 
     /**
      * Orientation of the camera sensor
@@ -309,21 +310,10 @@ public class CameraCapture extends Fragment
                     break;
                 }
                 case STATE_WAITING_LOCK: {
-                    Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
-                    if (afState == null) {
+                    if (!mManualFocusEngaged)
                         captureStillPicture();
-                    } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
-                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
-                        // CONTROL_AE_STATE can be null on some devices
-                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-                        if (aeState == null ||
-                                aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
-                            mState = STATE_PICTURE_TAKEN;
-                            captureStillPicture();
-                        } else {
-                            runPrecaptureSequence();
-                        }
-                    }
+                    else
+                        runPrecaptureSequence();
                     break;
                 }
                 case STATE_WAITING_PRECAPTURE: {
@@ -428,6 +418,9 @@ public class CameraCapture extends Fragment
         try {
             for (String cameraId : manager.getCameraIdList()) {
                 characteristics = manager.getCameraCharacteristics(cameraId);
+                Range<Long> exposureTimeRange = characteristics.get(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE);
+                Log.e(TAG, "setUpCameraOutputs: Lower Range = "+ exposureTimeRange.getLower());
+                Log.e(TAG, "setUpCameraOutputs: Upper Range = "+ exposureTimeRange.getUpper());
 
                 // We don't use a front facing camera in this sample.
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
@@ -513,8 +506,8 @@ public class CameraCapture extends Fragment
                 }
 
                 // Check if the flash is supported.
-                Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
-                mFlashSupported = available == null ? false : available;
+//                Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+//                mFlashSupported = available == null ? false : available;
 
                 mCameraId = cameraId;
                 return;
@@ -639,7 +632,7 @@ public class CameraCapture extends Fragment
                                 mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                                         CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
                                 // Flash is automatically enabled when necessary.
-                                setAutoFlash(mPreviewRequestBuilder);
+//                                setAutoFlash(mPreviewRequestBuilder);
 
                                 // Finally, we start displaying the camera preview.
                                 mPreviewRequest = mPreviewRequestBuilder.build();
@@ -653,7 +646,7 @@ public class CameraCapture extends Fragment
                         @Override
                         public void onConfigureFailed(
                                 @NonNull CameraCaptureSession cameraCaptureSession) {
-                            Log.e(TAG, "onConfigureFailed: Failed" );
+                            Log.e(TAG, "onConfigureFailed: Failed");
                         }
                     }, null
             );
@@ -758,7 +751,7 @@ public class CameraCapture extends Fragment
                 captureBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
                 captureBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, Constants.EXPOSURE_BRACKET[i]);
 
-                setAutoFlash(captureBuilder);
+//                setAutoFlash(captureBuilder);
 
                 // Orientation
                 int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
@@ -798,7 +791,7 @@ public class CameraCapture extends Fragment
             // Reset the auto-focus trigger
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
-            setAutoFlash(mPreviewRequestBuilder);
+//            setAutoFlash(mPreviewRequestBuilder);
             mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
             // After this, the camera will go back to the normal state of preview.
@@ -840,12 +833,12 @@ public class CameraCapture extends Fragment
         return res;
     }
 
-    private void setAutoFlash(CaptureRequest.Builder requestBuilder) {
-        if (mFlashSupported) {
-            requestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
-                    CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
-        }
-    }
+//    private void setAutoFlash(CaptureRequest.Builder requestBuilder) {
+//        if (mFlashSupported) {
+//            requestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
+//                    CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+//        }
+//    }
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {

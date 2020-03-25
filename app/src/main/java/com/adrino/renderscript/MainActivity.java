@@ -13,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.adrino.hdr.Manager;
 import com.adrino.hdr.corehdr.CreateHDR;
+import com.adrino.hdr.corehdr.HDRManager;
+import com.adrino.hdr.corehdr.RsUtils;
 import com.adrino.renderscript.visual.ViewDialog;
 
 import java.util.ArrayList;
@@ -34,6 +36,10 @@ public class MainActivity extends AppCompatActivity {
 
         hdrManager.perform(this, true);
         bmpImgList = new ArrayList<>(hdrManager.getBmpImageList());
+        bmpImgList = RsUtils.resizeBmp(bmpImgList);
+        ((ImageView)findViewById(R.id.pic1)).setImageBitmap(bmpImgList.get(0));
+        ((ImageView)findViewById(R.id.pic2)).setImageBitmap(bmpImgList.get(1));
+        ((ImageView)findViewById(R.id.pic3)).setImageBitmap(bmpImgList.get(2));
     }
 
     @Override

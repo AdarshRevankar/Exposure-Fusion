@@ -15,8 +15,8 @@ import androidx.renderscript.ScriptIntrinsicResize;
 import com.adrino.hdr.ScriptC_Collapse;
 import com.adrino.hdr.ScriptC_Exposure;
 import com.adrino.hdr.ScriptC_Laplacian;
-import com.adrino.hdr.ScriptC_NormalizeWeights;
 import com.adrino.hdr.ScriptC_Saturation;
+import com.adrino.hdr.ScriptC_Normalize;
 import com.adrino.hdr.ScriptC_utils;
 
 import java.util.ArrayList;
@@ -63,7 +63,6 @@ class HDRFilter implements HDRManager.HDRProcessor {
      */
     @Override
     public void setMeta(int imWidth, int imHeight, Bitmap.Config imConfig) {
-        Constants.MEM_BOOST = false;
 
         // Set image Dim
         width = imWidth;
@@ -266,44 +265,48 @@ class HDRFilter implements HDRManager.HDRProcessor {
                                                   List<Allocation> saturation,
                                                   List<Allocation> wellExposeness) {
 
-        ScriptC_NormalizeWeights scriptNorm = new ScriptC_NormalizeWeights(renderScript);
+        ScriptC_Normalize scriptNormalize = new ScriptC_Normalize(renderScript);
 
         // - - - - - Allocate - - - - - - - -
-        Allocation outAlloc1 = RsUtils.create2d(renderScript, width, height, elementFloat);
-        Allocation outAlloc2 = RsUtils.create2d(renderScript, width, height, elementFloat);
-        Allocation outAlloc3 = RsUtils.create2d(renderScript, width, height, elementFloat);
+        List<Allocation> weightedAllocList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
+        List<Allocation> normWeightedAllocList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
+        scriptNormalize.set_N(Constants.INPUT_IMAGE_SIZE);
 
-        scriptNorm.set_out2(outAlloc2);
-        scriptNorm.set_out3(outAlloc3);
+        // Calculate Weighted Sum
+        for (int i = 0; i < Constants.INPUT_IMAGE_SIZE; i++) {
+            Allocation outAlloc = RsUtils.create2d(renderScript, width, height, elementFloat);
 
-        scriptNorm.set_C1(contrast.get(0));
-        scriptNorm.set_C2(contrast.get(1));
-        scriptNorm.set_C3(contrast.get(2));
+            // Setting up values
+            scriptNormalize.set_C(contrast.get(i));
+            scriptNormalize.set_S(saturation.get(i));
+            scriptNormalize.set_E(wellExposeness.get(i));
+            scriptNormalize.set_N(i);
+            if (i == 0) {
+                scriptNormalize.set_sumW(RsUtils.create2d(renderScript, width, height, elementFloat));
+            }
 
-        scriptNorm.set_S1(saturation.get(0));
-        scriptNorm.set_S2(saturation.get(1));
-        scriptNorm.set_S3(saturation.get(2));
+            // Weighted Values
+            scriptNormalize.forEach_getWeighted(outAlloc);
 
-        scriptNorm.set_E1(wellExposeness.get(0));
-        scriptNorm.set_E2(wellExposeness.get(1));
-        scriptNorm.set_E3(wellExposeness.get(2));
+            // Add to the list
+            weightedAllocList.add(outAlloc);
+        }
 
-        // - - - - - Normalise - - - - - - - -
-        scriptNorm.forEach_normalizeWeights(outAlloc1);
-
-        // - - - - - Store - - - - - - - -
-        List<Allocation> outAllocList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
-        outAllocList.add(outAlloc1);
-        outAllocList.add(outAlloc2);
-        outAllocList.add(outAlloc3);
+        // Calculate Normal Weighted
+        for (int i = 0; i < Constants.INPUT_IMAGE_SIZE; i++) {
+            Allocation outAlloc = RsUtils.create2d(renderScript, width, height, elementFloat);
+            scriptNormalize.forEach_getNormalWeighted(weightedAllocList.get(i), outAlloc);
+            normWeightedAllocList.add(outAlloc);
+        }
 
         // Clear the Allocations used & not required
+        RsUtils.destroy1DAllocation(weightedAllocList);
         RsUtils.destroy1DAllocation(contrast);
         RsUtils.destroy1DAllocation(saturation);
         RsUtils.destroy1DAllocation(wellExposeness);
-        scriptNorm.destroy();
+        scriptNormalize.destroy();
 
-        return outAllocList;
+        return normWeightedAllocList;
     }
 
     // Overridden Method
@@ -638,8 +641,8 @@ class HDRFilter implements HDRManager.HDRProcessor {
         return outAlloc;
     }
 
-    private Allocation upScale(ScriptIntrinsicResize scriptResize, @NonNull Allocation inAlloc, Level smallDimention, Script.LaunchOptions options, boolean destroy) {
-        return downScale(scriptResize, inAlloc, smallDimention, options, destroy);
+    private Allocation upScale(ScriptIntrinsicResize scriptResize, @NonNull Allocation inAlloc, Level smallDimension, Script.LaunchOptions options, boolean destroy) {
+        return downScale(scriptResize, inAlloc, smallDimension, options, destroy);
     }
 
     private Allocation subtract(ScriptC_Laplacian scriptLaplacian, @NonNull Allocation A, @NonNull Allocation B, Level currDim, boolean destroyA, boolean destroyB) {

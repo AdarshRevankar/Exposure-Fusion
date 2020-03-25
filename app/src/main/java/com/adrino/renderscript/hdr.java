@@ -26,9 +26,6 @@ public class hdr extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         List<Bitmap> inputBitmapsList = new ArrayList<>();
-        inputBitmapsList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphon1));
-        inputBitmapsList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone3));
-        inputBitmapsList.add(BitmapFactory.decodeResource(getResources(), R.drawable.sarvesh_iphone2));
 
         List<Bitmap> hdrOutputList = createHDR.perform(inputBitmapsList, CreateHDR.Actions.HDR);
 
