@@ -7,18 +7,12 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -31,7 +25,6 @@ import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.Image;
 import android.media.ImageReader;
 import android.net.Uri;
 import android.os.Bundle;
@@ -62,14 +55,10 @@ import com.adrino.hdr.corecamera.utils.ImageSaver;
 import com.adrino.hdr.corecamera.utils.WobbleCheck;
 
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-
-import static android.content.Context.SENSOR_SERVICE;
 
 public class CameraCapture extends Fragment
         implements View.OnClickListener,
@@ -224,7 +213,6 @@ public class CameraCapture extends Fragment
                 activity.finish();
             }
         }
-
     };
 
     /**
@@ -251,17 +239,13 @@ public class CameraCapture extends Fragment
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            ++writtenCount;
+
             Log.e(TAG, "onImageAvailable: Listener " + writtenCount);
 
             mBackgroundHandler.post(
-                    new ImageSaver(reader.acquireNextImage(),
-                            new File(getActivity().getExternalFilesDir(null), "pic" + writtenCount + ".jpg")));
+                    new ImageSaver(getActivity(), reader.acquireNextImage(),
+                            new File(getActivity().getExternalFilesDir(null), "pic" + ImageSaver.writtenCount + ".jpg")));
 
-            if (writtenCount >= 3) {
-                writtenCount = 0;
-                getActivity().finish();
-            }
         }
 
     };
@@ -962,5 +946,4 @@ public class CameraCapture extends Fragment
         wobbleCheck.unRegisterListener();
         super.onPause();
     }
-
 }

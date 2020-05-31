@@ -7,13 +7,10 @@ import android.os.Handler;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.adrino.hdr.Manager;
 import com.adrino.hdr.corehdr.CreateHDR;
-import com.adrino.hdr.corehdr.HDRManager;
 import com.adrino.hdr.corehdr.RsUtils;
 import com.adrino.renderscript.visual.ViewDialog;
 
@@ -23,31 +20,26 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
-    List<Bitmap> bmpImgList, saturation, contrast, exposed, norm;
-    private ViewDialog viewDialog;
+    private List<Bitmap> bmpImgList;
+    private ViewDialog viewDialog = new ViewDialog(this);
     private Manager hdrManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Set the content
         super.onCreate(savedInstanceState);
-        hdrManager = new Manager(this);
         setContentView(R.layout.activity_main);
-        viewDialog = new ViewDialog(this);
+        hdrManager = new Manager(getApplicationContext());
 
-        hdrManager.perform(this, true);
-        bmpImgList = new ArrayList<>(hdrManager.getBmpImageList());
-        bmpImgList = RsUtils.resizeBmp(bmpImgList);
-        ((ImageView)findViewById(R.id.pic1)).setImageBitmap(bmpImgList.get(0));
-        ((ImageView)findViewById(R.id.pic2)).setImageBitmap(bmpImgList.get(1));
-        ((ImageView)findViewById(R.id.pic3)).setImageBitmap(bmpImgList.get(2));
+        // Show the Camera Activity
+        hdrManager.perform(this);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-    }
-
+    /**
+     * ========================================================================
+     * On Click Listeners
+     * ========================================================================
+     */
     public void doGaussianLaplacian(View view) {
         Intent i = new Intent(MainActivity.this, Pyramids.class);
         i.putExtra("location", this.getExternalFilesDir(null).toString());
@@ -61,118 +53,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void setContrast(View view) {
-        final String functionName = "Contrast";
-        (findViewById(R.id.llView)).setVisibility(View.VISIBLE);
-        showCustomLoadingDialog(view);
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if (contrast == null)
-                    contrast = hdrManager.perform(bmpImgList, CreateHDR.Actions.CONTRAST);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        (findViewById(R.id.bottomTxt)).setVisibility(View.VISIBLE);
-                        ((TextView) findViewById(R.id.bottomTxt)).setText(functionName);
-                        ((ImageView) findViewById(R.id.out1)).setImageBitmap(contrast.get(0));
-                        ((TextView) findViewById(R.id.out1Text)).setText(functionName+" 1");
-                        ((ImageView) findViewById(R.id.out2)).setImageBitmap(contrast.get(1));
-                        ((TextView) findViewById(R.id.out2Text)).setText(functionName+" 2");
-                        ((ImageView) findViewById(R.id.out3)).setImageBitmap(contrast.get(2));
-                        ((TextView) findViewById(R.id.out3Text)).setText(functionName+" 3");
-                    }
-                });
-            }
-        }).start();
+        updateUI(view, CreateHDR.Actions.CONTRAST, bmpImgList);
     }
 
     public void setSaturation(View view) {
-        final String functionName = "Saturation";
-        showCustomLoadingDialog(view);
-
-        (findViewById(R.id.llView)).setVisibility(View.VISIBLE);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if (saturation == null)
-                    saturation = hdrManager.perform(bmpImgList, CreateHDR.Actions.SATURATION);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        (findViewById(R.id.bottomTxt)).setVisibility(View.VISIBLE);
-                        ((TextView) findViewById(R.id.bottomTxt)).setText(functionName);
-                        ((ImageView) findViewById(R.id.out1)).setImageBitmap(saturation.get(0));
-                        ((TextView) findViewById(R.id.out1Text)).setText(functionName+" 1");
-                        ((ImageView) findViewById(R.id.out2)).setImageBitmap(saturation.get(1));
-                        ((TextView) findViewById(R.id.out2Text)).setText(functionName+" 2");
-                        ((ImageView) findViewById(R.id.out3)).setImageBitmap(saturation.get(2));
-                        ((TextView) findViewById(R.id.out3Text)).setText(functionName+" 3");
-                    }
-                });
-            }
-        }).start();
+        updateUI(view, CreateHDR.Actions.SATURATION, bmpImgList);
     }
 
     public void setExposure(View view) {
-        final String functionName = "Exposure";
-        showCustomLoadingDialog(view);
-
-        (findViewById(R.id.llView)).setVisibility(View.VISIBLE);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if (exposed == null)
-                    exposed = hdrManager.perform(bmpImgList, CreateHDR.Actions.EXPOSED);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        (findViewById(R.id.bottomTxt)).setVisibility(View.VISIBLE);
-                        ((TextView) findViewById(R.id.bottomTxt)).setText(functionName);
-                        ((ImageView) findViewById(R.id.out1)).setImageBitmap(exposed.get(0));
-                        ((TextView) findViewById(R.id.out1Text)).setText(functionName+" 1");
-                        ((ImageView) findViewById(R.id.out2)).setImageBitmap(exposed.get(1));
-                        ((TextView) findViewById(R.id.out2Text)).setText(functionName+" 2");
-                        ((ImageView) findViewById(R.id.out3)).setImageBitmap(exposed.get(2));
-                        ((TextView) findViewById(R.id.out3Text)).setText(functionName+" 3");
-                    }
-                });
-            }
-        }).start();
+        updateUI(view, CreateHDR.Actions.EXPOSED, bmpImgList);
     }
 
     public void setNormal(View view) {
-        final String functionName = "Normalization";
-        (findViewById(R.id.llView)).setVisibility(View.VISIBLE);
-        showCustomLoadingDialog(view);
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if (norm == null)
-                    norm = hdrManager.perform(bmpImgList, CreateHDR.Actions.NORMAL);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        (findViewById(R.id.bottomTxt)).setVisibility(View.VISIBLE);
-                        ((TextView) findViewById(R.id.bottomTxt)).setText(functionName);
-                        ((TextView) findViewById(R.id.out1Text)).setText(functionName+" 1");
-                        ((ImageView) findViewById(R.id.out1)).setImageBitmap(norm.get(0));
-                        ((TextView) findViewById(R.id.out2Text)).setText(functionName+" 2");
-                        ((ImageView) findViewById(R.id.out2)).setImageBitmap(norm.get(1));
-                        ((TextView) findViewById(R.id.out3Text)).setText(functionName+" 3");
-                        ((ImageView) findViewById(R.id.out3)).setImageBitmap(norm.get(2));
-                    }
-                });
-            }
-        }).start();
+        updateUI(view, CreateHDR.Actions.NORMAL, bmpImgList);
     }
 
     /**
-     * Loader - For Matching the UI for holding processing
+     * ========================================================================
+     * Helper Functions
+     * ========================================================================
      */
     public void showCustomLoadingDialog(View view) {
-
+        // Loader - For Matching the UI for holding processing
         viewDialog.showDialog();
 
         final Handler handler = new Handler();
@@ -181,6 +83,56 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 viewDialog.hideDialog();
             }
-        }, 300);
+        }, 100);
     }
+
+    public void updateUI(View view, final CreateHDR.Actions action, final List<Bitmap> inputImageList){
+        // Load Images
+        if (bmpImgList == null) {
+            loadImages();
+        }
+
+        (findViewById(R.id.llView)).setVisibility(View.VISIBLE);
+        showCustomLoadingDialog(view);
+
+        // Start a thread for Doing Processing + Updating UI
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                    final List<Bitmap> outputImageList = hdrManager.perform(inputImageList, action);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        (findViewById(R.id.bottomTxt)).setVisibility(View.VISIBLE);
+                        ((TextView) findViewById(R.id.bottomTxt)).setText(action.toString());
+                        ((TextView) findViewById(R.id.out1Text)).setText(action.toString() + " 1");
+                        ((ImageView) findViewById(R.id.out1)).setImageBitmap(outputImageList.get(0));
+                        ((TextView) findViewById(R.id.out2Text)).setText(action.toString() + " 2");
+                        ((ImageView) findViewById(R.id.out2)).setImageBitmap(outputImageList.get(1));
+                        ((TextView) findViewById(R.id.out3Text)).setText(action.toString() + " 3");
+                        ((ImageView) findViewById(R.id.out3)).setImageBitmap(outputImageList.get(2));
+                    }
+                });
+            }
+        }).start();
+    }
+
+    void loadImages(){
+        bmpImgList = new ArrayList<>(hdrManager.getBmpImageList(getExternalFilesDir(null)));
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                bmpImgList = RsUtils.resizeBmp(bmpImgList);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ((ImageView) findViewById(R.id.pic1)).setImageBitmap(bmpImgList.get(0));
+                        ((ImageView) findViewById(R.id.pic2)).setImageBitmap(bmpImgList.get(1));
+                        ((ImageView) findViewById(R.id.pic3)).setImageBitmap(bmpImgList.get(2));
+                    }
+                });
+            }
+        }).start();
+    }
+
 }

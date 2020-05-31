@@ -1,5 +1,6 @@
 package com.adrino.hdr.corecamera.utils;
 
+import android.app.Activity;
 import android.media.Image;
 
 import java.io.File;
@@ -8,10 +9,15 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class ImageSaver implements Runnable {
-    private Image mImage = null;
-    private File mFile = null;
+    private Image mImage;
+    private File mFile;
+    public static int writtenCount = 1;
+    private static Activity activity;
 
-    public ImageSaver(Image image, File file) {
+    public ImageSaver(Activity fragmentActivity, Image image, File file) {
+        if(writtenCount == 1)
+            activity = fragmentActivity;
+        writtenCount++;
         mImage = image;
         mFile = file;
     }
@@ -37,6 +43,10 @@ public class ImageSaver implements Runnable {
                 }
             }
             clear();
+        }
+        if (writtenCount > 3) {
+            activity.finish();
+            writtenCount = 0;
         }
     }
 

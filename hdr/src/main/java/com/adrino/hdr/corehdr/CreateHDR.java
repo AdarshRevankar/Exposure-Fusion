@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.renderscript.Allocation;
 
 import java.util.List;
@@ -63,7 +64,14 @@ public class CreateHDR implements HDRManager.HDRClient {
         LAPLACIAN,
         NORMAL,
         RESULTANT,
-        SATURATION
+        SATURATION;
+
+
+        @NonNull
+        @Override
+        public String toString() {
+            return this.name();
+        }
     }
 
     /**
