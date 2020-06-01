@@ -10,12 +10,12 @@ This Application is provided with beautiful interface as <b>Camera Activity</b> 
 
 Worflow of Exposure Fusion Algorithm is given below
 
-![FlowChartHDR](https://user-images.githubusercontent.com/48080453/83433018-dbccdb80-a456-11ea-9470-fe95e46d00eb.png)
+[<img src="https://user-images.githubusercontent.com/48080453/83433018-dbccdb80-a456-11ea-9470-fe95e46d00eb.png"/>](flowchart.png)
 ---
-#### Structure
+### Structure
 Structure of the hdr library is given below
 ```
-	com.adrino.hdr
+    com.adrino.hdr
     |
     |-> corecamera
     |	|-> CameraActivity (c)
@@ -29,14 +29,14 @@ Structure of the hdr library is given below
 <i><b>NOTE:</b> Some of the Classes, Interfaces, Abstract Classes are not shown here. But in the back end it will be utilised. (c) indicates the classes </i>
 
 ---
-#### Install
+### Install
 In Android Studio devs can import the `.aar` module from the release build / can include the library ```hdr``` to their project.
 
 1. Open `Project Structure > All Dependencies > +` select the `.aar` file
 2. Import the module to the current project & Apply
 
 ---
-#### Usage
+### Usage
 Library is provided with the class `com.adrino.hdr.Manager` which consist of a single gateway method, which gives access to all the functionalities. We will try to inflate `CameraActivity` and try to produce `hdr` Image.
 1. Import the class `Manager`, `CreateHDR` in the required activity.
     ```
@@ -69,94 +69,33 @@ Library is provided with the class `com.adrino.hdr.Manager` which consist of a s
     ```
 
 ---
-#### Things to be noted
+### Things to be noted
 `CreateHDR.Actions` is enumeration which has following items. Which is used to specify which intermediate result is required. Accordingly the size of output list varies.
 
-<table>
-  <tr>
-      <td>Action</td>
-      <td>Description</td>
-      <td>inputImageList.size()</td>
-      <td>outputImageList.size()</td>
-  </tr>
-  <tr>
-    <td> <code>HDR</code> </td>
-    <td> Performs HDR </td>
-    <td> 3 </td>
-    <td> 1 </td>
-  </tr>
-  <tr>
-    <td> <code>CONTRAST</code> </td>
-    <td> Edge Detection </td>
-    <td> N </td>
-    <td> N </td>
-  </tr>
-  <tr>
-    <td> <code>EXPOSED</code> </td>
-    <td> Detects Well Exposed Area</td>
-    <td> N </td>
-    <td> N </td>
-  </tr>
-  <tr>
-    <td> <code>SATURATION</code> </td>
-    <td> Detects Vivid Colors</td>
-    <td> N </td>
-    <td> N </td>
-  </tr>
-  <tr>
-    <td> <code>GAUSSIAN</code> </td>
-    <td> Gaussian Pyramid of Images </td>
-    <td> N </td>
-    <td> N ( N- Pyramids, M-Levels) </td>
-  </tr>
-  <tr>
-    <td> <code>LAPLACIAN</code> </td>
-    <td> Laplacian Pyramid of Images</td>
-    <td> N</td>
-    <td> N ( N- Pyramids, M-Levels) </td>
-  </tr>
-  <tr>
-    <td> <code>RESULTANT</code> </td>
-    <td> Resultant of Images</td>
-    <td> 3 </td>
-    <td> 3 (3- Pyramids, M-Levels) </td>
-  </tr>
-</table>
+| Action     | Description                 | inputImageList.size() | outputImageList.size()     |
+|------------|-----------------------------|-----------------------|----------------------------|
+| `HDR`      | Performs HDR                | 3                     | 1                          |
+| `CONTRAST` | Edge Detection              | N                     | N                          |
+| `EXPOSED`  | Detects Well Exposed Area   | N                     | N                          |
+| `SATURATION`| Detects Vivid Colors        | N                     | N                          |
+| `GAUSSIAN` | Gaussian Pyramid of Images  | N                     | N ( N- Pyramids, M-Levels) |
+| `LAPLACIAN`| Laplacian Pyramid of Images | N                     | N ( N- Pyramids, M-Levels) |
+| `RESULTANT`| Resultant of Images         | 3                     | 1 (1- Pyramid, M-Levels)   |
 
 Here, Pyramids behave differently. So, we have to handle them carefully. `GAUSSIAN` will return `N` Pyramids each of size `M` ( `M` - Depends on the resolution of Image ). So, the `outputImageList` contains `N x M` Images.
 
 ---
-#### Snapshots
+### Snapshots
 Samples of our project is shown below
 
-<table>
-<tr>
-	<td><figure align="center"><image src="https://user-images.githubusercontent.com/48080453/83431542-1b92c380-a455-11ea-87bc-5004a7eb3bd0.png"/ width=300><figcaption align="center">Splash Screen</figcaption></figure></td>
-    <td><figure align="center"><image src="https://user-images.githubusercontent.com/48080453/83431821-94921b00-a455-11ea-84df-fcfccb1cc391.png"/ width=300><figcaption align="center">Splash Screen</figcaption></figure></td>
-<tr>
+|[<img src="https://user-images.githubusercontent.com/48080453/83431542-1b92c380-a455-11ea-87bc-5004a7eb3bd0.png"/>](splash.png)<br>Splash Screen|  [<img src="https://user-images.githubusercontent.com/48080453/83431821-94921b00-a455-11ea-84df-fcfccb1cc391.png"/>](camera.png)<br>Camera View | [<img src="https://user-images.githubusercontent.com/48080453/83431996-d1f6a880-a455-11ea-9539-c98843f77cf7.png"/>](contrast.png)<br>Contrast  |
+|----------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+|[<img src="https://user-images.githubusercontent.com/48080453/83432026-dae77a00-a455-11ea-9493-5a55cf443a9f.png"/>](exposure.png)<br>Exposure|[<img src="https://user-images.githubusercontent.com/48080453/83432054-e3d84b80-a455-11ea-96bb-0af997f7c49b.png"/>](saturation.png)<br>Saturation|[<img src="https://user-images.githubusercontent.com/48080453/83432063-e89cff80-a455-11ea-9d65-06af6edda882.png"/>](normal.png)<br>Normal|
 
-<tr>
-	<td><figure align="center"><image src="https://user-images.githubusercontent.com/48080453/83431996-d1f6a880-a455-11ea-9539-c98843f77cf7.png"/ width=300><figcaption align="center">Contrast</figcaption></figure></td>
-    <td><figure align="center"><image src="https://user-images.githubusercontent.com/48080453/83432026-dae77a00-a455-11ea-9493-5a55cf443a9f.png"/ width=300><figcaption align="center">Exposure</figcaption></figure></td>
-<tr>
+|[<img src="https://user-images.githubusercontent.com/48080453/83432261-3dd91100-a456-11ea-902f-9fc5081a071a.png"/>](gaussian.png)<br>Gaussian Pyramid|[<img src="https://user-images.githubusercontent.com/48080453/83432263-3e71a780-a456-11ea-8541-7d47ea8f8403.png"/>](laplacian.png)<br>Laplacian Pyramid|[<img src="https://user-images.githubusercontent.com/48080453/83432266-3fa2d480-a456-11ea-9952-f25ceeeb2830.png"/>](resultant.png)<br>Resultant Pyramid|
 
-<tr>
-	<td><figure align="center"><image src="https://user-images.githubusercontent.com/48080453/83432054-e3d84b80-a455-11ea-96bb-0af997f7c49b.png"/ width=300><figcaption align="center">Saturation</figcaption></figure></td>
-    <td><figure align="center"><image src="https://user-images.githubusercontent.com/48080453/83432063-e89cff80-a455-11ea-9d65-06af6edda882.png"/ width=300><figcaption align="center">Normalization</figcaption></figure></td>
-<tr>
-
-<tr>
-	<td><figure align="center"><image src="https://user-images.githubusercontent.com/48080453/83432261-3dd91100-a456-11ea-902f-9fc5081a071a.png"/ width=300><figcaption align="center">Gaussian Pyramid</figcaption></figure></td>
-    <td><figure align="center"><image src="https://user-images.githubusercontent.com/48080453/83432263-3e71a780-a456-11ea-8541-7d47ea8f8403.png"/ width=300><figcaption align="center">Laplacian Pyramid</figcaption></figure></td>
-<tr>
-
-<tr>
-	<td colspan="2"><figure align="center"><image src="https://user-images.githubusercontent.com/48080453/83432266-3fa2d480-a456-11ea-9952-f25ceeeb2830.png"/ width=300><figcaption align="center">Resultant + HDR</figcaption></figure></td>
-<tr>
-</table>
-
-
-#### Contact
+---
+### Contact
 If any error, suggestions please do contact :
 
 `Adarsh Revankar` adarsh_revankar@live.com
