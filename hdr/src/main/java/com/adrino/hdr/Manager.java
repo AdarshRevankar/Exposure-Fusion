@@ -69,7 +69,7 @@ public class Manager {
      * Helper Functions
      * ==================================================================
      */
-    public List<Bitmap> loadImages(File file, boolean deleteImages) {
+    private List<Bitmap> loadImages(File file, boolean deleteImages) {
         List<Bitmap> bmpImageList = new ArrayList<>(Constants.INPUT_IMAGE_SIZE);
 
         for (int imgIndex = 1; imgIndex <= Constants.INPUT_IMAGE_SIZE; imgIndex++) {
