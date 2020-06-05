@@ -7,8 +7,10 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -86,11 +88,6 @@ public class CameraCapture extends Fragment
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
-
-    /**
-     * Counter for completing capturing image
-     */
-    private int writtenCount = 0;
 
     /**
      * Tag for the {@link Log}.
@@ -240,8 +237,6 @@ public class CameraCapture extends Fragment
         @Override
         public void onImageAvailable(ImageReader reader) {
 
-            Log.e(TAG, "onImageAvailable: Listener " + writtenCount);
-
             mBackgroundHandler.post(
                     new ImageSaver(getActivity(), reader.acquireNextImage(),
                             new File(getActivity().getExternalFilesDir(null), "pic" + ImageSaver.writtenCount + ".jpg")));
@@ -361,7 +356,6 @@ public class CameraCapture extends Fragment
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.texture).setOnTouchListener(this);
         mTextureView = view.findViewById(R.id.texture);
-        writtenCount = 0;
         wobbleCheck = new WobbleCheck(getActivity());
     }
 
@@ -616,7 +610,7 @@ public class CameraCapture extends Fragment
                                 mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                                         CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
                                 // Flash is automatically enabled when necessary.
-//                                setAutoFlash(mPreviewRequestBuilder);
+                                // setAutoFlash(mPreviewRequestBuilder);
 
                                 // Finally, we start displaying the camera preview.
                                 mPreviewRequest = mPreviewRequestBuilder.build();
@@ -826,10 +820,7 @@ public class CameraCapture extends Fragment
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
-
-        Log.i(TAG, "onTouch: Touched");
         final int actionMasked = motionEvent.getActionMasked();
-
         if (actionMasked != MotionEvent.ACTION_DOWN) {
             return false;
         }
@@ -852,6 +843,13 @@ public class CameraCapture extends Fragment
                 halfTouchWidth * 2,
                 halfTouchHeight * 2,
                 MeteringRectangle.METERING_WEIGHT_MAX - 1);
+
+//        // Draw the box
+//        Box box = new Box(getContext());
+//        box.setXY(Math.max(x, 0),Math.max(y, 0));
+//        ViewGroup.LayoutParams contentViewLayout = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT)
+//        getActivity().addContentView(box, contentViewLayout);
+
 
         CameraCaptureSession.CaptureCallback captureCallbackHandler = new CameraCaptureSession.CaptureCallback() {
             @Override

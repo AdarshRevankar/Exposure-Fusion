@@ -8,7 +8,7 @@ Library created for the demonstration of computation of HDR on Android Device. T
 
 This Application is provided with beautiful interface as <b>Camera Activity</b> (optional), so as to provide the demonstration of the usage of the <b>HDR Library</b>.
 
-Worflow of Exposure Fusion Algorithm is given below
+Workflow of Exposure Fusion Algorithm is given below
 
 [<img src="https://user-images.githubusercontent.com/48080453/83433018-dbccdb80-a456-11ea-9470-fe95e46d00eb.png"/>](flowchart.png)
 ---
@@ -39,12 +39,12 @@ In Android Studio devs can import the `.aar` module from the release build / can
 ### Usage
 Library is provided with the class `com.adrino.hdr.Manager` which consist of a single gateway method, which gives access to all the functionalities. We will try to inflate `CameraActivity` and try to produce `hdr` Image.
 1. Import the class `Manager`, `CreateHDR` in the required activity.
-    ```
+    ```groovy
     import com.adrino.hdr.Manager;
     import com.adrino.hdr.corehdr.CreateHDR;
     ```
 2. Create instance of `Manager` class, by passing through the Application Context to the Constructor
-    ```
+    ```groovy
     Manager hdrManager = new Manager(getApplicationContext());
     ```
     Manager consist of methods for creation of camera activity and HDR Image
@@ -53,11 +53,11 @@ Library is provided with the class `com.adrino.hdr.Manager` which consist of a s
     3. `List<Bitmap> perform(Activity currActivity, boolean deleteImages)` - Returns the required `Action` specified over List of images sent by providing the CameraActivity. Provides boolean `deleteImages` if you want to retain or delete the captured images (Security Reasons).
     4. `List<Bitmap> getBmpImageList(File file)` - Returns the captured images from the Storage, when the External Storage location is given. For example, `getExternalFilesDir(null)` is passed as the file parameter.
 3. Inflate the `CameraActivity` by calling `perform(Activity)` method
-    ```
+    ```groovy
     hdrManager.perform(this);
     ```
 4. Performing `HDR` over the captured Images
-	```
+	```groovy
     // Get the captured Images
     List<Bitmap> inputImageList = hdrManager.getBmpImageList(getExternalFilesDir(null));
 

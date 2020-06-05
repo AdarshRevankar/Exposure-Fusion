@@ -1,17 +1,20 @@
 package com.adrino.renderscript;
 
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.adrino.hdr.Manager;
 import com.adrino.hdr.corehdr.CreateHDR;
 import com.adrino.hdr.corehdr.RsUtils;
+import com.adrino.renderscript.utils.ImageItem;
+import com.adrino.renderscript.utils.ItemsAdapter;
 import com.adrino.renderscript.visual.ViewDialog;
 
 import java.util.ArrayList;
@@ -30,9 +33,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         hdrManager = new Manager(getApplicationContext());
-
-        // Show the Camera Activity
-        hdrManager.perform(this);
     }
 
     /**
@@ -40,32 +40,20 @@ public class MainActivity extends AppCompatActivity {
      * On Click Listeners
      * ========================================================================
      */
-    public void doGaussianLaplacian(View view) {
-        Intent i = new Intent(MainActivity.this, Pyramids.class);
-        i.putExtra("location", this.getExternalFilesDir(null).toString());
-        startActivity(i);
-    }
-
-    public void doCollapse(View view) {
-        Intent i = new Intent(MainActivity.this, Collapse.class);
-        i.putExtra("location", this.getExternalFilesDir(null).toString());
-        startActivity(i);
-    }
-
     public void setContrast(View view) {
-        updateUI(view, CreateHDR.Actions.CONTRAST, bmpImgList);
+        updateUI(view, CreateHDR.Actions.CONTRAST);
     }
 
     public void setSaturation(View view) {
-        updateUI(view, CreateHDR.Actions.SATURATION, bmpImgList);
+        updateUI(view, CreateHDR.Actions.SATURATION);
     }
 
     public void setExposure(View view) {
-        updateUI(view, CreateHDR.Actions.EXPOSED, bmpImgList);
+        updateUI(view, CreateHDR.Actions.EXPOSED);
     }
 
     public void setNormal(View view) {
-        updateUI(view, CreateHDR.Actions.NORMAL, bmpImgList);
+        updateUI(view, CreateHDR.Actions.NORMAL);
     }
 
     /**
@@ -86,53 +74,59 @@ public class MainActivity extends AppCompatActivity {
         }, 100);
     }
 
-    public void updateUI(View view, final CreateHDR.Actions action, final List<Bitmap> inputImageList){
+    public void updateUI(View view, final CreateHDR.Actions action) {
         // Load Images
         if (bmpImgList == null) {
             loadImages();
         }
 
-        (findViewById(R.id.llView)).setVisibility(View.VISIBLE);
-        showCustomLoadingDialog(view);
-
         // Start a thread for Doing Processing + Updating UI
         new Thread(new Runnable() {
             @Override
             public void run() {
-                    final List<Bitmap> outputImageList = hdrManager.perform(inputImageList, action);
+                final List<Bitmap> outputImageList = hdrManager.perform(bmpImgList, action);
+                final List<String> metaList = new ArrayList<>(outputImageList.size());
+                for (int i = 1; i <= outputImageList.size(); i++) {
+                    metaList.add(action + " " + i);
+                }
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        (findViewById(R.id.bottomTxt)).setVisibility(View.VISIBLE);
-                        ((TextView) findViewById(R.id.bottomTxt)).setText(action.toString());
-                        ((TextView) findViewById(R.id.out1Text)).setText(action.toString() + " 1");
-                        ((ImageView) findViewById(R.id.out1)).setImageBitmap(outputImageList.get(0));
-                        ((TextView) findViewById(R.id.out2Text)).setText(action.toString() + " 2");
-                        ((ImageView) findViewById(R.id.out2)).setImageBitmap(outputImageList.get(1));
-                        ((TextView) findViewById(R.id.out3Text)).setText(action.toString() + " 3");
-                        ((ImageView) findViewById(R.id.out3)).setImageBitmap(outputImageList.get(2));
+                        ((TextView)findViewById(R.id.status)).setText(action.toString());
+                        RecyclerView rvContacts = (RecyclerView) findViewById(R.id.rvResult);
+                        ArrayList<ImageItem> contacts = ImageItem.createImageItemList(outputImageList, metaList);
+                        ItemsAdapter adapter = new ItemsAdapter(contacts);
+                        rvContacts.setAdapter(adapter);
+                        rvContacts.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
                     }
                 });
             }
         }).start();
     }
 
-    void loadImages(){
-        bmpImgList = new ArrayList<>(hdrManager.getBmpImageList(getExternalFilesDir(null)));
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                bmpImgList = RsUtils.resizeBmp(bmpImgList);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        ((ImageView) findViewById(R.id.pic1)).setImageBitmap(bmpImgList.get(0));
-                        ((ImageView) findViewById(R.id.pic2)).setImageBitmap(bmpImgList.get(1));
-                        ((ImageView) findViewById(R.id.pic3)).setImageBitmap(bmpImgList.get(2));
-                    }
-                });
-            }
-        }).start();
+    void loadImages() {
+        bmpImgList = hdrManager.getBmpImageList(getExternalFilesDir(null));
+        ArrayList<String> descList = new ArrayList<String>();
+        descList.add("Original1");
+        descList.add("Original2");
+        descList.add("Original3");
+        RecyclerView rvContacts = findViewById(R.id.rvOrgImage);
+        ArrayList<ImageItem> contacts = ImageItem.createImageItemList(RsUtils.resizeBmp(bmpImgList), descList);
+        ItemsAdapter adapter = new ItemsAdapter(contacts);
+        rvContacts.setAdapter(adapter);
+        rvContacts.setLayoutManager(new LinearLayoutManager(this));
     }
 
+    public void setHDR(View view) {
+        updateUI(view, CreateHDR.Actions.HDR);
+    }
+
+    public void setResultantPyr(View view) {
+        updateUI(view, CreateHDR.Actions.RESULTANT);
+    }
+
+    public void captureImage(View view) {
+        // Show the Camera Activity
+        hdrManager.perform(this);
+    }
 }
