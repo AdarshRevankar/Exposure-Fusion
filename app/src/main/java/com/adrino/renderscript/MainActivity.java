@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -26,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private List<Bitmap> bmpImgList;
     private ViewDialog viewDialog = new ViewDialog(this);
     private Manager hdrManager;
+    private Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,22 +58,51 @@ public class MainActivity extends AppCompatActivity {
         updateUI(view, CreateHDR.Actions.NORMAL);
     }
 
+    public void setHDR(View view) {
+        updateUI(view, CreateHDR.Actions.HDR);
+    }
+
+    public void setResultantPyr(View view) {
+        updateUI(view, CreateHDR.Actions.RESULTANT);
+    }
+
+    public void setLaplacianPyr(View view) {
+        updateUI(view, CreateHDR.Actions.LAPLACIAN);
+    }
+
+    public void setGaussianPyr(View view) {
+        updateUI(view, CreateHDR.Actions.GAUSSIAN);
+    }
+
+    public void captureImage(View view) {
+        // Clear the Previous Images captured
+        if (bmpImgList != null) {
+            bmpImgList.clear();
+            bmpImgList = null;
+        }
+
+        // Inflate CameraActivity and Capture
+        hdrManager.perform(this);
+    }
+
     /**
      * ========================================================================
      * Helper Functions
      * ========================================================================
      */
+    Runnable runnableViewLoader = new Runnable() {
+        @Override
+        public void run() {
+            viewDialog.hideDialog();
+        }
+    };
+
     public void showCustomLoadingDialog(View view) {
         // Loader - For Matching the UI for holding processing
         viewDialog.showDialog();
 
-        final Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                viewDialog.hideDialog();
-            }
-        }, 100);
+        handler = new Handler();
+        handler.post(runnableViewLoader);
     }
 
     public void updateUI(View view, final CreateHDR.Actions action) {
@@ -81,23 +112,36 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Start a thread for Doing Processing + Updating UI
+        showCustomLoadingDialog(view);
         new Thread(new Runnable() {
             @Override
             public void run() {
+                // Load Image & Meta info
                 final List<Bitmap> outputImageList = hdrManager.perform(bmpImgList, action);
                 final List<String> metaList = new ArrayList<>(outputImageList.size());
                 for (int i = 1; i <= outputImageList.size(); i++) {
                     metaList.add(action + " " + i);
                 }
+
+                // Update the UI
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        ((TextView)findViewById(R.id.status)).setText(action.toString());
-                        RecyclerView rvContacts = (RecyclerView) findViewById(R.id.rvResult);
+                        // Update - TextView
+                        ((TextView) findViewById(R.id.status)).setText(action.toString());
+
+                        // Recycler View - Result View
+                        RecyclerView rvContacts = findViewById(R.id.rvResult);
                         ArrayList<ImageItem> contacts = ImageItem.createImageItemList(outputImageList, metaList);
-                        ItemsAdapter adapter = new ItemsAdapter(contacts);
-                        rvContacts.setAdapter(adapter);
+                        rvContacts.setAdapter(new ItemsAdapter(contacts));
                         rvContacts.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
+
+                        // Stop loader
+                        try {
+                            handler.removeCallbacks(runnableViewLoader);
+                        } catch (final Exception ex) {
+                            Toast.makeText(MainActivity.this, "Something went wrong with loader...", Toast.LENGTH_LONG).show();
+                        }
                     }
                 });
             }
@@ -105,28 +149,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void loadImages() {
+        // Load Images from Storage
         bmpImgList = hdrManager.getBmpImageList(getExternalFilesDir(null));
+
+        // Create the name for each of the item
         ArrayList<String> descList = new ArrayList<String>();
         descList.add("Original1");
         descList.add("Original2");
         descList.add("Original3");
+
+        // RecyclerView - Showing Original Image
         RecyclerView rvContacts = findViewById(R.id.rvOrgImage);
         ArrayList<ImageItem> contacts = ImageItem.createImageItemList(RsUtils.resizeBmp(bmpImgList), descList);
-        ItemsAdapter adapter = new ItemsAdapter(contacts);
-        rvContacts.setAdapter(adapter);
+        rvContacts.setAdapter(new ItemsAdapter(contacts));
         rvContacts.setLayoutManager(new LinearLayoutManager(this));
-    }
-
-    public void setHDR(View view) {
-        updateUI(view, CreateHDR.Actions.HDR);
-    }
-
-    public void setResultantPyr(View view) {
-        updateUI(view, CreateHDR.Actions.RESULTANT);
-    }
-
-    public void captureImage(View view) {
-        // Show the Camera Activity
-        hdrManager.perform(this);
     }
 }

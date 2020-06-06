@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <!-- Header -->
     <LinearLayout
         android:id="@+id/lltopBar"
         android:layout_width="match_parent"
@@ -13,59 +14,39 @@
         android:orientation="horizontal">
 
         <TextView
-            android:layout_weight="1"
             android:id="@+id/status"
             android:layout_width="match_parent"
             android:layout_height="80dp"
+            android:layout_weight="1"
+            android:gravity="center"
             android:padding="15dp"
             android:text="Original"
-            android:textSize="40sp"/>
-
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:onClick="captureImage"
-            android:padding="20dp"
-            android:scaleType="centerCrop"
-            android:background="#FFFFFF"
-            android:src="@drawable/ic_baseline_photo_camera_24" />
+            android:textSize="40sp" />
     </LinearLayout>
 
+    <!--Recycler View - For the image viewing-->
     <LinearLayout
         android:id="@+id/llLeftSide"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_below="@+id/lltopBar"
         android:orientation="horizontal"
-        android:paddingBottom="100dp">
+        android:paddingBottom="120dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvOrgImage"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:layout_weight="1"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvResult"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:layout_weight="1"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
     </LinearLayout>
 
-
+    <!--Bottom Buttons-->
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="100dp"
@@ -83,240 +64,112 @@
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:scrollbars="none">
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent">
 
-                <Button
-                    android:id="@+id/btnContrast"
+                <ImageButton
+                    android:id="@+id/btnCapture"
                     android:layout_width="100dp"
                     android:layout_height="match_parent"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:onClick="captureImage"
+                    android:padding="20dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_baseline_photo_camera_24" />
+
+                <Button
+                    android:id="@+id/btnContrast"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:onClick="setContrast"
-                    android:text="Cont" />
+                    android:text="Contrast"
+                    android:padding="20dp"/>
 
                 <Button
                     android:id="@+id/btnSaturation"
-                    android:layout_width="100dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:onClick="setSaturation"
-                    android:text="Sat" />
+                    android:text="Saturation"
+                    android:padding="20dp"/>
 
                 <Button
                     android:id="@+id/btnExposure"
                     android:layout_width="100dp"
                     android:layout_height="match_parent"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:onClick="setExposure"
-                    android:text="Expose" />
+                    android:text="Exposure" />
 
                 <Button
                     android:id="@+id/btnNorm"
                     android:layout_width="100dp"
                     android:layout_height="match_parent"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:onClick="setNormal"
-                    android:text="Norm" />
+                    android:text="Normal"
+                    android:padding="20dp"/>
 
                 <Button
                     android:id="@+id/btnGP"
                     android:layout_width="100dp"
                     android:layout_height="match_parent"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:onClick="setGaussianPyr"
                     android:text="GaussPyr" />
 
                 <Button
                     android:id="@+id/btnLP"
                     android:layout_width="100dp"
                     android:layout_height="match_parent"
-                    android:text="LapPyr" />
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:onClick="setLaplacianPyr"
+                    android:text="LapPyr"
+                    android:padding="20dp"/>
 
                 <Button
                     android:id="@+id/btnRes"
                     android:layout_width="100dp"
                     android:layout_height="match_parent"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:onClick="setResultantPyr"
-                    android:text="ResPyr" />
+                    android:text="ResPyr"
+                    android:padding="20dp"/>
 
                 <Button
                     android:id="@+id/btnHDR"
                     android:layout_width="100dp"
                     android:layout_height="match_parent"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:onClick="setHDR"
-                    android:text="HDR" />
+                    android:text="HDR"
+                    android:padding="20dp"/>
             </LinearLayout>
         </HorizontalScrollView>
     </androidx.cardview.widget.CardView>
-
-    <!--        <LinearLayout-->
-    <!--            android:id="@+id/llView"-->
-    <!--            android:layout_width="match_parent"-->
-    <!--            android:layout_height="match_parent"-->
-    <!--            android:orientation="vertical"-->
-    <!--            android:visibility="gone"-->
-    <!--            android:layout_weight="1">-->
-    <!--            <LinearLayout-->
-    <!--                android:layout_width="match_parent"-->
-    <!--                android:layout_height="match_parent"-->
-    <!--                android:layout_weight="1"-->
-    <!--                android:orientation="vertical">-->
-    <!--                <ImageView-->
-    <!--                    android:id="@+id/out1"-->
-    <!--                    android:layout_width="match_parent"-->
-    <!--                    android:layout_height="match_parent"-->
-    <!--                    android:layout_weight="1"-->
-    <!--                    android:rotation="90"-->
-    <!--                    android:src="@drawable/ic_broken_image_black_24dp"/>-->
-    <!--                <TextView-->
-    <!--                    android:id="@+id/out1Text"-->
-    <!--                    android:layout_width="match_parent"-->
-    <!--                    android:layout_height="100dp"-->
-    <!--                    android:textAlignment="center"-->
-    <!--                    android:layout_weight="3"-->
-    <!--                    android:textColor="#FFFFFF"-->
-    <!--                    android:text="Normalized 1"/>-->
-    <!--            </LinearLayout>-->
-    <!--            <LinearLayout-->
-    <!--                android:layout_width="match_parent"-->
-    <!--                android:layout_height="match_parent"-->
-    <!--                android:layout_weight="1"-->
-    <!--                android:orientation="vertical">-->
-    <!--                <ImageView-->
-    <!--                    android:id="@+id/out2"-->
-    <!--                    android:layout_width="match_parent"-->
-    <!--                    android:layout_height="match_parent"-->
-    <!--                    android:layout_weight="1"-->
-    <!--                    android:rotation="90"-->
-    <!--                    android:src="@drawable/ic_broken_image_black_24dp"/>-->
-    <!--                <TextView-->
-    <!--                    android:id="@+id/out2Text"-->
-    <!--                    android:layout_width="match_parent"-->
-    <!--                    android:layout_height="100dp"-->
-    <!--                    android:textAlignment="center"-->
-    <!--                    android:layout_weight="3"-->
-    <!--                    android:textColor="#FFFFFF"-->
-    <!--                    android:text="Normalized 2"/>-->
-    <!--            </LinearLayout>-->
-    <!--            <LinearLayout-->
-    <!--                android:layout_width="match_parent"-->
-    <!--                android:layout_height="match_parent"-->
-    <!--                android:layout_weight="1"-->
-    <!--                android:orientation="vertical">-->
-    <!--                <ImageView-->
-    <!--                    android:id="@+id/out3"-->
-    <!--                    android:layout_width="match_parent"-->
-    <!--                    android:layout_height="match_parent"-->
-    <!--                    android:layout_weight="1"-->
-    <!--                    android:rotation="90"-->
-    <!--                    android:src="@drawable/ic_broken_image_black_24dp"/>-->
-    <!--                <TextView-->
-    <!--                    android:id="@+id/out3Text"-->
-    <!--                    android:layout_width="match_parent"-->
-    <!--                    android:layout_height="100dp"-->
-    <!--                    android:textAlignment="center"-->
-    <!--                    android:layout_weight="3"-->
-    <!--                    android:textColor="#FFFFFF"-->
-    <!--                    android:text="Normalized 3"/>-->
-    <!--            </LinearLayout>-->
-    <!--        </LinearLayout>-->
-    <!--    </LinearLayout>-->
-
-    <!--    <LinearLayout-->
-    <!--        android:id="@+id/bottomBar"-->
-    <!--        android:layout_alignParentBottom="true"-->
-    <!--        android:layout_width="match_parent"-->
-    <!--        android:layout_height="80dp"-->
-    <!--        android:orientation="vertical"-->
-    <!--        android:background="#000000">-->
-    <!--        <LinearLayout-->
-    <!--            android:layout_weight="1"-->
-    <!--            android:layout_width="match_parent"-->
-    <!--            android:layout_height="match_parent"-->
-    <!--            android:orientation="horizontal">-->
-    <!--            <ImageButton-->
-    <!--                android:layout_weight="1"-->
-    <!--                android:id="@+id/Contrast"-->
-    <!--                android:padding="10dp"-->
-    <!--                android:layout_width="100dp"-->
-    <!--                android:layout_height="50dp"-->
-    <!--                android:onClick="setContrast"-->
-    <!--                android:scaleType="fitCenter"-->
-    <!--                android:background="#000000"-->
-    <!--                android:src="@drawable/icon_c"-->
-    <!--                style="@android:style/Widget.Material.Light.Button.Borderless"/>-->
-
-    <!--            <ImageButton-->
-    <!--                android:id="@+id/Saturation"-->
-    <!--                android:padding="10dp"-->
-    <!--                android:layout_width="100dp"-->
-    <!--                android:layout_height="50dp"-->
-    <!--                android:layout_weight="1"-->
-    <!--                android:onClick="setSaturation"-->
-    <!--                android:scaleType="fitCenter"-->
-    <!--                android:background="#000000"-->
-    <!--                android:src="@drawable/icon_s"-->
-    <!--                style="@android:style/Widget.Material.Light.Button.Borderless"/>-->
-
-    <!--            <ImageButton-->
-    <!--                android:layout_weight="1"-->
-    <!--                android:padding="10dp"-->
-    <!--                android:id="@+id/Exposure"-->
-    <!--                android:layout_width="100dp"-->
-    <!--                android:layout_height="50dp"-->
-    <!--                android:background="#000000"-->
-    <!--                android:onClick="setExposure"-->
-    <!--                android:scaleType="fitCenter"-->
-    <!--                android:src="@drawable/icon_e"-->
-    <!--                style="@android:style/Widget.Material.Light.Button.Borderless"/>-->
-
-    <!--            <ImageButton-->
-    <!--                android:layout_weight="1"-->
-    <!--                android:padding="10dp"-->
-    <!--                android:id="@+id/normal"-->
-    <!--                android:layout_width="100dp"-->
-    <!--                android:layout_height="50dp"-->
-    <!--                android:onClick="setNormal"-->
-    <!--                android:src="@drawable/icon_n"-->
-    <!--                android:scaleType="fitCenter"-->
-    <!--                android:background="#000000"-->
-    <!--                style="@android:style/Widget.Material.Light.Button.Borderless"/>-->
-
-    <!--            <ImageButton-->
-    <!--                android:layout_weight="1"-->
-    <!--                android:padding="5dp"-->
-    <!--                android:id="@+id/pyramidTest"-->
-    <!--                android:layout_width="100dp"-->
-    <!--                android:layout_height="50dp"-->
-    <!--                android:background="#000000"-->
-    <!--                android:scaleType="fitCenter"-->
-    <!--                android:src="@drawable/icon_pyramid"-->
-    <!--                android:onClick="doGaussianLaplacian"-->
-    <!--                style="@android:style/Widget.Material.Light.Button.Borderless"/>-->
-    <!--            <ImageButton-->
-    <!--                android:layout_weight="1"-->
-    <!--                android:padding="5dp"-->
-    <!--                android:id="@+id/collapse"-->
-    <!--                android:layout_width="100dp"-->
-    <!--                android:layout_height="50dp"-->
-    <!--                android:scaleType="fitCenter"-->
-    <!--                android:background="#000000"-->
-    <!--                android:src="@drawable/icon_combine"-->
-    <!--                android:onClick="doCollapse"-->
-    <!--                style="@android:style/Widget.Material.Light.Button.Borderless"/>-->
-    <!--        </LinearLayout>-->
-
-    <!--        <LinearLayout-->
-    <!--            android:layout_weight="3"-->
-    <!--            android:layout_width="match_parent"-->
-    <!--            android:layout_height="match_parent">-->
-    <!--            <TextView-->
-    <!--                android:visibility="gone"-->
-    <!--                android:id="@+id/bottomTxt"-->
-    <!--                android:layout_width="match_parent"-->
-    <!--                android:layout_height="20dp"-->
-    <!--                android:textAlignment="center"-->
-    <!--                android:textColor="@color/colorPrimary"-->
-    <!--                android:textSize="10sp"/>-->
-    <!--        </LinearLayout>-->
-    <!--    </LinearLayout>-->
-
 
 </RelativeLayout>

@@ -57,20 +57,24 @@ public class CreateHDR implements HDRManager.HDRClient {
      * L - Pyramid Length computed dynamically (Depends on resolution)
      */
     public enum Actions {
-        HDR,
-        CONTRAST,
-        EXPOSED,
-        GAUSSIAN,
-        LAPLACIAN,
-        NORMAL,
-        RESULTANT,
-        SATURATION;
+        HDR("HDR"),
+        CONTRAST("Contrast"),
+        EXPOSED("Exposed"),
+        GAUSSIAN("Gaussian Pyramid"),
+        LAPLACIAN("Laplacian Pyramid"),
+        NORMAL("Normal"),
+        RESULTANT("Product Pyramid"),
+        SATURATION("Saturation");
 
+        private final String displayName;
 
+        Actions(String displayName){
+            this.displayName = displayName;
+        }
         @NonNull
         @Override
         public String toString() {
-            return this.name();
+            return this.displayName;
         }
     }
 

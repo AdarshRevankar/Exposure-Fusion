@@ -1,6 +1,6 @@
-# High Dynamic Range (HDR) - Android
+# High Dynamic Range (HDR) - Exposure Fusion - Android 📸
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/AdarshRevankar/RenderScript)
-[![version](https://img.shields.io/badge/version-1.2.0-yellow.svg)](https://semver.org)
+[![](https://jitpack.io/v/AdarshRevankar/Exposure-Fusion.svg)](https://jitpack.io/#AdarshRevankar/Exposure-Fusion)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Arpith-kumar/DsDojo/blob/master/LICENSE.md)
 ### Exposure Fusion Algorithm
 
@@ -30,10 +30,29 @@ Structure of the hdr library is given below
 
 ---
 ### Install
-In Android Studio devs can import the `.aar` module from the release build / can include the library ```hdr``` to their project.
+Using the following steps you can include the `hdr` library in your Application
 
-1. Open `Project Structure > All Dependencies > +` select the `.aar` file
-2. Import the module to the current project & Apply
+**Step 1. Add the JitPack repository to your build file**
+Add it in your root build.gradle at the end of repositories
+
+```
+allprojects {
+    repositories {
+        ...
+        maven { url "https://jitpack.io" }
+    }
+}
+```
+
+**Step 2. Add the dependency**
+Provide the `latest_version` with the Release Versions (Eg: HDRv1.2.0 etc)
+```
+dependencies {
+    implementation 'com.github.AdarshRevankar:Exposure-Fusion:latest_version'
+}
+```
+
+That's it! you have included the artifacts (jar, aar) into your project.
 
 ---
 ### Usage
@@ -48,10 +67,12 @@ Library is provided with the class `com.adrino.hdr.Manager` which consist of a s
     Manager hdrManager = new Manager(getApplicationContext());
     ```
     Manager consist of methods for creation of camera activity and HDR Image
-    1. `List<Bitmap> perform(List<Bitmap>, CreateHDR.Actions)` - Returns the required `Action` specified over List of images sent.
-    2. `void perform(Activity currActivity)` - Intents the CameraActivity over the current activity and provides the camera interface.
-    3. `List<Bitmap> perform(Activity currActivity, boolean deleteImages)` - Returns the required `Action` specified over List of images sent by providing the CameraActivity. Provides boolean `deleteImages` if you want to retain or delete the captured images (Security Reasons).
-    4. `List<Bitmap> getBmpImageList(File file)` - Returns the captured images from the Storage, when the External Storage location is given. For example, `getExternalFilesDir(null)` is passed as the file parameter.
+    | Method                                                              | What it does?                                                                                                                                                                                               |
+    |---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | ```groovy List<Bitmap> perform(List<Bitmap>, CreateHDR.Actions) ``` | Returns the required  `Action` specified over List of images sent                                                                                                                                           |
+    | `void perform(Activity currActivity)`                               | Intents the CameraActivity over the current activity and provides the camera interface                                                                                                                      |
+    | `List<Bitmap> perform(Activity currActivity, boolean deleteImages)` | Returns the required  `Action`  specified over List of images sent by providing the CameraActivity. Provides boolean  `deleteImages` if you want to retain or delete the captured images (Security Reasons) |
+    | `List<Bitmap> getBmpImageList(File file)`                           | Returns the captured images from the Storage, when the External Storage location is given. For example,  `getExternalFilesDir(null)` is passed as the file parameter                                        |
 3. Inflate the `CameraActivity` by calling `perform(Activity)` method
     ```groovy
     hdrManager.perform(this);
@@ -94,7 +115,6 @@ Samples of our project is shown below
 |[<img src="https://user-images.githubusercontent.com/48080453/83432261-3dd91100-a456-11ea-902f-9fc5081a071a.png"/>](gaussian.png)<br>Gaussian Pyramid|[<img src="https://user-images.githubusercontent.com/48080453/83432263-3e71a780-a456-11ea-8541-7d47ea8f8403.png"/>](laplacian.png)<br>Laplacian Pyramid|[<img src="https://user-images.githubusercontent.com/48080453/83432266-3fa2d480-a456-11ea-9952-f25ceeeb2830.png"/>](resultant.png)<br>Resultant Pyramid|
 
 ---
-### Contact
-If any error, suggestions please do contact :
-
+If any error, suggestions please do contact
 `Adarsh Revankar` adarsh_revankar@live.com
+Enjoy learning ☕☕☕

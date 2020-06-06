@@ -19,12 +19,12 @@ import static android.content.ContentValues.TAG;
 
 /**
  * Manager is the Binder which does the job of combining the Camera View & HDR Manager
- * +----------------------------------------------------+
- * | Requires                                           |
- * | 1. {@link com.adrino.hdr.corehdr.CreateHDR};       |
- * | 2. {@link com.adrino.hdr.corecamera.CameraActivity}|
- * | 3. {@link com.adrino.hdr.corehdr.Constants};       |
- * +----------------------------------------------------+
+ * +---------------------------------------------------------+
+ * | Requires                                                |
+ * | 1. {@link com.adrino.hdr.corehdr.CreateHDR};            |
+ * | 2. {@link com.adrino.hdr.corecamera.CameraActivity}     |
+ * | 3. {@link com.adrino.hdr.corehdr.Constants};            |
+ * +---------------------------------------------------------+
  */
 public class Manager {
 
