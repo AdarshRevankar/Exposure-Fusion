@@ -24,6 +24,7 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"/>
 
+
     <LinearLayout
         android:id="@+id/control"
         android:layout_width="match_parent"
@@ -33,14 +34,14 @@
         android:background="#00000000"
         android:orientation="horizontal">
 
-<!--        <ImageView-->
-<!--            android:id="@+id/imgPicker"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="50dp"-->
-<!--            android:layout_weight="1"-->
-<!--            android:layout_gravity="start"-->
-<!--            android:src="@drawable/ic_add_black_24dp"-->
-<!--            style="@android:style/Widget.Material.Light.Button.Borderless"/>-->
+        <ImageButton
+            android:id="@+id/exposurePlus"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:layout_height="50dp"
+            android:src="@drawable/ic_add_black_24dp"
+            android:onClick="changeEV"
+            style="@android:style/Widget.Material.Light.Button.Borderless"/>
 
         <ImageButton
             android:id="@+id/picture"
@@ -51,15 +52,14 @@
             android:src="@drawable/ic_photo_camera_black_24dp"
             style="@android:style/Widget.Material.Light.Button.Borderless"/>
 
-<!--        <ImageButton-->
-<!--            android:id="@+id/process"-->
-<!--            android:layout_weight="1"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="50dp"-->
-<!--            android:layout_gravity="end"-->
-<!--            android:src="@drawable/ic_navigate_next_black_24dp"-->
-<!--            style="@android:style/Widget.Material.Light.Button.Borderless"/>-->
-
+        <ImageButton
+            android:id="@+id/exposureMinus"
+            android:layout_weight="1"
+            android:layout_height="50dp"
+            android:layout_width="match_parent"
+            android:src="@drawable/ic_baseline_minimize_24"
+            android:onClick="changeEV"
+            style="@android:style/Widget.Material.Light.Button.Borderless"/>
     </LinearLayout>
 
 </RelativeLayout>

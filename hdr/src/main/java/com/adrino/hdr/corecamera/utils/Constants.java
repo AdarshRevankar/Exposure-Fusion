@@ -10,14 +10,44 @@ public class Constants {
      * 0 means, Correct Exposed
      */
     public static int[] EXPOSURE_BRACKET = {-20, 10, 0};
+    private static int incrementValue = 4;
 
-    // Setter for exposure values
-    public static void setExposureBracket(int low, int mid, int high){
-        EXPOSURE_BRACKET[0] = low;
-        EXPOSURE_BRACKET[1] = mid;
-        EXPOSURE_BRACKET[2] = high;
+    // Getter for exposure values
+    public static int getIncrement(){
+        return incrementValue;
     }
-    public enum CameraLens{
+    public static int getLowEV() {
+        return EXPOSURE_BRACKET[0];
+    }
+
+    public static int getMidEV() {
+        return EXPOSURE_BRACKET[2];
+    }
+
+    public static int getHighEV() {
+        return EXPOSURE_BRACKET[1];
+    }
+
+    // Setter
+    public static void setLowEV(int value) {
+        EXPOSURE_BRACKET[0] = value;
+    }
+
+    public static void setMidEV(int value) {
+        EXPOSURE_BRACKET[2] = value;
+    }
+
+    public static void setHighEV(int value) {
+        EXPOSURE_BRACKET[1] = value;
+    }
+
+    public static void setExposureBracket(int low, int mid, int high) {
+        setLowEV(low);
+        setHighEV(high);
+        setMidEV(mid);
+    }
+
+    public enum CameraLens {
         LENS_FACING_FRONT,
         LENS_FACING_BACK
     }

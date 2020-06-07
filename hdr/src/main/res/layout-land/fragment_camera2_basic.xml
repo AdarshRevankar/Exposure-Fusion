@@ -35,14 +35,15 @@
         android:orientation="vertical">
 
         <ImageView
-            android:id="@+id/imgPicker"
+            android:id="@+id/exposurePlus"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             style="@android:style/Widget.Material.Light.Button.Borderless"
             android:layout_gravity="center"
             android:scaleType="center"
             android:layout_weight="1"
-            android:src="@drawable/ic_add_black_24dp" />
+            android:src="@drawable/ic_add_black_24dp"
+            android:onClick="changeEV"/>
 
         <ImageButton
             android:id="@+id/picture"
@@ -55,7 +56,7 @@
             android:src="@drawable/ic_photo_camera_black_24dp" />
 
         <ImageButton
-            android:id="@+id/process"
+            android:id="@+id/exposureMinus"
             android:contentDescription="@string/description_info"
             style="@android:style/Widget.Material.Light.Button.Borderless"
             android:layout_width="match_parent"
@@ -64,7 +65,8 @@
             android:scaleType="center"
             android:layout_weight="1"
             android:padding="20dp"
-            android:src="@drawable/ic_navigate_next_black_24dp" />
+            android:src="@drawable/ic_baseline_minimize_24"
+            android:onClick="changeEV"/>
 
     </LinearLayout>
 

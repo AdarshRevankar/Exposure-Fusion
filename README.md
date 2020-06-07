@@ -2,6 +2,10 @@
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/AdarshRevankar/RenderScript)
 [![](https://jitpack.io/v/AdarshRevankar/Exposure-Fusion.svg)](https://jitpack.io/#AdarshRevankar/Exposure-Fusion)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Arpith-kumar/DsDojo/blob/master/LICENSE.md)
+
+---
+![ic_render_hdr_logo](https://user-images.githubusercontent.com/48080453/83974343-4d4ed300-a90a-11ea-8e39-42eccc8a73fc.png)
+
 ### Exposure Fusion Algorithm
 
 Library created for the demonstration of computation of HDR on Android Device. This library uses <b>RenderScript</b> extensively for the computation of pixels.
@@ -32,7 +36,7 @@ Structure of the hdr library is given below
 ### Install
 Using the following steps you can include the `hdr` library in your Application
 
-**Step 1. Add the JitPack repository to your build file**
+**Step 1. Add the JitPack repository to your build file**<br>
 Add it in your root build.gradle at the end of repositories
 
 ```
@@ -44,8 +48,8 @@ allprojects {
 }
 ```
 
-**Step 2. Add the dependency**
-Provide the `latest_version` with the Release Versions (Eg: HDRv1.2.0 etc)
+**Step 2. Add the dependency**<br>
+Provide the `latest_version` with the Release Versions ([![](https://jitpack.io/v/AdarshRevankar/Exposure-Fusion.svg)](https://jitpack.io/#AdarshRevankar/Exposure-Fusion) Get this version `HDRv...`)
 ```
 dependencies {
     implementation 'com.github.AdarshRevankar:Exposure-Fusion:latest_version'

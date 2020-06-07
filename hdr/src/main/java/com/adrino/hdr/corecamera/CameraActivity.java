@@ -37,7 +37,7 @@ public class CameraActivity extends AppCompatActivity implements
     @Override
     public void onClick(View view) {
         if (view.getId() == R.id.changeCamera) {
-            Log.e(TAG, "onClick: Changing camera" );
+            Log.e(TAG, "onClick: Changing camera");
             cameraCapture.onDestroy();
             cameraLens = cameraLens == Constants.CameraLens.LENS_FACING_BACK ?
                     Constants.CameraLens.LENS_FACING_FRONT :
@@ -46,6 +46,20 @@ public class CameraActivity extends AppCompatActivity implements
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.container, cameraCapture)
                     .commit();
+        }
+    }
+
+    public void changeEV(View view) {
+        if (view.getId() == R.id.exposurePlus) {
+            if (Constants.getLowEV() - Constants.getIncrement() < Constants.getHighEV() + Constants.getIncrement()) {
+                Constants.setLowEV(Constants.getLowEV() - Constants.getIncrement());
+                Constants.setHighEV(Constants.getHighEV() + Constants.getIncrement());
+            }
+        } else if (view.getId() == R.id.exposureMinus) {
+            if (Constants.getLowEV() + Constants.getIncrement() < Constants.getHighEV() - Constants.getIncrement()) {
+                Constants.setLowEV(Constants.getLowEV() + Constants.getIncrement());
+                Constants.setHighEV(Constants.getHighEV() - Constants.getIncrement());
+            }
         }
     }
 

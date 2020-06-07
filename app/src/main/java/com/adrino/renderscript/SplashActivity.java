@@ -1,12 +1,13 @@
 package com.adrino.renderscript;
 
 import android.content.Intent;
-import android.os.Handler;
 import android.os.Bundle;
+import android.os.Handler;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
-import android.view.animation.LinearInterpolator;
-import android.view.animation.RotateAnimation;
-import android.widget.ImageView;
+import android.view.animation.AnimationSet;
+import android.view.animation.DecelerateInterpolator;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -20,14 +21,23 @@ public class SplashActivity extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final RotateAnimation rotate = new RotateAnimation(0, 180, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-                rotate.setDuration(5000);
-                rotate.setInterpolator(new LinearInterpolator());
+                Animation fadeIn = new AlphaAnimation(0, 1);
+                fadeIn.setInterpolator(new DecelerateInterpolator());
+                fadeIn.setDuration(400);
+
+                Animation fadeOut = new AlphaAnimation(1, 0);
+                fadeOut.setInterpolator(new AccelerateInterpolator());
+                fadeOut.setStartOffset(500);
+                fadeOut.setDuration(200);
+
+                final AnimationSet animation = new AnimationSet(false);
+                animation.addAnimation(fadeIn);
+                animation.addAnimation(fadeOut);
 
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        ((ImageView)findViewById(R.id.logoIco)).startAnimation(rotate);
+                        (findViewById(R.id.logoIco)).startAnimation(animation);
                     }
                 });
             }
@@ -40,6 +50,6 @@ public class SplashActivity extends AppCompatActivity {
                 startActivity(i);
                 finish();
             }
-        }, 2300);
+        }, 1700);
     }
 }

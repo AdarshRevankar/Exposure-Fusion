@@ -1,9 +1,16 @@
 package com.adrino.renderscript;
 
+import android.app.Dialog;
+import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -106,6 +113,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void updateUI(View view, final CreateHDR.Actions action) {
+        // Get selected button id
+
+        final int selectedBtnId = view.getId();
+        changeButtonView(selectedBtnId);
+
         // Load Images
         if (bmpImgList == null) {
             loadImages();
@@ -136,32 +148,84 @@ public class MainActivity extends AppCompatActivity {
                         rvContacts.setAdapter(new ItemsAdapter(contacts));
                         rvContacts.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
 
-                        // Stop loader
-                        try {
-                            handler.removeCallbacks(runnableViewLoader);
-                        } catch (final Exception ex) {
-                            Toast.makeText(MainActivity.this, "Something went wrong with loader...", Toast.LENGTH_LONG).show();
-                        }
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    handler.removeCallbacks(runnableViewLoader);
+                                } catch (final Exception ex) {
+                                    Toast.makeText(MainActivity.this, "Something went wrong with loader...", Toast.LENGTH_LONG).show();
+                                }
+
+                                findViewById(R.id.llcamera).setVisibility(View.GONE);
+                                findViewById(R.id.lltopBar).setVisibility(View.VISIBLE);
+                                findViewById(R.id.rvOrgImage).setVisibility(View.VISIBLE);
+                                findViewById(R.id.rvResult).setVisibility(View.VISIBLE);
+                            }
+                        }).start();
                     }
                 });
+
             }
         }).start();
+    }
+
+    private void changeButtonView(int selectedBtnId) {
+        // Change the color of other buttons and
+        // keep the selected color button to Green
+        int[] btnIds = {R.id.btnContrast, R.id.btnExposure, R.id.btnSaturation, R.id.btnGP, R.id.btnLP, R.id.btnRes, R.id.btnHDR};
+        for (int id : btnIds) {
+            ((Button) findViewById(id)).setTextColor(Color.BLACK);
+        }
+        ((Button) findViewById(selectedBtnId)).setTextColor(Color.rgb(0, 124, 255));
     }
 
     void loadImages() {
         // Load Images from Storage
         bmpImgList = hdrManager.getBmpImageList(getExternalFilesDir(null));
+        Log.e(TAG, "loadImages: " + bmpImgList.size());
+        if (bmpImgList.size() < 3 || bmpImgList.get(0) == null) {
+            Toast.makeText(MainActivity.this, "Images not loaded / not present", Toast.LENGTH_LONG);
+            captureImage(null);
+        }
 
         // Create the name for each of the item
         ArrayList<String> descList = new ArrayList<String>();
-        descList.add("Original1");
-        descList.add("Original2");
-        descList.add("Original3");
+        descList.add("Original 1");
+        descList.add("Original 2");
+        descList.add("Original 3");
 
         // RecyclerView - Showing Original Image
         RecyclerView rvContacts = findViewById(R.id.rvOrgImage);
         ArrayList<ImageItem> contacts = ImageItem.createImageItemList(RsUtils.resizeBmp(bmpImgList), descList);
         rvContacts.setAdapter(new ItemsAdapter(contacts));
         rvContacts.setLayoutManager(new LinearLayoutManager(this));
+    }
+
+    public void showMoreInfo(View view) {
+
+        // Inflate the UI
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setCancelable(true);
+        dialog.setContentView(R.layout.more_info);
+        dialog.show();
+
+    }
+
+    public void moreInfoAction(View view) {
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_VIEW);
+        if (view.getId() == R.id.btnGithub) {
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+            intent.setData(Uri.parse("https://github.com/AdarshRevankar/Exposure-Fusion"));
+        } else if (view.getId() == R.id.btnMail) {
+            intent.setAction(Intent.ACTION_SENDTO);
+            intent.setData(Uri.fromParts("mailto", "adarsh_revankar@live.com", null));
+        } else if (view.getId() == R.id.btnLink) {
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+            intent.setData(Uri.parse("https://adarshrevankar.github.io/Exposure-Fusion"));
+        }
+        startActivity(intent);
     }
 }

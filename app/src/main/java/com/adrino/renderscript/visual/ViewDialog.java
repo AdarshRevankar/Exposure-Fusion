@@ -29,8 +29,8 @@ public class ViewDialog {
         GlideDrawableImageViewTarget imageViewTarget = new GlideDrawableImageViewTarget(gifImageView);
 
         Glide.with(activity)
-                .load(R.drawable.load_2)
-                .placeholder(R.drawable.load_2)
+                .load(R.drawable.splash_loader_blue)
+                .placeholder(R.drawable.splash_loader_blue)
                 .centerCrop()
                 .crossFade()
                 .into(imageViewTarget);

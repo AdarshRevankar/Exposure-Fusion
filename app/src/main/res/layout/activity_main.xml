@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#ffffff"
     tools:context=".MainActivity">
 
     <!-- Header -->
@@ -16,11 +17,10 @@
         <TextView
             android:id="@+id/status"
             android:layout_width="match_parent"
-            android:layout_height="80dp"
+            android:layout_height="120dp"
             android:layout_weight="1"
             android:gravity="center"
             android:padding="15dp"
-            android:text="Original"
             android:textSize="40sp" />
     </LinearLayout>
 
@@ -37,17 +37,44 @@
             android:id="@+id/rvOrgImage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:visibility="gone" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvResult"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/llcamera"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_above="@+id/cardViewBottomPane">
+
+            <TextView
+                android:id="@+id/cameraText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Capture the image to begin !!!"
+                android:textSize="19sp" />
+
+            <ImageView
+                android:id="@+id/cameraGIF"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scaleType="fitCenter"
+                android:src="@drawable/main_capture_wallpaper"/>
+
+        </LinearLayout>
     </LinearLayout>
 
     <!--Bottom Buttons-->
     <androidx.cardview.widget.CardView
+        android:id="@+id/cardViewBottomPane"
         android:layout_width="match_parent"
         android:layout_height="100dp"
         android:layout_alignParentBottom="true"
@@ -91,8 +118,8 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:onClick="setContrast"
-                    android:text="Contrast"
-                    android:padding="20dp"/>
+                    android:padding="20dp"
+                    android:text="Contrast" />
 
                 <Button
                     android:id="@+id/btnSaturation"
@@ -102,12 +129,12 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:onClick="setSaturation"
-                    android:text="Saturation"
-                    android:padding="20dp"/>
+                    android:padding="20dp"
+                    android:text="Saturation" />
 
                 <Button
                     android:id="@+id/btnExposure"
-                    android:layout_width="100dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
@@ -117,59 +144,69 @@
 
                 <Button
                     android:id="@+id/btnNorm"
-                    android:layout_width="100dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
                     android:focusable="true"
                     android:onClick="setNormal"
-                    android:text="Normal"
-                    android:padding="20dp"/>
+                    android:padding="20dp"
+                    android:text="Normal" />
 
                 <Button
                     android:id="@+id/btnGP"
-                    android:layout_width="100dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
                     android:focusable="true"
                     android:onClick="setGaussianPyr"
-                    android:text="GaussPyr" />
+                    android:text="Gaussian" />
 
                 <Button
                     android:id="@+id/btnLP"
-                    android:layout_width="100dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
                     android:focusable="true"
                     android:onClick="setLaplacianPyr"
-                    android:text="LapPyr"
-                    android:padding="20dp"/>
+                    android:padding="20dp"
+                    android:text="Laplacian" />
 
                 <Button
                     android:id="@+id/btnRes"
-                    android:layout_width="100dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
                     android:focusable="true"
                     android:onClick="setResultantPyr"
-                    android:text="ResPyr"
-                    android:padding="20dp"/>
+                    android:padding="20dp"
+                    android:text="Resultant" />
 
                 <Button
                     android:id="@+id/btnHDR"
-                    android:layout_width="100dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
                     android:focusable="true"
                     android:onClick="setHDR"
-                    android:text="HDR"
-                    android:padding="20dp"/>
+                    android:padding="20dp"
+                    android:text="HDR" />
+
+                <ImageButton
+                    android:id="@+id/btnInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:onClick="showMoreInfo"
+                    android:padding="20dp"
+                    android:src="@drawable/ic_outline_info_24" />
             </LinearLayout>
         </HorizontalScrollView>
     </androidx.cardview.widget.CardView>
-
 </RelativeLayout>
