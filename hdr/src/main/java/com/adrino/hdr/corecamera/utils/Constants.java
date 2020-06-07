@@ -9,8 +9,8 @@ public class Constants {
      * +ve means, Over Exposed
      * 0 means, Correct Exposed
      */
-    public static int[] EXPOSURE_BRACKET = {-20, 10, 0};
-    private static int incrementValue = 4;
+    public static int[] EXPOSURE_BRACKET = {-15, 10, 0};
+    private static int incrementValue = 2;
 
     // Getter for exposure values
     public static int getIncrement(){

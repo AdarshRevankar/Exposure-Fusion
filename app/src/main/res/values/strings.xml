@@ -1,6 +1,11 @@
 <resources>
     <string name="app_name">RenderHdr</string>
+
+    <!-- More Information -->
     <string name="developer_comment">RenderHDR Application is created using the Exposure Fusion algorithm.
         Application uses the High-Performance RenderScript Language for processing images. Enjoy the understanding of the algorithm  -  AdarshRevankar 😊</string>
     <string name="version">HDRv1.2.0</string>
+    <string name="github_uri">https://github.com/AdarshRevankar/Exposure-Fusion</string>
+    <string name="email">adarsh_revankar@live.com</string>
+    <string name="web_uri">https://adarshrevankar.github.io/Exposure-Fusion</string>
 </resources>

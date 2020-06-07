@@ -35,11 +35,18 @@ public class MainActivity extends AppCompatActivity {
     private ViewDialog viewDialog = new ViewDialog(this);
     private Manager hdrManager;
     private Handler handler;
+    private Runnable runnableViewLoader = new Runnable() {
+        @Override
+        public void run() {
+            viewDialog.hideDialog();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // Set the content
         super.onCreate(savedInstanceState);
+        overridePendingTransition(R.anim.fadein, R.anim.fadeout);   // Initial Animation
         setContentView(R.layout.activity_main);
         hdrManager = new Manager(getApplicationContext());
     }
@@ -92,29 +99,46 @@ public class MainActivity extends AppCompatActivity {
         hdrManager.perform(this);
     }
 
+    public void moreInfoAction(View view) {
+        // More information - OnClick Listeners
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_VIEW);
+        if (view.getId() == R.id.btnGithub) {
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+            intent.setData(Uri.parse(String.valueOf(R.string.github_uri)));
+        } else if (view.getId() == R.id.btnMail) {
+            intent.setAction(Intent.ACTION_SENDTO);
+            intent.setData(Uri.fromParts("mailto", String.valueOf(R.string.email), null));
+        } else if (view.getId() == R.id.btnLink) {
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+            intent.setData(Uri.parse(String.valueOf(R.string.web_uri)));
+        }
+        startActivity(intent);
+    }
+
+    public void showMoreInfo(View view) {
+        // Inflate the UI
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setCancelable(true);
+        dialog.setContentView(R.layout.more_info);
+        dialog.show();
+    }
+
     /**
      * ========================================================================
      * Helper Functions
      * ========================================================================
      */
-    Runnable runnableViewLoader = new Runnable() {
-        @Override
-        public void run() {
-            viewDialog.hideDialog();
-        }
-    };
-
     public void showCustomLoadingDialog(View view) {
         // Loader - For Matching the UI for holding processing
         viewDialog.showDialog();
-
         handler = new Handler();
         handler.post(runnableViewLoader);
     }
 
     public void updateUI(View view, final CreateHDR.Actions action) {
         // Get selected button id
-
         final int selectedBtnId = view.getId();
         changeButtonView(selectedBtnId);
 
@@ -200,32 +224,5 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<ImageItem> contacts = ImageItem.createImageItemList(RsUtils.resizeBmp(bmpImgList), descList);
         rvContacts.setAdapter(new ItemsAdapter(contacts));
         rvContacts.setLayoutManager(new LinearLayoutManager(this));
-    }
-
-    public void showMoreInfo(View view) {
-
-        // Inflate the UI
-        Dialog dialog = new Dialog(this);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setCancelable(true);
-        dialog.setContentView(R.layout.more_info);
-        dialog.show();
-
-    }
-
-    public void moreInfoAction(View view) {
-        Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_VIEW);
-        if (view.getId() == R.id.btnGithub) {
-            intent.addCategory(Intent.CATEGORY_BROWSABLE);
-            intent.setData(Uri.parse("https://github.com/AdarshRevankar/Exposure-Fusion"));
-        } else if (view.getId() == R.id.btnMail) {
-            intent.setAction(Intent.ACTION_SENDTO);
-            intent.setData(Uri.fromParts("mailto", "adarsh_revankar@live.com", null));
-        } else if (view.getId() == R.id.btnLink) {
-            intent.addCategory(Intent.CATEGORY_BROWSABLE);
-            intent.setData(Uri.parse("https://adarshrevankar.github.io/Exposure-Fusion"));
-        }
-        startActivity(intent);
     }
 }

@@ -18,6 +18,7 @@
         android:layout_alignParentTop="true"
         android:layout_marginRight="30dp"
         android:layout_marginTop="30dp"
-        android:src="@drawable/ic_switch_camera_black_24dp" />
+        android:src="@drawable/ic_switch_camera_black_24dp"
+        android:onClick="changeCamera"/>
 
 </RelativeLayout>

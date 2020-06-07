@@ -336,9 +336,12 @@ public class CameraCapture extends Fragment
      * +====================================================+
      */
     private boolean mManualFocusEngaged = false;
+    private static int notSelectedLen = 1;
 
-
-    public static CameraCapture newInstance() {
+    public static CameraCapture newInstance(Constants.CameraLens skipLens) {
+        notSelectedLen = skipLens == Constants.CameraLens.LENS_FACING_FRONT ?
+                CameraCharacteristics.LENS_FACING_BACK :
+                CameraCharacteristics.LENS_FACING_FRONT;
         return new CameraCapture();
     }
 
@@ -395,12 +398,12 @@ public class CameraCapture extends Fragment
             for (String cameraId : manager.getCameraIdList()) {
                 characteristics = manager.getCameraCharacteristics(cameraId);
                 Range<Long> exposureTimeRange = characteristics.get(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE);
-                Log.e(TAG, "setUpCameraOutputs: Lower Range = "+ exposureTimeRange.getLower());
-                Log.e(TAG, "setUpCameraOutputs: Upper Range = "+ exposureTimeRange.getUpper());
+                Log.e(TAG, "setUpCameraOutputs: Lower Range = " + exposureTimeRange.getLower());
+                Log.e(TAG, "setUpCameraOutputs: Upper Range = " + exposureTimeRange.getUpper());
 
                 // We don't use a front facing camera in this sample.
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                if (facing != null && facing == notSelectedLen) {
                     continue;
                 }
 
