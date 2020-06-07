@@ -234,7 +234,6 @@ public class CameraCapture extends Fragment
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-
             mBackgroundHandler.post(
                     new ImageSaver(getActivity(), reader.acquireNextImage(),
                             new File(getActivity().getExternalFilesDir(null), "pic" + ImageSaver.writtenCount + ".jpg")));
@@ -719,6 +718,12 @@ public class CameraCapture extends Fragment
             if (null == activity || null == mCameraDevice) {
                 return;
             }
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    activity.findViewById(R.id.camera_activity_progress_cycle).setVisibility(View.VISIBLE);
+                }
+            });
 
             for (int i = 0; i < 3; i++) {
                 // This is the CaptureRequest.Builder that we use to take a picture.

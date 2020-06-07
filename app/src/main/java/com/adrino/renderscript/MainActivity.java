@@ -6,11 +6,11 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,7 +23,6 @@ import com.adrino.hdr.corehdr.CreateHDR;
 import com.adrino.hdr.corehdr.RsUtils;
 import com.adrino.renderscript.utils.ImageItem;
 import com.adrino.renderscript.utils.ItemsAdapter;
-import com.adrino.renderscript.visual.ViewDialog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,15 +31,18 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private List<Bitmap> bmpImgList;
-    private ViewDialog viewDialog = new ViewDialog(this);
     private Manager hdrManager;
-    private Handler handler;
-    private Runnable runnableViewLoader = new Runnable() {
-        @Override
-        public void run() {
-            viewDialog.hideDialog();
-        }
-    };
+    private ProgressBar progressBar;
+    private TextView headerTextView;
+    private static int[] btnIds = {
+            R.id.btnContrast,
+            R.id.btnExposure,
+            R.id.btnSaturation,
+            R.id.btnNorm,
+            R.id.btnGP,
+            R.id.btnLP,
+            R.id.btnRes,
+            R.id.btnHDR};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +51,9 @@ public class MainActivity extends AppCompatActivity {
         overridePendingTransition(R.anim.fadein, R.anim.fadeout);   // Initial Animation
         setContentView(R.layout.activity_main);
         hdrManager = new Manager(getApplicationContext());
+
+        progressBar = findViewById(R.id.main_progress_cycle);
+        headerTextView = findViewById(R.id.status);
     }
 
     /**
@@ -130,17 +135,12 @@ public class MainActivity extends AppCompatActivity {
      * Helper Functions
      * ========================================================================
      */
-    public void showCustomLoadingDialog(View view) {
-        // Loader - For Matching the UI for holding processing
-        viewDialog.showDialog();
-        handler = new Handler();
-        handler.post(runnableViewLoader);
-    }
-
     public void updateUI(View view, final CreateHDR.Actions action) {
         // Get selected button id
-        final int selectedBtnId = view.getId();
-        changeButtonView(selectedBtnId);
+        changeButtonView(view.getId());
+
+        // Show the progress bar
+        progressBar.setVisibility(View.VISIBLE);
 
         // Load Images
         if (bmpImgList == null) {
@@ -148,7 +148,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Start a thread for Doing Processing + Updating UI
-        showCustomLoadingDialog(view);
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -164,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         // Update - TextView
-                        ((TextView) findViewById(R.id.status)).setText(action.toString());
+                        headerTextView.setText(action.toString());
 
                         // Recycler View - Result View
                         RecyclerView rvContacts = findViewById(R.id.rvResult);
@@ -175,12 +174,7 @@ public class MainActivity extends AppCompatActivity {
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
-                                try {
-                                    handler.removeCallbacks(runnableViewLoader);
-                                } catch (final Exception ex) {
-                                    Toast.makeText(MainActivity.this, "Something went wrong with loader...", Toast.LENGTH_LONG).show();
-                                }
-
+                                progressBar.setVisibility(View.GONE);
                                 findViewById(R.id.llcamera).setVisibility(View.GONE);
                                 findViewById(R.id.lltopBar).setVisibility(View.VISIBLE);
                                 findViewById(R.id.rvOrgImage).setVisibility(View.VISIBLE);
@@ -197,7 +191,6 @@ public class MainActivity extends AppCompatActivity {
     private void changeButtonView(int selectedBtnId) {
         // Change the color of other buttons and
         // keep the selected color button to Green
-        int[] btnIds = {R.id.btnContrast, R.id.btnExposure, R.id.btnSaturation, R.id.btnGP, R.id.btnLP, R.id.btnRes, R.id.btnHDR};
         for (int id : btnIds) {
             ((Button) findViewById(id)).setTextColor(Color.BLACK);
         }

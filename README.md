@@ -1,7 +1,7 @@
 # High Dynamic Range (HDR) - Exposure Fusion - Android 📸
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/AdarshRevankar/RenderScript)
 [![](https://jitpack.io/v/AdarshRevankar/Exposure-Fusion.svg)](https://jitpack.io/#AdarshRevankar/Exposure-Fusion)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Arpith-kumar/DsDojo/blob/master/LICENSE.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/AdarshRevankar/Exposure-Fusion/master/LICENSE.md)
 
 ---
 ![ic_render_hdr_logo](https://user-images.githubusercontent.com/48080453/83974343-4d4ed300-a90a-11ea-8e39-42eccc8a73fc.png)

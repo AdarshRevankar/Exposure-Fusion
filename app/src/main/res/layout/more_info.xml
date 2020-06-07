@@ -26,8 +26,9 @@
                 <ImageView
                     android:id="@+id/more_logo"
                     android:layout_width="match_parent"
-                    android:layout_height="70dp"
-                    android:src="@drawable/ic_render_hdr_logo_round" />
+                    android:layout_height="100dp"
+                    android:src="@drawable/ic_render_hdr_logo_round"
+                    android:layout_marginBottom="20dp"/>
 
                 <TextView
                     android:layout_width="match_parent"
@@ -41,7 +42,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical|end"
-                    android:layout_marginTop="40dp"
+                    android:layout_marginTop="30dp"
                     android:fontFamily="sans-serif-medium"
                     android:lineSpacingExtra="6sp"
                     android:text="@string/developer_comment"
