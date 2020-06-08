@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="?attr/selectableItemBackground"
+        android:background="?attr/cardbackgroundcolor"
         android:clickable="true"
         android:focusable="true">
 
@@ -25,6 +25,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@+id/image_viewer"
+            android:textColor="?attr/textcolor"
             android:gravity="center"
             android:padding="5dp" />
     </LinearLayout>

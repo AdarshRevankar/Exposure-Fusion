@@ -11,6 +11,8 @@
         <item name="tintcolor">#A0A0A0</item>
         <item name="buttoncolor">#EFEFEF</item>
         <item name="backgroundcolor">#FFFFFF</item>
+        <item name="cardbackgroundcolor">?attr/selectableItemBackground</item>
+        <item name="android:windowAnimationStyle">@style/WindowAnimationTransition</item>
     </style>
 
     <!-- Dark / Night theme. -->
@@ -23,5 +25,12 @@
         <item name="tintcolor">#606060</item>
         <item name="buttoncolor">#505050</item>
         <item name="backgroundcolor">#000000</item>
+        <item name="cardbackgroundcolor">#121212</item>
+        <item name="android:windowAnimationStyle">@style/WindowAnimationTransition</item>
+    </style>
+    
+    <style name="WindowAnimationTransition">
+        <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:windowExitAnimation">@android:anim/fade_out</item>
     </style>
 </resources>

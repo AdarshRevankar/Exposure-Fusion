@@ -79,9 +79,9 @@ public class CameraActivity extends AppCompatActivity{
 
     @Override
     protected void onDestroy() {
+        super.onDestroy();
         cameraLens = null;
         cameraCapture.onDestroy();
         cameraCapture = null;
-        super.onDestroy();
     }
 }

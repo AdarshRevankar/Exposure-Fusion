@@ -7,9 +7,6 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
@@ -72,14 +69,14 @@ public class MainActivity extends AppCompatActivity {
             ((ImageView) findViewById(R.id.cameraGIF)).setImageResource(R.drawable.main_capture_wallpaper_dark);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater menuInflater = getMenuInflater();
-        menuInflater.inflate(R.menu.menu, menu);
-        MenuItem switchOnOffItem = menu.findItem(R.id.switchOnOffItem);
-        switchOnOffItem.setActionView(R.layout.switch_layout);
-        return true;
-    }
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        MenuInflater menuInflater = getMenuInflater();
+//        menuInflater.inflate(R.menu.menu, menu);
+//        MenuItem switchOnOffItem = menu.findItem(R.id.switchOnOffItem);
+//        switchOnOffItem.setActionView(R.layout.switch_layout);
+//        return true;
+//    }
 
     /**
      * ========================================================================
@@ -135,13 +132,13 @@ public class MainActivity extends AppCompatActivity {
         intent.setAction(Intent.ACTION_VIEW);
         if (view.getId() == R.id.btnGithub) {
             intent.addCategory(Intent.CATEGORY_BROWSABLE);
-            intent.setData(Uri.parse(String.valueOf(R.string.github_uri)));
+            intent.setData(Uri.parse("https://github.com/AdarshRevankar/Exposure-Fusion"));
         } else if (view.getId() == R.id.btnMail) {
             intent.setAction(Intent.ACTION_SENDTO);
             intent.setData(Uri.fromParts("mailto", String.valueOf(R.string.email), null));
         } else if (view.getId() == R.id.btnLink) {
             intent.addCategory(Intent.CATEGORY_BROWSABLE);
-            intent.setData(Uri.parse(String.valueOf(R.string.web_uri)));
+            intent.setData(Uri.parse("https://adarshrevankar.github.io/Exposure-Fusion"));
         }
         startActivity(intent);
     }
@@ -213,12 +210,24 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
+    private static int prevBtn;
+
     private void changeButtonView(int selectedBtnId) {
         // Change the color of other buttons and
         // keep the selected color button to Green
+        int color = 0;
         for (int id : btnIds) {
-            ((Button) findViewById(id)).setTextColor(Color.BLACK);
+            if (((Button) findViewById(id)).getTextColors().getDefaultColor() !=
+                    Color.rgb(0, 124, 255)) {
+                color = ((Button) findViewById(id)).getTextColors().getDefaultColor();
+                break;
+            }
         }
+
+        for (int id : btnIds) {
+            ((Button) findViewById(id)).setTextColor(color);
+        }
+
         ((Button) findViewById(selectedBtnId)).setTextColor(Color.rgb(0, 124, 255));
     }
 
