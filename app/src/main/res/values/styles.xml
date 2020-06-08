@@ -1,11 +1,27 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light">
+    <!-- Light / Day theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="textcolor">#404040</item>
+        <item name="tintcolor">#A0A0A0</item>
+        <item name="buttoncolor">#EFEFEF</item>
+        <item name="backgroundcolor">#FFFFFF</item>
     </style>
 
+    <!-- Dark / Night theme. -->
+    <style name="DarkTheme" parent="Theme.AppCompat.DayNight">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">#212121</item>
+        <item name="colorPrimaryDark">#000000</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="textcolor">#9A9A9A</item>
+        <item name="tintcolor">#606060</item>
+        <item name="buttoncolor">#505050</item>
+        <item name="backgroundcolor">#000000</item>
+    </style>
 </resources>

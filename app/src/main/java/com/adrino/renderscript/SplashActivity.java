@@ -1,18 +1,33 @@
 package com.adrino.renderscript;
 
+import android.content.res.Configuration;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import com.adrino.renderscript.utils.AnimationHandlers;
 
 public class SplashActivity extends AppCompatActivity {
 
+    private static final String TAG = "S[;ash";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        switch (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) {
+            case Configuration.UI_MODE_NIGHT_YES:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                setTheme(R.style.DarkTheme);
+                break;
+            case Configuration.UI_MODE_NIGHT_NO:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                setTheme(R.style.AppTheme);
+                break;
+        }
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
