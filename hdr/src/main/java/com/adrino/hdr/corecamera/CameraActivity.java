@@ -5,6 +5,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import com.adrino.hdr.R;
 import com.adrino.hdr.corecamera.utils.Constants;
@@ -17,6 +18,7 @@ public class CameraActivity extends AppCompatActivity{
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTheme(getThemeMode());
         super.onCreate(savedInstanceState);
         overridePendingTransition(R.anim.fadein, R.anim.fadeout);   // Initial Animation
         setContentView(R.layout.activity_camera);
@@ -75,6 +77,11 @@ public class CameraActivity extends AppCompatActivity{
         ((TextView)findViewById(R.id.tvLow)).setText("Low "+Constants.getLowEV());
         ((TextView)findViewById(R.id.tvMid)).setText("Mid "+Constants.getMidEV());
         ((TextView)findViewById(R.id.tvHigh)).setText("High "+Constants.getHighEV());
+    }
+
+    private int getThemeMode() {
+        boolean darkModeOn = AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES;
+        return darkModeOn ? R.style.DarkTheme : R.style.AppTheme;
     }
 
     @Override

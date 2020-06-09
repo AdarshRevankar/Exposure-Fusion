@@ -15,8 +15,8 @@
         android:id="@+id/control"
         android:layout_width="match_parent"
         android:layout_height="100dp"
+        android:paddingTop="10dp"
         android:layout_above="@+id/evViewer"
-        android:background="#00000000"
         android:orientation="horizontal">
 
         <ImageButton
@@ -25,9 +25,10 @@
             android:layout_weight="1"
             android:layout_height="match_parent"
             android:src="@drawable/ic_add_black_24dp"
+            android:paddingTop="10dp"
             android:layout_gravity="center"
             android:onClick="changeEV"
-            style="@android:style/Widget.Material.Light.Button.Borderless"/>
+            android:background="?attr/selectableItemBackground"/>
 
         <ImageButton
             android:id="@+id/picture"
@@ -37,7 +38,7 @@
             android:scaleType="fitCenter"
             android:layout_gravity="center"
             android:src="@drawable/ic_click_camera"
-            style="@android:style/Widget.Material.Light.Button.Borderless"/>
+            android:background="?attr/selectableItemBackground"/>
 
         <ImageButton
             android:id="@+id/exposureMinus"
@@ -47,7 +48,7 @@
             android:src="@drawable/ic_baseline_minimize_24"
             android:layout_gravity="center"
             android:onClick="changeEV"
-            style="@android:style/Widget.Material.Light.Button.Borderless"/>
+            android:background="?attr/selectableItemBackground"/>
     </LinearLayout>
 
     <LinearLayout

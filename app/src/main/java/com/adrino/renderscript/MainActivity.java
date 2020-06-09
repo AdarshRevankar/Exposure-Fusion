@@ -10,7 +10,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -49,34 +48,16 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Set the content
-        if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES) {
-            setTheme(R.style.DarkTheme);
-            darkModeOn = true;
-        } else {
-            setTheme(R.style.AppTheme);
-            darkModeOn = false;
-        }
+        setTheme(getThemeMode());                                   // For Dark Mode
+        overridePendingTransition(R.anim.fadein, R.anim.fadeout);   // Initial Animation
 
         super.onCreate(savedInstanceState);
-        overridePendingTransition(R.anim.fadein, R.anim.fadeout);   // Initial Animation
         setContentView(R.layout.activity_main);
         hdrManager = new Manager(getApplicationContext());
 
         progressBar = findViewById(R.id.main_progress_cycle);
         headerTextView = findViewById(R.id.status);
-        if (darkModeOn)
-            ((ImageView) findViewById(R.id.cameraGIF)).setImageResource(R.drawable.main_capture_wallpaper_dark);
     }
-
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        MenuInflater menuInflater = getMenuInflater();
-//        menuInflater.inflate(R.menu.menu, menu);
-//        MenuItem switchOnOffItem = menu.findItem(R.id.switchOnOffItem);
-//        switchOnOffItem.setActionView(R.layout.switch_layout);
-//        return true;
-//    }
 
     /**
      * ========================================================================
@@ -251,5 +232,10 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<ImageItem> contacts = ImageItem.createImageItemList(RsUtils.resizeBmp(bmpImgList), descList);
         rvContacts.setAdapter(new ItemsAdapter(contacts));
         rvContacts.setLayoutManager(new LinearLayoutManager(this));
+    }
+
+    private int getThemeMode() {
+        darkModeOn = AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES;
+        return darkModeOn ? R.style.DarkTheme : R.style.AppTheme;
     }
 }

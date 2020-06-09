@@ -4,7 +4,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/AdarshRevankar/Exposure-Fusion/master/LICENSE.md)
 
 ---
-![ic_render_hdr_logo](https://user-images.githubusercontent.com/48080453/83974343-4d4ed300-a90a-11ea-8e39-42eccc8a73fc.png)
+![logo](https://user-images.githubusercontent.com/48080453/84115484-c9046900-aa4b-11ea-80ff-4d81f0ed7dff.png)
+![1](https://user-images.githubusercontent.com/48080453/84115561-e2a5b080-aa4b-11ea-9462-a167e2756d5e.png)
+<br>
+<br>
+<br>
+![2](https://user-images.githubusercontent.com/48080453/84115701-213b6b00-aa4c-11ea-9c71-59ff32bd80bf.png)
+![3](https://user-images.githubusercontent.com/48080453/84115609-f3eebd00-aa4b-11ea-8f81-81981a237f41.gif)
+![4](https://user-images.githubusercontent.com/48080453/84115757-37492b80-aa4c-11ea-94b0-df0cf3db0103.png)
 
 ### Exposure Fusion Algorithm
 

@@ -17,6 +17,7 @@ public class SplashActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Dark Mode
         switch (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) {
             case Configuration.UI_MODE_NIGHT_YES:
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
@@ -27,7 +28,6 @@ public class SplashActivity extends AppCompatActivity {
                 setTheme(R.style.AppTheme);
                 break;
         }
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
