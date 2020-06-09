@@ -78,12 +78,14 @@ Library is provided with the class `com.adrino.hdr.Manager` which consist of a s
     Manager hdrManager = new Manager(getApplicationContext());
     ```
     Manager consist of methods for creation of camera activity and HDR Image
-    | Method                                                              | What it does?                                                                                                                                                                                               |
-    |---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-    | `List<Bitmap> perform(List<Bitmap>, CreateHDR.Actions) `            | Returns the required  `Action` specified over List of images sent                                                                                                                                           |
-    | `void perform(Activity currActivity)`                               | Intents the CameraActivity over the current activity and provides the camera interface                                                                                                                      |
-    | `List<Bitmap> perform(Activity currActivity, boolean deleteImages)` | Returns the required  `Action`  specified over List of images sent by providing the CameraActivity. Provides boolean  `deleteImages` if you want to retain or delete the captured images (Security Reasons) |
-    | `List<Bitmap> getBmpImageList(File file)`                           | Returns the captured images from the Storage, when the External Storage location is given. For example,  `getExternalFilesDir(null)` is passed as the file parameter                                        |
+    
+| Method                                                              | What it does?                                                                                                                                                                                               |
+|---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `List<Bitmap> perform(List<Bitmap>, CreateHDR.Actions) `            | Returns the required  `Action` specified over List of images sent                                                                                                                                           |
+| `void perform(Activity currActivity)`                               | Intents the CameraActivity over the current activity and provides the camera interface                                                                                                                      |
+| `List<Bitmap> perform(Activity currActivity, boolean deleteImages)` | Returns the required  `Action`  specified over List of images sent by providing the CameraActivity. Provides boolean  `deleteImages` if you want to retain or delete the captured images (Security Reasons) |
+| `List<Bitmap> getBmpImageList(File file)`                           | Returns the captured images from the Storage, when the External Storage location is given. For example,  `getExternalFilesDir(null)` is passed as the file parameter                                        |
+
 3. Inflate the `CameraActivity` by calling `perform(Activity)` method
     ```groovy
     hdrManager.perform(this);
