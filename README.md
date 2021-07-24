@@ -4,6 +4,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/AdarshRevankar/Exposure-Fusion/master/LICENSE.md)
 
 ---
+
+### Deprecation ⚠️
+This repository has been deprecated from Android 12 Beta
+```
+https://developer.android.com/about/versions/12/deprecations#renderscript
+```
+
 ![logo](https://user-images.githubusercontent.com/48080453/84115484-c9046900-aa4b-11ea-80ff-4d81f0ed7dff.png)
 ![1](https://user-images.githubusercontent.com/48080453/84115561-e2a5b080-aa4b-11ea-9462-a167e2756d5e.png)
 <br>
